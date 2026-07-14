@@ -1,0 +1,5 @@
+#02 Dynamic Pricing — retrieval + LLM, zero-training
+Currency: GBP | comps k=10
+================================================================
+Comps-median baseline (n=1500):  MAE=11.7  MAPE=25.8%
+LLM-reasoned (gpt-4o-mini, n=40):  MAE=4.9  MAPE=12.5%

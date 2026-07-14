@@ -1,0 +1,8 @@
+#03 Personal Shopper — retrieval (RAG), zero-training
+Embed backend index | currency=mixed | recall probes=300
+============================================================
+Known-item recall@k (query = product name keywords):
+  @1: 0.887
+  @3: 0.970
+  @5: 0.987
+  @10: 0.993

@@ -1,0 +1,26 @@
+{
+  "approach": "ollama-llm-scoring-zero-training",
+  "model": "gpt-4o-mini",
+  "task": "customer-churn-risk",
+  "system_prompt": "You are a customer-retention expert for a fashion & cosmetics e-commerce platform. From the customer's behaviour, estimate the CHURN RISK over the next 30-90 days. churn_risk is a probability 0..1. Name 2-3 key drivers and one concrete retention action. Always return JSON.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "churn_risk": {
+        "type": "number"
+      },
+      "drivers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "retention_action": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "churn_risk"
+    ]
+  }
+}

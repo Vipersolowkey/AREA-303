@@ -1,0 +1,14 @@
+#01 Review Sentiment (English) — LLM openai:gpt-4o-mini, zero-training
+Eval sample: 1200 reviews
+LLM call errors (fell back to neutral): 0
+Accuracy: 0.591   Macro-F1: 0.596
+================================================================
+              precision    recall  f1-score   support
+
+    negative      0.777     0.512     0.617       400
+     neutral      0.460     0.705     0.557       400
+    positive      0.687     0.555     0.614       400
+
+    accuracy                          0.591      1200
+   macro avg      0.641     0.591     0.596      1200
+weighted avg      0.641     0.591     0.596      1200

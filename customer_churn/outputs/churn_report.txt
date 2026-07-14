@@ -1,0 +1,6 @@
+#04 Customer Churn — LLM risk scoring, zero-training
+Data source: rees46_events  |  users: 1500  |  churn rate: 0.389
+LLM-scored users: 200
+============================================================
+Rule baseline (all users): AUC=0.572  F1@0.5=0.131  (n=1500)
+LLM openai:gpt-4o-mini (scored subset): AUC=0.775  F1@0.5=0.718  (n=200)

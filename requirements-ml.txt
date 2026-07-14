@@ -1,0 +1,21 @@
+# AREA 303 — modeling dependencies (ideas #01–#05, Ollama-first, no training).
+# Install on top of requirements.txt:  pip install -r requirements-ml.txt
+#
+# The LLM layer talks to Ollama (local) or the OpenAI API over plain HTTP
+# (urllib, stdlib) — no vendor SDK required. See common/llm_client.py and
+# .env.example for backend config.
+
+numpy>=1.26
+pandas>=2.0
+pyarrow>=14.0
+scikit-learn>=1.3      # metrics: F1, AUC, ROC, PR, confusion matrix
+matplotlib>=3.7        # figures
+
+# --- data fetching (code/download_clean_ideas.py) ---
+datasets>=2.0          # HuggingFace (vispam, asos)
+huggingface_hub>=0.20
+kaggle>=1.6            # shopee, sephora, tiki, rees46, utkarshx27 (need kaggle.json)
+
+# --- optional: only if you want a *trained* tabular alternative to LLM scoring ---
+# xgboost>=2.0
+# shap>=0.44

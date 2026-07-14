@@ -1,0 +1,13 @@
+#05 Fake Review (English) — LLM openai:gpt-4o-mini, zero-training
+Eval sample: 1000 reviews | LLM errors: 0
+Binary fake detection — Accuracy: 0.767  Macro-F1: 0.766
+================================================================
+              precision    recall  f1-score   support
+
+     genuine      0.816     0.690     0.748       500
+        fake      0.731     0.844     0.784       500
+
+    accuracy                          0.767      1000
+   macro avg      0.773     0.767     0.766      1000
+weighted avg      0.773     0.767     0.766      1000
+

@@ -1,0 +1,41 @@
+{
+  "approach": "llm-fewshot-zero-training",
+  "model": "gpt-4o-mini",
+  "task": "english-fake-review-detection",
+  "system_prompt": "You are a review-integrity system for an e-commerce platform (fashion & cosmetics). Decide whether a review is GENUINE (written by a real customer) or FAKE (computer-generated / fabricated). Fake reviews tend to be generic, overly positive, template-like, repetitive, or lack concrete product detail. Use the text and metadata (rating, category). Always return JSON.",
+  "fewshot": [
+    [
+      "rating=5, category=Clothing, review: \"Fits perfectly, the linen is breathable and the stitching held up after three washes. Runs slightly large.\"",
+      "genuine (specific, concrete detail)"
+    ],
+    [
+      "rating=5, category=Beauty, review: \"Love this product! Great quality and works perfectly. Highly recommend to everyone!\"",
+      "fake (generic, template-like, no specifics)"
+    ],
+    [
+      "rating=1, category=Shoes, review: \"Sole separated within a week and the glue smell was strong. Returned it.\"",
+      "genuine (concrete complaint)"
+    ],
+    [
+      "rating=5, category=Home, review: \"This is amazing. I love it. Best purchase ever. Amazing quality.\"",
+      "fake (repetitive, vague)"
+    ]
+  ],
+  "schema": {
+    "type": "object",
+    "properties": {
+      "is_fake": {
+        "type": "boolean"
+      },
+      "confidence": {
+        "type": "number"
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "is_fake"
+    ]
+  }
+}

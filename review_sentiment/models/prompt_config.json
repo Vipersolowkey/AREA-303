@@ -1,0 +1,52 @@
+{
+  "approach": "llm-fewshot-zero-training",
+  "model": "gpt-4o-mini",
+  "task": "english-review-sentiment",
+  "labels": [
+    "positive",
+    "neutral",
+    "negative"
+  ],
+  "system_prompt": "You are a sentiment classifier for e-commerce product reviews (fashion & cosmetics). Return exactly one label: positive, neutral, or negative.\nGuidance:\n- positive: clearly satisfied, recommends, praise with no real reservation.\n- negative: clearly dissatisfied, regrets the purchase, real problems dominate.\n- neutral: LUKEWARM or MIXED — praise AND complaints together; 'okay / average / fine / decent for the price'; mild reservations; or purely factual (shipping/packaging) with no strong feeling about the product itself.\nIf the review has both clear pros and clear cons, choose neutral. Judge only the review content. Always return JSON matching the schema.",
+  "fewshot": [
+    [
+      "Beautiful top, soft fabric, true to size. Absolutely love it, will buy again!",
+      "positive"
+    ],
+    [
+      "The dress is pretty but the fabric is thinner than expected — fine for the price I guess.",
+      "neutral"
+    ],
+    [
+      "It's okay. Nothing special, does the job.",
+      "neutral"
+    ],
+    [
+      "Fast shipping, well packaged. Haven't worn it yet.",
+      "neutral"
+    ],
+    [
+      "Terrible quality, fell apart after one wash. Very disappointed.",
+      "negative"
+    ]
+  ],
+  "schema": {
+    "type": "object",
+    "properties": {
+      "sentiment": {
+        "type": "string",
+        "enum": [
+          "positive",
+          "neutral",
+          "negative"
+        ]
+      },
+      "reason": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "sentiment"
+    ]
+  }
+}
