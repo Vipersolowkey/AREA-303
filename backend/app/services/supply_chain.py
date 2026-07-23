@@ -7,6 +7,8 @@ congestion) — see module docstring in schemas/supply_chain.py for sourcing.
 
 from __future__ import annotations
 
+from typing import Literal, cast
+
 from app.schemas.supply_chain import DisruptionAlert, SupplyChainRequest, SupplyChainResponse
 
 DISRUPTION_EVENTS: list[dict] = [
@@ -56,5 +58,5 @@ def check_supply_chain(req: SupplyChainRequest) -> SupplyChainResponse:
 
     return SupplyChainResponse(
         alerts=[DisruptionAlert(**e) for e in matched],
-        overall_risk=overall, summary=summary,
+        overall_risk=cast(Literal["low", "medium", "high"], overall), summary=summary,
     )

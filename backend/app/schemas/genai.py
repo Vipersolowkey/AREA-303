@@ -47,14 +47,13 @@ class ShopperProductsResponse(BaseModel):
 
 
 Platform = Literal["Shopee", "Tiki", "TikTok Shop"]
+_DEFAULT_PLATFORMS: list[Platform] = ["Shopee", "Tiki", "TikTok Shop"]
 
 
 class ContentGeneratorRequest(BaseModel):
     product_name: str = Field(min_length=1, max_length=200)
     features: str = Field(min_length=1, max_length=1000)
-    platforms: list[Platform] = Field(
-        default_factory=lambda: ["Shopee", "Tiki", "TikTok Shop"]
-    )
+    platforms: list[Platform] = Field(default_factory=lambda: list(_DEFAULT_PLATFORMS))
 
 
 class ContentVariant(BaseModel):

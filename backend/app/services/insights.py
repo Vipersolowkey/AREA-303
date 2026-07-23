@@ -14,11 +14,10 @@ from __future__ import annotations
 import json
 import math
 import re
+from typing import Literal, cast
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.services.genai.base import LlmMessage
-from app.services.genai.factory import get_llm_client
 from app.schemas.insights import (
     ChurnRequest,
     ChurnResponse,
@@ -35,8 +34,17 @@ from app.schemas.insights import (
     SentimentRequest,
     SentimentResponse,
 )
+from app.services.genai.base import LlmMessage
+from app.services.genai.demo_data import DEMO_CATALOG
+from app.services.genai.factory import get_llm_client
 
 log = get_logger("app.services.insights")
+
+# Aliases matching the response schemas' Literal fields (for cast narrowing —
+# the values are validated at runtime by the branch logic / Pydantic).
+_SentimentLit = Literal["positive", "neutral", "negative"]
+_RiskBandLit = Literal["low", "medium", "high"]
+_AlertLevelLit = Literal["none", "watch", "urgent"]
 
 
 def _llm_ready() -> bool:
@@ -50,7 +58,7 @@ def _parse_json(raw: str) -> dict:
         raw = raw.split("```", 2)[1].lstrip("json").strip()
     start, end = raw.find("{"), raw.rfind("}")
     return json.loads(raw[start:end + 1] if start != -1 and end != -1 else raw)
-from app.services.genai.demo_data import DEMO_CATALOG
+
 
 # English + Vietnamese cue words (the seller platform sees both).
 _POS = {
@@ -91,7 +99,7 @@ def _analyze_sentiment_heuristic(req: SentimentRequest) -> SentimentResponse:
         s, reason = "neutral", "Mixed or weak signal — lukewarm / factual review."
 
     confidence = min(0.95, 0.5 + 0.12 * abs(score))
-    return SentimentResponse(sentiment=s, confidence=round(confidence, 2), reason=reason)
+    return SentimentResponse(sentiment=cast(_SentimentLit, s), confidence=round(confidence, 2), reason=reason)
 
 
 def _detect_fake_heuristic(req: FakeReviewRequest) -> FakeReviewResponse:
@@ -178,7 +186,7 @@ async def analyze_sentiment(req: SentimentRequest) -> SentimentResponse:
             raise ValueError(f"bad sentiment: {sentiment!r}")
         conf = float(data.get("confidence", 0.7))
         return SentimentResponse(
-            sentiment=sentiment,
+            sentiment=cast(_SentimentLit, sentiment),
             confidence=round(min(0.99, max(0.0, conf)), 2),
             reason=str(data.get("reason", "")).strip() or "LLM classification.",
         )
@@ -295,7 +303,7 @@ def score_churn(req: ChurnRequest) -> ChurnResponse:
         "No action needed — keep delighting as usual."
     )
     return ChurnResponse(
-        churn_risk=round(risk, 2), risk_band=band, drivers=drivers, retention_action=action,
+        churn_risk=round(risk, 2), risk_band=cast(_RiskBandLit, band), drivers=drivers, retention_action=action,
     )
 
 
@@ -350,7 +358,7 @@ def score_return(req: ReturnRequest) -> ReturnResponse:
         if band == "medium" else
         "No special handling needed."
     )
-    return ReturnResponse(return_risk=round(risk, 2), risk_band=band, drivers=drivers, action=action)
+    return ReturnResponse(return_risk=round(risk, 2), risk_band=cast(_RiskBandLit, band), drivers=drivers, action=action)
 
 
 # ---------------------------------------------------------------------------
@@ -401,7 +409,7 @@ def score_regret(req: RegretRequest) -> RegretResponse:
     else:
         msg = "Cảm ơn bạn đã tin tưởng lựa chọn kỹ lưỡng — chúc bạn hài lòng với sản phẩm!"
 
-    return RegretResponse(regret_risk=round(risk, 2), risk_band=band, drivers=drivers, reassurance_message=msg)
+    return RegretResponse(regret_risk=round(risk, 2), risk_band=cast(_RiskBandLit, band), drivers=drivers, reassurance_message=msg)
 
 
 # ---------------------------------------------------------------------------
@@ -442,6 +450,6 @@ def score_inventory_alert(req: InventoryAlertRequest) -> InventoryAlertResponse:
 
     return InventoryAlertResponse(
         is_trending=is_trending, trend_score=round(trend_score, 2),
-        days_of_stock_left=round(days_left, 1), alert_level=level,
+        days_of_stock_left=round(days_left, 1), alert_level=cast(_AlertLevelLit, level),
         recommended_restock_qty=needed, reason=reason,
     )

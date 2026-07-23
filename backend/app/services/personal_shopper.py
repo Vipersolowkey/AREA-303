@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import unicodedata
+
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.schemas.genai import ProductCard, ShopperProductsResponse
@@ -36,7 +38,7 @@ _STOPWORDS = {
 # --------------------------------------------------------------------- #
 # Build keyword index từ catalog - map keyword -> product_ids
 # --------------------------------------------------------------------- #
-import unicodedata
+
 
 def _normalize_vietnamese(s: str) -> str:
     """Loại bỏ dấu tiếng Việt để so sánh."""
@@ -156,11 +158,7 @@ def _classify_intent_fast(query: str) -> str | None:
     """
     q_lower = query.lower()
     q_words = set(q_lower.split())
-    q_tokens = _tokens(query)
-    
-    cos_hits = q_tokens & _COSMETICS_STRICT
-    fas_hits = q_tokens & _FASHION_STRICT
-    
+
     # Exact keyword match is strongest signal
     if q_words & _COSMETICS_STRICT and not (q_words & _FASHION_STRICT):
         return "cosmetic"

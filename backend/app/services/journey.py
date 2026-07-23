@@ -52,7 +52,7 @@ def analyze_journey(req: JourneyRequest) -> JourneyResponse:
         will_purchase=will_purchase,
         purchase_probability=round(prob, 2),
         top_category=top_category,
-        category_breakdown=dict(cat_counts),
+        category_breakdown={str(k): v for k, v in cat_counts.items()},
         recommended_products=products,
         reasoning=reasoning,
     )
