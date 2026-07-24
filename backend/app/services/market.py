@@ -13,9 +13,17 @@ The strategic narrative (`reasoning`) runs on the LLM with a templated fallback.
 
 from __future__ import annotations
 
-from typing import Literal, cast
+from statistics import median
+from typing import Any, Literal, cast
 
-from app.schemas.market import MarketRequest, MarketResponse
+from app.schemas.market import (
+    CompetitorCompare,
+    MarketRequest,
+    MarketResponse,
+    MarketScanRequest,
+    MarketScanResponse,
+)
+from app.services import commerce_store as store
 from app.services.llm_reasoning import reason_json
 
 _PositionLit = Literal["cheaper", "parity", "pricier"]
@@ -115,4 +123,59 @@ async def analyze_market(req: MarketRequest) -> MarketResponse:
         margin_pct_at_recommended=h["margin_pct_at_recommended"],
         competitor_effective_price_vnd=h["competitor_effective_price_vnd"],
         reasoning=(reasoning or "").strip() or _fallback_reasoning(req, h),
+    )
+
+
+async def scan_market(req: MarketScanRequest) -> MarketScanResponse:
+    """Multi-competitor scan grounded in the store: market position + margin-safe
+    recommendation against the most aggressive competitor."""
+    p = store.find_product(req.query)
+    if not p:
+        return MarketScanResponse(
+            found=False, product_name="", sku="", our_price_vnd=0, competitors=[],
+            market_min_vnd=0, market_median_vnd=0, market_max_vnd=0, our_rank=0, of_total=0,
+            recommended_price_vnd=0, price_floor_vnd=0, margin_pct_at_recommended=0.0,
+            reasoning=f"Không tìm thấy sản phẩm khớp với '{req.query}'.",
+        )
+    our = p["price_vnd"]
+    comps: list[CompetitorCompare] = []
+    eff_prices: list[int] = []
+    for c in p["competitors"]:
+        eff = int(round(c["price_vnd"] * (1 - c["discount_pct"] / 100.0) / 100) * 100)
+        eff_prices.append(eff)
+        pos = "cheaper" if eff < our * 0.97 else ("pricier" if eff > our * 1.03 else "parity")
+        comps.append(CompetitorCompare(
+            name=c["name"], price_vnd=c["price_vnd"], effective_price_vnd=eff,
+            discount_pct=c["discount_pct"], position_vs_us=cast(_PositionLit, pos),
+            gap_pct=round((eff - our) / our * 100, 1),
+        ))
+    prices = [our, *eff_prices]
+    our_rank = sum(1 for x in eff_prices if x < our) + 1
+
+    cheapest = min(p["competitors"], key=lambda c: c["price_vnd"] * (1 - c["discount_pct"] / 100.0))
+    h = _heuristic(MarketRequest(
+        our_product=p["name"], category=cast(Any, p["category"]), our_price_vnd=our,
+        our_cost_vnd=p["cost_vnd"], competitor_name=cheapest["name"],
+        competitor_price_vnd=cheapest["price_vnd"], competitor_discount_pct=cheapest["discount_pct"],
+    ))
+    data = await reason_json(
+        _SYSTEM,
+        f"Product {p['name']} ours {our:,}₫. Competitors (effective): "
+        f"{[(c.name, c.effective_price_vnd) for c in comps]}. Our rank {our_rank}/{len(prices)} "
+        f"(1=cheapest). Recommended {h['recommended_action']} at {h['recommended_price_vnd']:,}₫ "
+        f"(margin {h['margin_pct_at_recommended']}%). Advise the seller.",
+        label="market_scan",
+    )
+    reasoning = (data or {}).get("reasoning") if data else None
+    if not (reasoning and reasoning.strip()):
+        reasoning = (f"Trên {len(prices)} nhà bán, giá ta xếp hạng {our_rank} (1=rẻ nhất). "
+                     f"Đề xuất {h['recommended_action']} về {h['recommended_price_vnd']:,}₫ "
+                     f"(biên {h['margin_pct_at_recommended']}%).")
+    return MarketScanResponse(
+        found=True, product_name=p["name"], sku=p["sku"], our_price_vnd=our, competitors=comps,
+        market_min_vnd=min(prices), market_median_vnd=int(median(prices)), market_max_vnd=max(prices),
+        our_rank=our_rank, of_total=len(prices),
+        recommended_price_vnd=h["recommended_price_vnd"], price_floor_vnd=h["price_floor_vnd"],
+        margin_pct_at_recommended=h["margin_pct_at_recommended"],
+        reasoning=reasoning.strip(),
     )

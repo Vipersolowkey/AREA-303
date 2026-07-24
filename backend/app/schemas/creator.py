@@ -41,3 +41,24 @@ class CreatorResponse(BaseModel):
     recommended_creator: str
     top_creators: list[CreatorScore]
     insight: str
+
+
+# --- Creator correlation (store-grounded, multi-campaign) ------------------ #
+class CorrelationRequest(BaseModel):
+    category: Category
+
+
+class CreatorCorrelation(BaseModel):
+    creator: str
+    content_type: str
+    campaigns: int
+    correlation: float  # views ↔ attributed_sales, -1..1
+    avg_sales_per_1k_views: int
+    total_sales_vnd: int
+
+
+class CorrelationResponse(BaseModel):
+    category: Category
+    ranked: list[CreatorCorrelation]
+    best_creator: str
+    insight: str

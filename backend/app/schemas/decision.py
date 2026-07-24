@@ -43,3 +43,27 @@ class DecisionResponse(BaseModel):
     best_ad_month: int | None
     recommended_action: str
     reasoning: str
+
+
+# --- Playbook: cross-metric normalization + seasonality (store-grounded) --- #
+class PlaybookRequest(BaseModel):
+    situation: str = Field(min_length=1, max_length=500)
+    category: Category
+
+
+class ScoredDecision(BaseModel):
+    kind: DecisionKind
+    description: str
+    metric: Metric
+    value: float
+    impact_score: float  # 0..1, comparable across metrics
+    month: int | None
+
+
+class PlaybookResponse(BaseModel):
+    best: ScoredDecision
+    ranked: list[ScoredDecision]
+    best_ad_month: int | None
+    seasonality: dict[str, float]  # month -> avg ROAS of ad decisions
+    recommended_action: str
+    reasoning: str

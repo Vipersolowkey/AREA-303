@@ -14,7 +14,11 @@ from app.schemas.decision import (
     DecisionRequest,
     DecisionResponse,
     PastDecision,
+    PlaybookRequest,
+    PlaybookResponse,
+    ScoredDecision,
 )
+from app.services import commerce_store as _store
 from app.services.llm_reasoning import reason_json
 
 _MONTHS_VI = {
@@ -74,4 +78,60 @@ async def recommend_decision(req: DecisionRequest) -> DecisionResponse:
         best_ad_month=ad_month,
         recommended_action=(action or "").strip() or fb_action,
         reasoning=(reasoning or "").strip() or fb_reason,
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Đề 5 — playbook: normalize metrics to a comparable impact score + seasonality
+# --------------------------------------------------------------------------- #
+# Fixed reference maxima so different metrics map to a comparable 0..1 score.
+_METRIC_REF = {"ROAS": 6.0, "sales_lift_pct": 40.0, "margin_pct": 100.0, "sell_through_pct": 100.0}
+
+
+def _impact_score(metric: str, value: float) -> float:
+    ref = _METRIC_REF.get(metric, 100.0)
+    return round(min(1.0, max(0.0, value / ref)), 3)
+
+
+async def playbook(req: PlaybookRequest) -> PlaybookResponse:
+    decisions = [d for d in _store.all_decisions() if d["category"] == req.category] or _store.all_decisions()
+    scored = [
+        ScoredDecision(
+            kind=d["kind"], description=d["description"], metric=d["metric"], value=d["value"],
+            impact_score=_impact_score(d["metric"], d["value"]), month=d["month"],
+        )
+        for d in decisions
+    ]
+    scored.sort(key=lambda s: s.impact_score, reverse=True)
+    best = scored[0]
+
+    # Seasonality: average ROAS of ad decisions by month (across the whole log).
+    by_month: dict[str, list[float]] = {}
+    for d in _store.all_decisions():
+        if d["kind"] == "ad" and d["metric"] == "ROAS" and d["month"] is not None:
+            by_month.setdefault(str(d["month"]), []).append(d["value"])
+    seasonality = {m: round(sum(v) / len(v), 2) for m, v in by_month.items()}
+    best_ad_month = int(max(seasonality, key=lambda m: seasonality[m])) if seasonality else None
+
+    data = await reason_json(
+        "You are an operations-strategy agent for a Vietnamese e-commerce shop. Given the "
+        "current situation and the best past decision (by a normalized impact score across "
+        "metrics) plus the best ad month, recommend ONE concrete next action in a short "
+        'Vietnamese paragraph (2-3 sentences). Reply as JSON: {"recommended_action": "...", "reasoning": "..."}',
+        f"Situation: {req.situation}. Category: {req.category}. Best: {best.description} "
+        f"({best.metric}={best.value}, score {best.impact_score}). Best ad month: {best_ad_month}. "
+        f"Seasonality (month→ROAS): {seasonality}.",
+        label="decision_playbook",
+    )
+    action = (data or {}).get("recommended_action") if data else None
+    reasoning = (data or {}).get("reasoning") if data else None
+    if not (action and action.strip()):
+        action = f"Ưu tiên tái áp dụng '{best.description}' (impact {best.impact_score})."
+    if not (reasoning and reasoning.strip()):
+        reasoning = (f"Theo lịch sử ngành {req.category}, quyết định tốt nhất là '{best.description}' "
+                     f"({best.metric}={best.value:g}). "
+                     + (f"Thời điểm đẩy ads tốt nhất: tháng {best_ad_month}." if best_ad_month else ""))
+    return PlaybookResponse(
+        best=best, ranked=scored, best_ad_month=best_ad_month, seasonality=seasonality,
+        recommended_action=action.strip(), reasoning=reasoning.strip(),
     )

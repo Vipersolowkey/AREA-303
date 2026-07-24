@@ -13,14 +13,19 @@ templated fallback.
 from __future__ import annotations
 
 from collections import defaultdict
+from statistics import StatisticsError, correlation
 from typing import cast
 
 from app.schemas.creator import (
     ContentType,
+    CorrelationRequest,
+    CorrelationResponse,
+    CreatorCorrelation,
     CreatorRequest,
     CreatorResponse,
     CreatorScore,
 )
+from app.services import commerce_store as store
 from app.services.llm_reasoning import reason_json
 
 
@@ -102,4 +107,50 @@ async def analyze_creators(req: CreatorRequest) -> CreatorResponse:
         recommended_creator=scores[0].creator,
         top_creators=top,
         insight=(insight or "").strip() or _fallback_insight(req, scores, best_type),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Đề 4 — creator correlation over multi-campaign history (store-grounded)
+# --------------------------------------------------------------------------- #
+async def analyze_correlation(req: CorrelationRequest) -> CorrelationResponse:
+    ranked: list[CreatorCorrelation] = []
+    for c in store.creators_for_category(req.category):
+        camps = c["campaigns"]
+        views = [x["views"] for x in camps]
+        sales = [x["attributed_sales_vnd"] for x in camps]
+        try:
+            corr = round(correlation(views, sales), 3)
+        except (StatisticsError, ValueError):
+            corr = 0.0
+        total = sum(sales)
+        tv = sum(views) or 1
+        ranked.append(CreatorCorrelation(
+            creator=c["creator"], content_type=camps[0]["content_type"], campaigns=len(camps),
+            correlation=corr, avg_sales_per_1k_views=int(total / tv * 1000), total_sales_vnd=total,
+        ))
+    # Rank by correlation first (consistency of content→sales), then efficiency.
+    ranked.sort(key=lambda r: (r.correlation, r.avg_sales_per_1k_views), reverse=True)
+    best = ranked[0].creator if ranked else ""
+
+    txt = "; ".join(
+        f"{r.creator}: corr={r.correlation}, {r.avg_sales_per_1k_views:,}₫/1k views ({r.campaigns} campaigns)"
+        for r in ranked
+    )
+    data = await reason_json(
+        "You are a creator-marketing analyst for a Vietnamese e-commerce shop. Given "
+        "creators ranked by the correlation between their content views and attributed "
+        "sales, recommend who is most reliable to partner with, in ONE short Vietnamese "
+        'paragraph (2-3 sentences). Reply as JSON: {"insight": "..."}',
+        f"Category {req.category}. Ranked: {txt}.",
+        label="creator_corr",
+    )
+    insight = (data or {}).get("insight") if data else None
+    if not (insight and insight.strip()) and ranked:
+        insight = (f"'{best}' có độ tương quan content↔doanh số cao nhất ({ranked[0].correlation}) "
+                   f"trên {ranked[0].campaigns} chiến dịch — đáng tin cậy nhất để hợp tác cho "
+                   f"ngành {req.category}.")
+    return CorrelationResponse(
+        category=req.category, ranked=ranked, best_creator=best,
+        insight=(insight or "Chưa đủ dữ liệu creator cho danh mục này.").strip(),
     )
