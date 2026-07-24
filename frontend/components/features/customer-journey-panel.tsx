@@ -1,34 +1,47 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, ShoppingCart, CreditCard, Radio, Loader2, Sparkles, X } from "lucide-react";
+import { Search, MousePointerClick, Eye, ShoppingCart, CreditCard, Radio, Loader2, Sparkles, X, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/genai/product-card";
-import { analyzeJourney, type JourneyEventInput } from "@/lib/features";
-import type { Product } from "@/lib/mock-data";
+import { analyzeJourney, type JourneyEventInput, type JourneyResultMapped } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = ["Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
 
 const EVENT_TYPES = [
+  { type: "search", label: "Tìm kiếm", icon: Search },
+  { type: "click", label: "Click", icon: MousePointerClick },
   { type: "view", label: "Xem sản phẩm", icon: Eye },
   { type: "cart", label: "Thêm vào giỏ", icon: ShoppingCart },
   { type: "purchase", label: "Mua hàng", icon: CreditCard },
   { type: "livestream", label: "Xem livestream", icon: Radio },
 ] as const;
 
-type Result = {
-  will_purchase: boolean; purchase_probability: number; top_category: string | null;
-  category_breakdown: Record<string, number>; recommended_products: Product[]; reasoning: string;
+const NEXT_ACTION_STYLE: Record<string, { cls: string }> = {
+  checkout: { cls: "text-success" },
+  add_to_cart: { cls: "text-accent" },
+  compare: { cls: "text-warning" },
+  keep_browsing: { cls: "text-text" },
+  leave: { cls: "text-danger" },
 };
+
+const FUNNEL_LABEL: Record<string, string> = {
+  awareness: "Nhận biết", consideration: "Cân nhắc", intent: "Có ý định", purchase: "Đã mua",
+};
+const FUNNEL_ORDER = ["awareness", "consideration", "intent", "purchase"];
+
+type Result = JourneyResultMapped;
 
 export function CustomerJourneyPanel() {
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("Mỹ phẩm");
   const [events, setEvents] = useState<JourneyEventInput[]>([
+    { type: "search", category: "Mỹ phẩm", query: "serum vitamin c" },
+    { type: "click", category: "Mỹ phẩm" },
     { type: "view", category: "Mỹ phẩm" },
-    { type: "view", category: "Mỹ phẩm" },
+    { type: "livestream", category: "Mỹ phẩm" },
     { type: "cart", category: "Mỹ phẩm" },
   ]);
   const [busy, setBusy] = useState(false);
@@ -63,7 +76,7 @@ export function CustomerJourneyPanel() {
           <div>
             <CardTitle>Mô phỏng phiên mua sắm</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
-              Thêm sự kiện (xem / giỏ hàng / mua / livestream) để mô phỏng hành trình của một khách hàng.
+              Thêm sự kiện (tìm kiếm / click / xem / giỏ hàng / mua / livestream) để mô phỏng hành trình và dự đoán bước tiếp theo.
             </p>
           </div>
           <Badge variant="muted">session simulator</Badge>
@@ -113,6 +126,7 @@ export function CustomerJourneyPanel() {
                   >
                     <meta.icon className="h-3 w-3" />
                     {meta.label}
+                    {e.query && <span className="text-text-dim">· &ldquo;{e.query}&rdquo;</span>}
                     {e.category && <span className="text-text-dim">· {e.category}</span>}
                     <button onClick={() => removeEvent(i)} className="text-text-dim hover:text-danger">
                       <X className="h-3 w-3" />
@@ -132,6 +146,52 @@ export function CustomerJourneyPanel() {
 
       {error && (
         <p className="text-sm text-danger">Không lấy được kết quả. Kiểm tra kết nối backend rồi thử lại.</p>
+      )}
+
+      {result && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Hành động tiếp theo dự đoán</CardTitle>
+            <Badge variant="muted">next-action prediction</Badge>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <ArrowRight className={cn("h-6 w-6", NEXT_ACTION_STYLE[result.predicted_next_action]?.cls)} />
+              <span className={cn("text-2xl font-semibold tracking-tight", NEXT_ACTION_STYLE[result.predicted_next_action]?.cls)}>
+                {result.next_action_label}
+              </span>
+            </div>
+
+            {/* Funnel stage tracker */}
+            <div className="flex items-center gap-1">
+              {FUNNEL_ORDER.map((s, i) => {
+                const active = FUNNEL_ORDER.indexOf(result.funnel_stage) >= i;
+                return (
+                  <div key={s} className="flex flex-1 items-center gap-1">
+                    <div className="flex-1">
+                      <div className={cn("h-1.5 rounded-full", active ? "bg-accent" : "bg-surface-2")} />
+                      <div className={cn("mono mt-1 text-2xs", active ? "text-text" : "text-text-dim")}>{FUNNEL_LABEL[s]}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-md border border-border bg-bg-alt px-3 py-2">
+                <div className="mono text-2xs uppercase tracking-wider text-text-dim">Điểm tương tác</div>
+                <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-2">
+                  <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(result.engagement_score * 100)}%` }} />
+                </div>
+                <div className="mono mt-1 text-2xs text-text-muted">{Math.round(result.engagement_score * 100)}%</div>
+              </div>
+              <div className="rounded-md border border-accent/30 bg-accent/5 px-3 py-2">
+                <div className="mono text-2xs uppercase tracking-wider text-accent">Gợi ý cho seller (nudge)</div>
+                <p className="mt-1 text-xs text-text">{result.nudge}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {result && (

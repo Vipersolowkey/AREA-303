@@ -154,17 +154,20 @@ export async function scoreChurn(input: {
 }
 
 // --- Customer Journey Intelligence (Track 1, Đề 2 — bonus) ----------------
-export type JourneyEventInput = { type: "view" | "cart" | "purchase" | "livestream"; category?: string };
+export type JourneyEventType = "search" | "click" | "view" | "cart" | "purchase" | "livestream";
+export type JourneyEventInput = { type: JourneyEventType; category?: string; query?: string };
+export type NextAction = "checkout" | "add_to_cart" | "compare" | "keep_browsing" | "leave";
+export type FunnelStage = "awareness" | "consideration" | "intent" | "purchase";
 export type JourneyResult = {
   will_purchase: boolean; purchase_probability: number;
+  predicted_next_action: NextAction; next_action_label: string;
+  funnel_stage: FunnelStage; engagement_score: number; nudge: string;
   top_category: string | null; category_breakdown: Record<string, number>;
   recommended_products: BackendProduct[]; reasoning: string;
 };
+export type JourneyResultMapped = Omit<JourneyResult, "recommended_products"> & { recommended_products: Product[] };
 
-export async function analyzeJourney(events: JourneyEventInput[]): Promise<
-  { will_purchase: boolean; purchase_probability: number; top_category: string | null;
-    category_breakdown: Record<string, number>; recommended_products: Product[]; reasoning: string } | null
-> {
+export async function analyzeJourney(events: JourneyEventInput[]): Promise<JourneyResultMapped | null> {
   const data = await post<JourneyResult>("/journey/", { events });
   if (!data) return null;
   return { ...data, recommended_products: data.recommended_products.map(mapProduct) };

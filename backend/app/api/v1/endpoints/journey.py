@@ -13,5 +13,5 @@ router = APIRouter()
 
 @router.post("/", response_model=ApiResponse[dict])
 async def analyze(req: JourneyRequest) -> ApiResponse[dict]:
-    data = service.analyze_journey(req)
+    data = await service.analyze_journey(req)
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)
