@@ -5,23 +5,19 @@ import { Loader2, Send, Bot, User, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { askCopilot, type CopilotResult } from "@/lib/features";
+import { askAgent, type CopilotAgentResult } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 type Message =
   | { id: string; role: "user"; text: string }
-  | { id: string; role: "assistant"; result: CopilotResult };
+  | { id: string; role: "assistant"; result: CopilotAgentResult };
 
 const EXAMPLES = [
-  "Vì sao doanh số váy hoa nhí giảm?",
-  "Đối thủ giảm giá kem chống nắng, tôi nên làm gì?",
-  "Nên hợp tác KOL nào cho mỹ phẩm?",
-  "Hôm nay tôi nên làm gì?",
+  "Vì sao doanh số váy hoa nhí midi giảm và nên chỉnh giá thế nào?",
+  "Nên hợp tác KOL nào cho mỹ phẩm và khi nào đẩy ads?",
+  "Hôm nay tôi nên ưu tiên làm gì?",
+  "Sản phẩm nào tương tự serum vitamin c?",
 ];
-
-function vnd(n: number) {
-  return n.toLocaleString("vi-VN") + "₫";
-}
 
 export function CopilotPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -40,9 +36,15 @@ export function CopilotPanel() {
     setBusy(true);
     setError(false);
     setDraft("");
+
+    const history = messages.map((m) => ({
+      role: m.role,
+      content: m.role === "user" ? m.text : m.result.answer,
+    }));
+
     setMessages((prev) => [...prev, { id: `u${Date.now()}`, role: "user", text: q }]);
 
-    const r = await askCopilot(q);
+    const r = await askAgent(q, history);
     setError(r === null);
     if (r) {
       setMessages((prev) => [...prev, { id: `a${Date.now()}`, role: "assistant", result: r }]);
@@ -60,10 +62,10 @@ export function CopilotPanel() {
             <div className="flex items-center gap-2">
               <span className="live-dot" />
               <span className="mono text-2xs uppercase tracking-wider text-text-dim">
-                copilot · agent ready
+                copilot · multi-step agent ready
               </span>
             </div>
-            <Badge variant="live">tool-routing agent</Badge>
+            <Badge variant="live">multi-tool agent</Badge>
           </div>
 
           <div ref={listRef} className="flex-1 space-y-5 overflow-y-auto px-4 py-5">
@@ -72,7 +74,7 @@ export function CopilotPanel() {
                 <Bot className="h-9 w-9 text-accent" />
                 <p className="mt-3 text-sm font-medium text-text">Hỏi bất cứ điều gì về shop của bạn</p>
                 <p className="mt-1 max-w-sm text-xs text-text-muted">
-                  Agent sẽ tự chọn công cụ phù hợp — phân tích doanh số, giá đối thủ, KOL, tồn kho… — và trả lời kèm tác động doanh thu ước tính.
+                  Agent sẽ tự chọn và gọi nhiều công cụ liên tiếp — phân tích doanh số, giá đối thủ, KOL, tồn kho… — rồi tổng hợp câu trả lời cuối cùng.
                 </p>
               </div>
             )}
@@ -93,23 +95,35 @@ export function CopilotPanel() {
                     <Bot className="h-3.5 w-3.5" />
                   </span>
                   <div className="min-w-0 max-w-[85%] space-y-2.5">
+                    {m.result.steps.length > 0 && (
+                      <div className="rounded-[10px] border border-border bg-bg-alt/60 px-3 py-2.5">
+                        <div className="mono text-2xs uppercase tracking-wider text-text-dim">
+                          Chuỗi công cụ đã gọi ({m.result.steps.length})
+                        </div>
+                        <div className="mt-2 space-y-1.5">
+                          {m.result.steps.map((s, i) => (
+                            <div key={i} className="flex items-start gap-2">
+                              <Badge variant="muted" className="shrink-0">
+                                <Wrench className="h-3 w-3" />
+                                {s.tool}
+                              </Badge>
+                              <span className="text-xs leading-relaxed text-text-muted">{s.summary}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="rounded-[10px] rounded-tl-sm border border-border bg-bg-alt px-3.5 py-2.5">
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-text">{m.result.answer}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="muted">
-                        <Wrench className="h-3 w-3" />
-                        {m.result.skill_used}
-                      </Badge>
-                      {m.result.entity && (
-                        <span className="mono text-2xs text-text-dim">{m.result.entity}</span>
-                      )}
-                      {m.result.impact_vnd != null && (
-                        <span className="inline-flex items-center gap-1.5 rounded-md border border-accent/40 bg-accent/10 px-2 py-0.5">
-                          <span className="mono text-2xs uppercase tracking-wider text-text-dim">Tác động ước tính</span>
-                          <span className="mono text-xs font-semibold text-accent">{vnd(m.result.impact_vnd)}</span>
-                        </span>
-                      )}
+                      {m.result.multi_step && <Badge variant="live">multi-step</Badge>}
+                      {m.result.tools_used.map((t) => (
+                        <Badge key={t} variant="muted">
+                          <Wrench className="h-3 w-3" />
+                          {t}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -119,7 +133,7 @@ export function CopilotPanel() {
             {busy && (
               <div className="flex items-center gap-2 text-xs text-text-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Agent đang chọn công cụ và phân tích…
+                Agent đang gọi nhiều công cụ và tổng hợp… (có thể mất 5–15 giây)
               </div>
             )}
             {error && (
@@ -175,9 +189,9 @@ export function CopilotPanel() {
         <div className="rounded-[10px] border border-border bg-surface p-4 text-xs text-text-muted">
           <span className="mono text-2xs uppercase tracking-wider text-text-dim">Cách hoạt động</span>
           <p className="mt-2">
-            Copilot là một agent điều phối: từ câu hỏi tiếng Việt, nó chọn đúng công cụ trong bộ tính năng seller
-            (giá, doanh số, KOL, tồn kho…), gọi công cụ đó và tổng hợp câu trả lời kèm{" "}
-            <span className="mono text-text">tác động doanh thu</span> ước tính.
+            Copilot là một agent điều phối đa bước: từ câu hỏi tiếng Việt, nó lần lượt chọn và gọi nhiều công cụ trong bộ tính năng seller
+            (giá, doanh số, KOL, tồn kho…), rồi tổng hợp thành câu trả lời cuối. Mỗi câu trả lời hiển thị{" "}
+            <span className="mono text-text">chuỗi công cụ</span> mà agent đã sử dụng.
           </p>
         </div>
       </aside>

@@ -24,6 +24,7 @@ import {
   Lightbulb,
   Bot,
   ClipboardCheck,
+  Network,
   type LucideIcon,
 } from "lucide-react";
 
@@ -81,6 +82,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "19", slug: "market-intelligence",  label: "Market Intelligence", href: "/seller/market-intelligence",  icon: Swords,    app: "seller", section: "intelligence", category: "Generative AI", owner: "TL" },
   { id: "20", slug: "creator-performance",  label: "Creator Performance", href: "/seller/creator-performance",  icon: Users,     app: "seller", section: "creator",      category: "Generative AI", owner: "TL" },
   { id: "21", slug: "decision-intelligence",label: "Decision Intelligence",href:"/seller/decision-intelligence",icon: Lightbulb, app: "seller", section: "intelligence", category: "Generative AI", owner: "TL" },
+  { id: "22", slug: "product-graph",       label: "Product Graph",       href: "/seller/product-graph",        icon: Network,   app: "seller", section: "intelligence", category: "Generative AI", owner: "TL" },
 
   // --- Bonus (Track 1 official brief, not part of the 17-idea brainstorm) ---
   { id: "T1-2", slug: "customer-journey", label: "Customer Journey",  href: "/seller/customer-journey", icon: Route,         app: "seller", section: "intelligence", category: "Behavioral AI",   owner: "FS" },
@@ -93,6 +95,7 @@ export const IMPLEMENTED = new Set<string>([
   "return-predict", "regret-predict", "sentiment-alert", "supply-chain",
   "negotiation", "emotion-sale",
   "product-knowledge", "market-intelligence", "creator-performance", "decision-intelligence",
+  "product-graph",
   "copilot", "daily-briefing",
 ]);
 
@@ -122,6 +125,7 @@ export const SUBTITLE: Record<string, string> = {
   "market-intelligence": "Phân tích đối thủ & giá — so sánh vị thế và đề xuất mức giá tối ưu không phá sàn lợi nhuận.",
   "creator-performance": "Đo hiệu quả KOL/KOC theo doanh số quy đổi, doanh số/1k view và tỷ lệ tương tác.",
   "decision-intelligence": "Học từ quyết định quá khứ để rút ra hành động nên lặp lại và thời điểm chạy ads tốt nhất.",
+  "product-graph": "Quan hệ SKU/brand + sản phẩm tương tự",
 };
 
 export const NAV_SECTIONS: Array<{ id: NavItem["section"]; title: string }> = [

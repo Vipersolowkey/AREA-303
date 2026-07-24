@@ -354,6 +354,35 @@ export async function askCopilot(question: string): Promise<CopilotResult | null
   return post<CopilotResult>("/copilot/ask", { question });
 }
 
+// --- AI Copilot Agent — multi-step, tự gọi nhiều công cụ --------------------
+export type AgentStep = { tool: string; args: Record<string, unknown>; summary: string };
+export type CopilotAgentResult = { answer: string; tools_used: string[]; steps: AgentStep[]; multi_step: boolean };
+
+export async function askAgent(
+  question: string,
+  history: { role: "user" | "assistant"; content: string }[],
+): Promise<CopilotAgentResult | null> {
+  return post<CopilotAgentResult>("/copilot/agent", { question, history });
+}
+
+// --- Product Graph — quan hệ SKU/brand + sản phẩm tương tự (Đề 1) ----------
+export type PGDriver = { factor: string; direction: "up" | "down"; impact: "low" | "medium" | "high" };
+export type PGSimilar = { id: string; sku: string; name: string; brand: string; price_vnd: number; relation: string };
+export type ProductGraphResult = {
+  found: boolean;
+  product: { id: string; sku: string; name: string; brand: string; category: string; price_vnd: number; cost_vnd: number; trend: string; stock_status: string } | null;
+  sales: { sales_prev: number; sales_curr: number; change_pct: number; direction: "up" | "down" | "flat"; drivers: PGDriver[] } | null;
+  similar_products: PGSimilar[];
+  brand_siblings: string[];
+  category_peers: number;
+  promotions: { name: string; discount_pct: number; lift_pct: number; effectiveness: string }[];
+  summary: string;
+};
+
+export async function exploreProductGraph(query: string): Promise<ProductGraphResult | null> {
+  return post<ProductGraphResult>("/product-knowledge/graph", { query });
+}
+
 // --- Daily Briefing — hôm nay cần làm gì -----------------------------------
 export type BriefingAction = {
   kind: "restock" | "reduce" | "reprice" | "investigate" | "promote";

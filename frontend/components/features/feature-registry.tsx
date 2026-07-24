@@ -20,6 +20,7 @@ import { ProductKnowledgePanel } from "./product-knowledge-panel";
 import { MarketIntelligencePanel } from "./market-intelligence-panel";
 import { CreatorPerformancePanel } from "./creator-performance-panel";
 import { DecisionIntelligencePanel } from "./decision-intelligence-panel";
+import { ProductGraphPanel } from "./product-graph-panel";
 import { CopilotPanel } from "./copilot-panel";
 import { DailyBriefingPanel } from "./daily-briefing-panel";
 
@@ -46,6 +47,7 @@ const PANELS: Record<string, ComponentType> = {
   "market-intelligence": MarketIntelligencePanel,
   "creator-performance": CreatorPerformancePanel,
   "decision-intelligence": DecisionIntelligencePanel,
+  "product-graph": ProductGraphPanel,
 };
 
 export function FeaturePanel({ slug }: { slug: string }) {
