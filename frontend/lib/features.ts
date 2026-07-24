@@ -338,6 +338,38 @@ export async function analyzeDecisionIntelligence(input: {
   return post<DecisionIntelligenceResult>("/decision-intelligence/", input);
 }
 
+// --- AI Copilot — hỏi bất cứ điều gì, agent tự chọn công cụ ----------------
+export type CopilotResult = {
+  answer: string;
+  skill_used: string;
+  entity: string | null;
+  impact_vnd: number | null;
+  tool_result: Record<string, unknown>;
+};
+
+export async function askCopilot(question: string): Promise<CopilotResult | null> {
+  return post<CopilotResult>("/copilot/ask", { question });
+}
+
+// --- Daily Briefing — hôm nay cần làm gì -----------------------------------
+export type BriefingAction = {
+  kind: "restock" | "reduce" | "reprice" | "investigate" | "promote";
+  title: string;
+  product: string;
+  priority: "high" | "medium" | "low";
+  impact_vnd: number;
+  detail: string;
+};
+export type BriefingResult = {
+  summary: string;
+  total_impact_vnd: number;
+  actions: BriefingAction[];
+};
+
+export async function getBriefing(): Promise<BriefingResult | null> {
+  return get<BriefingResult>("/copilot/briefing");
+}
+
 // --- #13 Emotion-Aware Flash Sale Optimizer --------------------------------
 export type FlashSaleResult = {
   hesitating: boolean; hesitation_score: number; trigger_now: boolean;

@@ -22,6 +22,8 @@ import {
   Swords,
   Users,
   Lightbulb,
+  Bot,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -61,6 +63,8 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "14", slug: "negotiation",      label: "Negotiate Price",    href: "/shop/negotiation",      icon: MessagesSquare, app: "shop",  section: "creator",      category: "Generative AI",   owner: "D1" },
 
   // --- SELLER (seller portal) ---
+  { id: "AI", slug: "copilot",          label: "AI Copilot",         href: "/seller/copilot",          icon: Bot,             app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
+  { id: "BR", slug: "daily-briefing",   label: "Hôm nay cần làm gì",  href: "/seller/daily-briefing",   icon: ClipboardCheck,  app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
   { id: "01", slug: "review-analyzer",  label: "Review Sentiment",   href: "/seller/review-analyzer",  icon: Star,          app: "seller", section: "intelligence", category: "NLP",              owner: "DA" },
   { id: "05", slug: "fake-review",      label: "Fake Review Guard",  href: "/seller/fake-review",      icon: ShieldAlert,   app: "seller", section: "intelligence", category: "NLP",              owner: "DA" },
   { id: "02", slug: "dynamic-pricing",  label: "Dynamic Pricing",    href: "/seller/dynamic-pricing",  icon: Tag,           app: "seller", section: "commerce",     category: "Time Series",     owner: "TL" },
@@ -89,6 +93,7 @@ export const IMPLEMENTED = new Set<string>([
   "return-predict", "regret-predict", "sentiment-alert", "supply-chain",
   "negotiation", "emotion-sale",
   "product-knowledge", "market-intelligence", "creator-performance", "decision-intelligence",
+  "copilot", "daily-briefing",
 ]);
 
 export function navForApp(app: AppKind): NavItem[] {
@@ -96,6 +101,8 @@ export function navForApp(app: AppKind): NavItem[] {
 }
 
 export const SUBTITLE: Record<string, string> = {
+  "copilot": "Hỏi bất cứ điều gì — agent tự chọn công cụ",
+  "daily-briefing": "Việc ưu tiên theo tác động doanh thu",
   "personal-shopper": "Chat mua sắm — RAG retrieval trên catalog, gợi ý sản phẩm phù hợp với nhu cầu & ngân sách.",
   "recsys": "Gợi ý “For You” cá nhân hoá từ tín hiệu hành vi (traditional CF vs AI reasoning).",
   "content-generator": "Sinh tiêu đề + mô tả listing tối ưu cho Shopee · Tiki · TikTok Shop.",
