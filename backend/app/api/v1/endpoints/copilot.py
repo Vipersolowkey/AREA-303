@@ -5,7 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.core.responses import ApiResponse, PageMeta
-from app.schemas.copilot import CopilotRequest
+from app.schemas.copilot import CopilotAgentRequest, CopilotRequest
 from app.services import copilot as service
 
 router = APIRouter()
@@ -14,6 +14,13 @@ router = APIRouter()
 @router.post("/ask", response_model=ApiResponse[dict])
 async def ask(req: CopilotRequest) -> ApiResponse[dict]:
     data = await service.ask(req.question)
+    return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)
+
+
+@router.post("/agent", response_model=ApiResponse[dict])
+async def agent(req: CopilotAgentRequest) -> ApiResponse[dict]:
+    """Multi-step agent: OpenAI function-calling over the store-grounded tools."""
+    data = await service.agent_ask(req.question, [h.model_dump() for h in req.history])
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)
 
 

@@ -84,6 +84,35 @@ class OpenAIClient(LlmClient):
             raw=data,
         )
 
+    async def chat_tools(
+        self,
+        messages: list[dict],
+        tools: list[dict],
+        *,
+        temperature: float = 0.2,
+        max_tokens: int | None = 600,
+    ) -> dict:
+        """Function-calling turn. `messages` are raw OpenAI-format dicts (so the
+        caller can append assistant tool_calls + tool results). Returns the raw
+        assistant message dict (may contain `content` and/or `tool_calls`)."""
+        body: dict = {"model": self.model, "messages": messages, "tools": tools,
+                      "temperature": temperature}
+        if max_tokens:
+            body["max_tokens"] = max_tokens
+        try:
+            r = await self._http.post("/v1/chat/completions", json=body)
+        except httpx.HTTPError as exc:
+            raise UpstreamUnavailableError(
+                f"OpenAI transport error: {exc}", code="LLM_TRANSPORT_ERROR"
+            ) from exc
+        if r.status_code >= 400:
+            raise UpstreamUnavailableError(
+                f"OpenAI returned {r.status_code}: {r.text[:300]}", code="LLM_UPSTREAM_ERROR"
+            )
+        data = r.json()
+        msg: dict = data["choices"][0]["message"]
+        return msg
+
     async def stream(
         self,
         messages: list[LlmMessage],

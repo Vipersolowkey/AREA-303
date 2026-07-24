@@ -18,6 +18,29 @@ class CopilotRequest(BaseModel):
     question: str = Field(min_length=1, max_length=500)
 
 
+class ChatTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=4000)
+
+
+class CopilotAgentRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=500)
+    history: list[ChatTurn] = Field(default_factory=list, max_length=12)
+
+
+class AgentStep(BaseModel):
+    tool: str
+    args: dict
+    summary: str
+
+
+class CopilotAgentResponse(BaseModel):
+    answer: str
+    tools_used: list[str]
+    steps: list[AgentStep]
+    multi_step: bool
+
+
 class CopilotResponse(BaseModel):
     answer: str
     skill_used: str

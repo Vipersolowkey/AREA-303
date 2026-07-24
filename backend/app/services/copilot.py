@@ -10,18 +10,27 @@ scans the whole KB and ranks today's actions by estimated VND impact.
 
 from __future__ import annotations
 
+import json
 from typing import Any, cast
 
-from app.schemas.copilot import BriefingAction, BriefingResponse, CopilotResponse
-from app.schemas.creator import ContentItem, CreatorRequest
-from app.schemas.decision import DecisionRequest, PastDecision
+from app.schemas.copilot import (
+    AgentStep,
+    BriefingAction,
+    BriefingResponse,
+    CopilotAgentResponse,
+    CopilotResponse,
+)
+from app.schemas.creator import ContentItem, CorrelationRequest, CreatorRequest
+from app.schemas.decision import DecisionRequest, PastDecision, PlaybookRequest
 from app.schemas.knowledge import ProductKnowledgeRequest
-from app.schemas.market import MarketRequest
+from app.schemas.market import MarketRequest, MarketScanRequest
+from app.schemas.product_graph import ProductGraphRequest
 from app.services import creator as creator_svc
 from app.services import decision as decision_svc
 from app.services import knowledge as knowledge_svc
 from app.services import market as market_svc
-from app.services.llm_reasoning import reason_json
+from app.services import product_graph as graph_svc
+from app.services.llm_reasoning import get_llm_client, llm_ready, reason_json
 
 # --------------------------------------------------------------------------- #
 # Demo seller knowledge base — a small/medium fashion+cosmetics shop. Each
@@ -313,3 +322,138 @@ async def briefing() -> BriefingResponse:
         summary = (f"Hôm nay có {len(actions)} việc nên làm, tổng tác động ~{total:,}₫. "
                    f"Ưu tiên: {top[0].title}." if actions else "Không có cảnh báo nào — mọi thứ ổn định.")
     return BriefingResponse(summary=summary.strip(), total_impact_vnd=total, actions=actions)
+
+
+# --------------------------------------------------------------------------- #
+# Copilot AGENT — multi-step OpenAI function-calling over the store-grounded
+# tools. The model may call several tools for one question, then synthesize.
+# Falls back to the single-step ask() if the LLM/tool-calling isn't available.
+# --------------------------------------------------------------------------- #
+_TOOL_SPECS = [
+    {"type": "function", "function": {
+        "name": "product_graph",
+        "description": "Quan hệ 1 sản phẩm: SKU tương tự, brand, danh mục, khuyến mãi, và vì sao doanh số thay đổi.",
+        "parameters": {"type": "object", "properties": {"product": {"type": "string", "description": "Tên hoặc SKU sản phẩm"}}, "required": ["product"]}}},
+    {"type": "function", "function": {
+        "name": "market_scan",
+        "description": "Quét đa đối thủ cho 1 sản phẩm: vị thế giá trên thị trường + giá đề xuất giữ biên lợi nhuận.",
+        "parameters": {"type": "object", "properties": {"product": {"type": "string"}}, "required": ["product"]}}},
+    {"type": "function", "function": {
+        "name": "creator_correlation",
+        "description": "Xếp hạng KOL/KOC theo độ tương quan giữa nội dung và doanh số cho 1 danh mục.",
+        "parameters": {"type": "object", "properties": {"category": {"type": "string", "enum": ["Thời trang", "Mỹ phẩm", "Phụ kiện"]}}, "required": ["category"]}}},
+    {"type": "function", "function": {
+        "name": "decision_playbook",
+        "description": "Gợi ý chiến lược từ lịch sử quyết định (ROAS, thời điểm đẩy ads) cho 1 tình huống + danh mục.",
+        "parameters": {"type": "object", "properties": {"situation": {"type": "string"}, "category": {"type": "string", "enum": ["Thời trang", "Mỹ phẩm", "Phụ kiện"]}}, "required": ["situation", "category"]}}},
+    {"type": "function", "function": {
+        "name": "daily_briefing",
+        "description": "Danh sách việc cần làm hôm nay trên toàn shop, xếp theo tác động doanh thu.",
+        "parameters": {"type": "object", "properties": {}}}},
+]
+
+_AGENT_SYSTEM = (
+    "Bạn là AI Copilot của một seller thương mại điện tử Việt Nam (thời trang & mỹ phẩm). "
+    "Dùng các công cụ được cung cấp để lấy dữ liệu THẬT của shop trước khi trả lời — có thể "
+    "gọi NHIỀU công cụ nếu câu hỏi cần. Sau khi có dữ liệu, trả lời ngắn gọn bằng tiếng Việt, "
+    "cụ thể, kèm con số và tác động. Không bịa số."
+)
+
+
+async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
+    """Run a tool; return (compact_result_for_model, human_summary_for_ui)."""
+    if name == "product_graph":
+        rg = await graph_svc.explore(ProductGraphRequest(query=args.get("product", "")))
+        if not rg.found or rg.product is None:
+            return {"found": False}, f"Không tìm thấy sản phẩm '{args.get('product', '')}'"
+        return (
+            {"name": rg.product.name, "sku": rg.product.sku, "trend": rg.product.trend,
+             "sales_change_pct": rg.sales.change_pct if rg.sales else None,
+             "similar": [s.name for s in rg.similar_products[:4]]},
+            f"Product graph: {rg.product.name} (SKU {rg.product.sku})",
+        )
+    if name == "market_scan":
+        rm = await market_svc.scan_market(MarketScanRequest(query=args.get("product", "")))
+        return (
+            {"product": rm.product_name, "our_rank": rm.our_rank, "of_total": rm.of_total,
+             "recommended_price_vnd": rm.recommended_price_vnd, "margin_pct": rm.margin_pct_at_recommended},
+            f"Market scan: {rm.product_name} (rank {rm.our_rank}/{rm.of_total})",
+        )
+    if name == "creator_correlation":
+        rc = await creator_svc.analyze_correlation(
+            CorrelationRequest(category=cast(Any, args.get("category", "Mỹ phẩm"))))
+        return (
+            {"best_creator": rc.best_creator,
+             "ranked": [{"creator": c.creator, "correlation": c.correlation} for c in rc.ranked[:3]]},
+            f"Creator correlation: best {rc.best_creator}",
+        )
+    if name == "decision_playbook":
+        rd = await decision_svc.playbook(PlaybookRequest(
+            situation=args.get("situation", "n/a"), category=cast(Any, args.get("category", "Thời trang"))))
+        return (
+            {"best": rd.best.description, "metric": rd.best.metric, "value": rd.best.value,
+             "best_ad_month": rd.best_ad_month},
+            f"Decision playbook: {rd.best.description}",
+        )
+    if name == "daily_briefing":
+        rb = await briefing()
+        return (
+            {"total_impact_vnd": rb.total_impact_vnd,
+             "top": [{"title": a.title, "impact_vnd": a.impact_vnd} for a in rb.actions[:3]]},
+            f"Briefing: {len(rb.actions)} việc, tổng {rb.total_impact_vnd:,}₫",
+        )
+    return {"error": "unknown tool"}, f"unknown tool {name}"
+
+
+async def agent_ask(question: str, history: list[dict] | None = None) -> CopilotAgentResponse:
+    client = get_llm_client()
+    if not llm_ready() or not hasattr(client, "chat_tools"):
+        # Fallback: single-step router (still a working answer).
+        r = await ask(question)
+        return CopilotAgentResponse(
+            answer=r.answer, tools_used=[r.skill_used] if r.skill_used else [],
+            steps=[AgentStep(tool=r.skill_used or "router", args={}, summary=r.skill_used or "")],
+            multi_step=False,
+        )
+
+    messages: list[dict] = [{"role": "system", "content": _AGENT_SYSTEM}]
+    for h in history or []:
+        messages.append({"role": h["role"], "content": h["content"]})
+    messages.append({"role": "user", "content": question})
+
+    steps: list[AgentStep] = []
+    tools_used: list[str] = []
+    answer = ""
+    for _ in range(4):  # bounded agent loop
+        msg = await client.chat_tools(messages, _TOOL_SPECS)
+        tool_calls = msg.get("tool_calls")
+        if not tool_calls:
+            answer = (msg.get("content") or "").strip()
+            break
+        messages.append(msg)  # assistant turn carrying the tool_calls
+        for tc in tool_calls:
+            fn = tc["function"]["name"]
+            try:
+                args = json.loads(tc["function"].get("arguments") or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            result, summary = await _dispatch(fn, args)
+            tools_used.append(fn)
+            steps.append(AgentStep(tool=fn, args=args, summary=summary))
+            messages.append({"role": "tool", "tool_call_id": tc["id"],
+                             "content": json.dumps(result, ensure_ascii=False)})
+
+    if not answer:
+        # Loop hit the cap without a final text — ask once more for a plain answer.
+        try:
+            final = await client.chat_tools(messages + [
+                {"role": "user", "content": "Tổng hợp câu trả lời cuối cùng bằng tiếng Việt."}], [])
+            answer = (final.get("content") or "").strip()
+        except Exception:  # noqa: BLE001
+            answer = ""
+    if not answer:
+        answer = "Mình đã thu thập dữ liệu nhưng chưa tổng hợp được câu trả lời — thử lại nhé."
+    return CopilotAgentResponse(
+        answer=answer, tools_used=list(dict.fromkeys(tools_used)), steps=steps,
+        multi_step=len(steps) > 1,
+    )
