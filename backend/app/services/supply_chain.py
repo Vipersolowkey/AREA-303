@@ -9,7 +9,13 @@ from __future__ import annotations
 
 from typing import Literal, cast
 
-from app.schemas.supply_chain import DisruptionAlert, SupplyChainRequest, SupplyChainResponse
+from app.schemas.supply_chain import (
+    DisruptionAlert,
+    NewsArticle,
+    SupplyChainRequest,
+    SupplyChainResponse,
+)
+from app.services.supply_news import fetch_supply_news
 
 DISRUPTION_EVENTS: list[dict] = [
     {
@@ -45,7 +51,7 @@ DISRUPTION_EVENTS: list[dict] = [
 _SEVERITY_RANK = {"low": 0, "medium": 1, "high": 2}
 
 
-def check_supply_chain(req: SupplyChainRequest) -> SupplyChainResponse:
+async def check_supply_chain(req: SupplyChainRequest) -> SupplyChainResponse:
     matched = [e for e in DISRUPTION_EVENTS if e["region"] == req.region]
     overall = max((e["severity"] for e in matched), key=lambda s: _SEVERITY_RANK[s], default="low")
 
@@ -56,7 +62,11 @@ def check_supply_chain(req: SupplyChainRequest) -> SupplyChainResponse:
     else:
         summary = f"Không có tín hiệu gián đoạn nào đang hoạt động tại {req.region}."
 
+    # Real Google News feed (SerpApi) — best-effort; empty if key/quota absent.
+    articles = await fetch_supply_news(req.region)
+
     return SupplyChainResponse(
         alerts=[DisruptionAlert(**e) for e in matched],
         overall_risk=cast(Literal["low", "medium", "high"], overall), summary=summary,
+        news=[NewsArticle(**a) for a in articles], news_live=bool(articles),
     )

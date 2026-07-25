@@ -65,6 +65,8 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-1.5-pro"
     OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str = "gpt-4o-mini"
+    # SerpApi — real Google News for Supply Chain early warning.
+    SERPAPI_KEY: str | None = None
 
     # Cache TTL for LLM responses (seconds).
     LLM_CACHE_TTL_SECONDS: int = 600  # 10 min per project plan

@@ -76,10 +76,13 @@ export function ProductCard({
   product,
   similarity,
   className,
+  onInteract,
 }: {
   product: Product;
   similarity?: number;
   className?: string;
+  /** Provided in the Shop app to record real shopping behaviour. */
+  onInteract?: (kind: "click" | "cart") => void;
 }) {
   const href = productUrl(product);
   const [broken, setBroken] = useState(false);
@@ -98,6 +101,7 @@ export function ProductCard({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => onInteract?.("click")}
         className="group relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl border border-border"
         style={{
           background: `linear-gradient(135deg, hsl(${hue} 62% 92%), hsl(${(hue + 32) % 360} 66% 84%))`,
@@ -159,6 +163,16 @@ export function ProductCard({
         </span>
         <Badge variant={platformVariant[product.platform]}>{product.platform}</Badge>
       </div>
+
+      {onInteract && (
+        <button
+          type="button"
+          onClick={() => onInteract("cart")}
+          className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-bold text-accent transition-colors hover:bg-accent hover:text-white"
+        >
+          <ShoppingBag className="h-3.5 w-3.5" /> Thêm vào giỏ
+        </button>
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   type Product,
 } from "@/lib/mock-data";
 import { shopperProducts } from "@/lib/features";
+import { trackEvent, guessCategory } from "@/lib/journey-track";
 import { cn } from "@/lib/utils";
 
 type Turn = {
@@ -77,6 +78,9 @@ export function PersonalShopperPanel() {
 
   async function send(query: string) {
     if (!query.trim() || pending) return;
+
+    // Record the shopper's real search behaviour for Journey analysis.
+    trackEvent("search", { category: guessCategory(query), query: query.trim() });
 
     const userTurn: Turn = {
       id: `u${Date.now()}`,
@@ -168,6 +172,9 @@ export function PersonalShopperPanel() {
                         key={p.id}
                         product={p}
                         similarity={p.similarity}
+                        onInteract={(kind) =>
+                          trackEvent(kind, { category: p.category })
+                        }
                       />
                     ))}
                   </div>

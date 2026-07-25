@@ -13,5 +13,5 @@ router = APIRouter()
 
 @router.post("/", response_model=ApiResponse[dict])
 async def check(req: SupplyChainRequest) -> ApiResponse[dict]:
-    data = service.check_supply_chain(req)
+    data = await service.check_supply_chain(req)
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)

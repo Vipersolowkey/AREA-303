@@ -29,7 +29,17 @@ class DisruptionAlert(BaseModel):
     contingency: str
 
 
+class NewsArticle(BaseModel):
+    title: str
+    source: str
+    link: str
+    date: str
+    snippet: str
+
+
 class SupplyChainResponse(BaseModel):
     alerts: list[DisruptionAlert]
     overall_risk: Literal["low", "medium", "high"]
     summary: str
+    news: list[NewsArticle] = []
+    news_live: bool = False

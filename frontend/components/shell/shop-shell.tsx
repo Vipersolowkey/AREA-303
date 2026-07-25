@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Store, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navForApp } from "@/lib/nav";
+import { ShopSessionBar } from "@/components/shell/shop-session-bar";
 
 const items = navForApp("shop");
 
@@ -100,6 +101,8 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
       <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-center text-xs text-text-dim sm:px-6">
         AREA-303 · mua sắm thời trang &amp; mỹ phẩm với AI
       </footer>
+
+      <ShopSessionBar />
     </div>
   );
 }

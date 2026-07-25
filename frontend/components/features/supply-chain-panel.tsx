@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Truck, AlertTriangle } from "lucide-react";
+import { Loader2, Truck, AlertTriangle, Newspaper, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,10 +43,10 @@ export function SupplyChainPanel() {
           <div>
             <CardTitle>Khu vực &amp; danh mục</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
-              Cảnh báo sớm dựa trên các mẫu gián đoạn logistics thực tế (mùa bão, ùn tắc cảng…), không phải feed tin tức trực tiếp.
+              Cảnh báo sớm gián đoạn logistics + <span className="text-text">tin tức thật</span> (Google News) theo khu vực.
             </p>
           </div>
-          <Badge variant="muted">demo data</Badge>
+          <Badge variant="muted">live news</Badge>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-4">
@@ -118,6 +118,40 @@ export function SupplyChainPanel() {
                 </Card>
               ))}
             </div>
+          )}
+
+          {result.news.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Newspaper className="h-4 w-4 text-accent" />
+                  <CardTitle>Tin tức liên quan</CardTitle>
+                </div>
+                <Badge variant={result.news_live ? "success" : "muted"}>
+                  {result.news_live ? "Google News · trực tiếp" : "cache"}
+                </Badge>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {result.news.map((n, i) => (
+                  <a
+                    key={i}
+                    href={n.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block rounded-md border border-border bg-bg-alt px-3 py-2.5 transition-colors hover:border-accent/40"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-text">{n.title}</span>
+                      <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-text-dim" />
+                    </div>
+                    {n.snippet && <p className="mt-1 line-clamp-2 text-xs text-text-muted">{n.snippet}</p>}
+                    <div className="mono mt-1.5 text-2xs text-text-dim">
+                      {n.source}{n.date ? ` · ${n.date}` : ""}
+                    </div>
+                  </a>
+                ))}
+              </CardContent>
+            </Card>
           )}
         </>
       )}

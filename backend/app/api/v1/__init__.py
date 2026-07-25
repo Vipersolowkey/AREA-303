@@ -6,6 +6,7 @@ from app.api.v1.endpoints import (
     auth,
     churn,
     content_generator,
+    copilot,
     creator,
     datasets,
     decision,
@@ -102,3 +103,5 @@ api_router.include_router(
 api_router.include_router(
     decision.router, prefix="/decision-intelligence", tags=["de5-decision-intelligence"]
 )
+# --- Seller Copilot: conversational agent that routes to the features above ---
+api_router.include_router(copilot.router, prefix="/copilot", tags=["copilot-agent"])
