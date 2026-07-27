@@ -93,7 +93,7 @@ def _impact_score(metric: str, value: float) -> float:
     return round(min(1.0, max(0.0, value / ref)), 3)
 
 
-async def playbook(req: PlaybookRequest) -> PlaybookResponse:
+async def playbook(req: PlaybookRequest, narrate: bool = True) -> PlaybookResponse:
     decisions = [d for d in _store.all_decisions() if d["category"] == req.category] or _store.all_decisions()
     scored = [
         ScoredDecision(
@@ -122,7 +122,7 @@ async def playbook(req: PlaybookRequest) -> PlaybookResponse:
         f"({best.metric}={best.value}, score {best.impact_score}). Best ad month: {best_ad_month}. "
         f"Seasonality (month→ROAS): {seasonality}.",
         label="decision_playbook",
-    )
+    ) if narrate else None
     action = (data or {}).get("recommended_action") if data else None
     reasoning = (data or {}).get("reasoning") if data else None
     if not (action and action.strip()):

@@ -113,7 +113,7 @@ async def analyze_creators(req: CreatorRequest) -> CreatorResponse:
 # --------------------------------------------------------------------------- #
 # Đề 4 — creator correlation over multi-campaign history (store-grounded)
 # --------------------------------------------------------------------------- #
-async def analyze_correlation(req: CorrelationRequest) -> CorrelationResponse:
+async def analyze_correlation(req: CorrelationRequest, narrate: bool = True) -> CorrelationResponse:
     ranked: list[CreatorCorrelation] = []
     for c in store.creators_for_category(req.category):
         camps = c["campaigns"]
@@ -144,7 +144,7 @@ async def analyze_correlation(req: CorrelationRequest) -> CorrelationResponse:
         'paragraph (2-3 sentences). Reply as JSON: {"insight": "..."}',
         f"Category {req.category}. Ranked: {txt}.",
         label="creator_corr",
-    )
+    ) if narrate else None
     insight = (data or {}).get("insight") if data else None
     if not (insight and insight.strip()) and ranked:
         insight = (f"'{best}' có độ tương quan content↔doanh số cao nhất ({ranked[0].correlation}) "
