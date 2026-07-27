@@ -7,6 +7,7 @@ import { Store, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { navForApp } from "@/lib/nav";
 import { ShopSessionBar } from "@/components/shell/shop-session-bar";
+import { CartButton } from "@/components/shell/cart-button";
 
 const items = navForApp("shop");
 
@@ -50,16 +51,19 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
 
-          <Link
-            href="/seller"
-            className="ml-auto hidden rounded-full border border-border px-3 py-1.5 text-sm font-semibold text-text-muted transition-colors hover:border-text hover:text-text md:inline-flex"
-          >
-            Người bán →
-          </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <CartButton />
+            <Link
+              href="/seller"
+              className="hidden rounded-full border border-border px-3 py-1.5 text-sm font-semibold text-text-muted transition-colors hover:border-text hover:text-text md:inline-flex"
+            >
+              Người bán →
+            </Link>
+          </div>
 
           <button
             onClick={() => setOpen((v) => !v)}
-            className="ml-auto grid h-10 w-10 place-items-center rounded-2xl border border-border md:hidden"
+            className="grid h-10 w-10 place-items-center rounded-2xl border border-border md:hidden"
             aria-label="Menu"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
