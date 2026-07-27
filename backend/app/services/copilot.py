@@ -364,9 +364,13 @@ _TOOL_SPECS = [
 
 _AGENT_SYSTEM = (
     "You are the AI Copilot for a Vietnamese e-commerce seller (fashion & cosmetics). "
-    "Use the provided tools to fetch the shop's REAL data before answering — call "
-    "MULTIPLE tools if the question needs it. After you have the data, give a short, "
-    "concrete answer with numbers and impact. Do not invent numbers.\n\n"
+    "Use the provided tools to fetch the shop's REAL data before answering.\n\n"
+    "TOOL BUDGET: call the FEWEST tools needed. A question about ONE topic/product "
+    "usually needs exactly ONE tool. Only call several tools when the question clearly "
+    "spans multiple distinct topics (e.g. 'why did sales drop AND how should I price it', "
+    "or 'which KOL AND when to run ads'). Never call a tool you don't need.\n\n"
+    "After you have the data, give a CONCISE answer (≤120 words: a few short bullets or "
+    "2-3 sentences) with the key numbers and impact. Do not invent numbers.\n\n"
     "CRITICAL LANGUAGE RULE: Answer in the SAME language as the user's question, NOT "
     "the language of the tool data. If the question is in English, answer in English "
     "(even though product names/data are Vietnamese). If the question is in Vietnamese, "
@@ -444,7 +448,7 @@ async def agent_ask(question: str, history: list[dict] | None = None) -> Copilot
     tools_used: list[str] = []
     answer = ""
     for _ in range(4):  # bounded agent loop
-        msg = await client.chat_tools(messages, _TOOL_SPECS)
+        msg = await client.chat_tools(messages, _TOOL_SPECS, max_tokens=420)
         tool_calls = msg.get("tool_calls")
         if not tool_calls:
             answer = (msg.get("content") or "").strip()
@@ -474,7 +478,8 @@ async def agent_ask(question: str, history: list[dict] | None = None) -> Copilot
         # Loop hit the cap without a final text — ask once more for a plain answer.
         try:
             final = await client.chat_tools(messages + [
-                {"role": "user", "content": "Tổng hợp câu trả lời cuối cùng bằng đúng ngôn ngữ của câu hỏi."}], [])
+                {"role": "user", "content": "Tổng hợp câu trả lời cuối cùng bằng đúng ngôn ngữ của câu hỏi."}],
+                [], max_tokens=420)
             answer = (final.get("content") or "").strip()
         except Exception:  # noqa: BLE001
             answer = ""
