@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Store } from "lucide-react";
 import { navForApp, IMPLEMENTED } from "@/lib/nav";
 
 export const dynamic = "force-dynamic";
@@ -23,8 +23,14 @@ export default function ShopHome() {
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
-            href="/shop/personal-shopper"
+            href="/shop/store"
             className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 font-bold text-white transition-transform hover:-translate-y-0.5"
+          >
+            <Store className="h-4 w-4" /> Vào cửa hàng »
+          </Link>
+          <Link
+            href="/shop/personal-shopper"
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-5 py-2.5 font-bold text-text transition-colors hover:border-text"
           >
             Hỏi Personal Shopper <ArrowRight className="h-4 w-4" />
           </Link>
