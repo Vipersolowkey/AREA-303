@@ -38,7 +38,7 @@ _SYSTEM = (
     "You are an operations-strategy agent for a Vietnamese e-commerce seller. "
     "Given the current situation, a category, and the single best-performing past "
     "decision (with its metric), recommend ONE concrete next action in a short "
-    "Vietnamese paragraph (2-3 sentences), grounded in that past result. "
+    "paragraph (2-3 sentences), grounded in that past result. "
     'Reply as JSON: {"recommended_action": "...", "reasoning": "..."}'
 )
 
@@ -117,7 +117,7 @@ async def playbook(req: PlaybookRequest) -> PlaybookResponse:
         "You are an operations-strategy agent for a Vietnamese e-commerce shop. Given the "
         "current situation and the best past decision (by a normalized impact score across "
         "metrics) plus the best ad month, recommend ONE concrete next action in a short "
-        'Vietnamese paragraph (2-3 sentences). Reply as JSON: {"recommended_action": "...", "reasoning": "..."}',
+        'paragraph (2-3 sentences). Reply as JSON: {"recommended_action": "...", "reasoning": "..."}',
         f"Situation: {req.situation}. Category: {req.category}. Best: {best.description} "
         f"({best.metric}={best.value}, score {best.impact_score}). Best ad month: {best_ad_month}. "
         f"Seasonality (month→ROAS): {seasonality}.",

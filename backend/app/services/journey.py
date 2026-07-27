@@ -115,7 +115,7 @@ async def analyze_journey(req: JourneyRequest) -> JourneyResponse:
 _SYSTEM = (
     "You are a customer-journey analyst for a Vietnamese e-commerce shop. Given a "
     "session's event counts, funnel stage, purchase probability and the predicted "
-    "next action, explain in ONE short Vietnamese paragraph (2-3 sentences) what the "
+    "next action, explain in ONE short paragraph (2-3 sentences) what the "
     "shopper is doing and why the next action is likely. Do not invent data. "
     'Reply as JSON: {"reasoning": "..."}'
 )

@@ -20,6 +20,14 @@ from app.services.genai.factory import get_llm_client
 
 log = get_logger("app.services.llm_reasoning")
 
+# Prepended to every reasoning prompt so answers match the user's language.
+_LANG_RULE = (
+    "Reply in the SAME language as the input: if the user's text/question is in "
+    "Vietnamese, answer in Vietnamese; if it is in English, answer in English. "
+    "When the input has no clear language (only numbers/structured data), default "
+    "to Vietnamese.\n\n"
+)
+
 
 def llm_ready() -> bool:
     """True if a real (non-mock) LLM is configured."""
@@ -49,7 +57,7 @@ async def reason_json(
     try:
         resp = await get_llm_client().chat(
             [
-                LlmMessage(role="system", content=system),
+                LlmMessage(role="system", content=_LANG_RULE + system),
                 LlmMessage(role="user", content=user),
             ],
             temperature=temperature,
