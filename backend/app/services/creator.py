@@ -140,7 +140,7 @@ async def analyze_correlation(req: CorrelationRequest) -> CorrelationResponse:
     data = await reason_json(
         "You are a creator-marketing analyst for a Vietnamese e-commerce shop. Given "
         "creators ranked by the correlation between their content views and attributed "
-        "sales, recommend who is most reliable to partner with, in ONE short Vietnamese "
+        "sales, recommend who is most reliable to partner with, in ONE short "
         'paragraph (2-3 sentences). Reply as JSON: {"insight": "..."}',
         f"Category {req.category}. Ranked: {txt}.",
         label="creator_corr",
