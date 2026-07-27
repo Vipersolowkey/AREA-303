@@ -5,6 +5,7 @@ import { Search, Store, Loader2, PackageOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStoreProducts, type StoreProduct } from "@/lib/features";
 import { trackEvent } from "@/lib/journey-track";
+import { addToCart } from "@/lib/cart";
 import { StoreProductCard } from "@/components/store/store-product-card";
 
 const CATEGORIES = ["Tất cả", "Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
@@ -123,7 +124,10 @@ export default function StorePage() {
               key={p.id}
               product={p}
               onClick={() => trackEvent("click", { category: p.category })}
-              onCart={() => trackEvent("cart", { category: p.category })}
+              onCart={() => {
+                addToCart({ id: p.id, name: p.name, brand: p.brand, price_vnd: p.price_vnd, image_url: p.image_url });
+                trackEvent("cart", { category: p.category });
+              }}
             />
           ))}
         </div>
