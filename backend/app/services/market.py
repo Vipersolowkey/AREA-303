@@ -126,7 +126,7 @@ async def analyze_market(req: MarketRequest) -> MarketResponse:
     )
 
 
-async def scan_market(req: MarketScanRequest) -> MarketScanResponse:
+async def scan_market(req: MarketScanRequest, narrate: bool = True) -> MarketScanResponse:
     """Multi-competitor scan grounded in the store: market position + margin-safe
     recommendation against the most aggressive competitor."""
     p = store.find_product(req.query)
@@ -165,7 +165,7 @@ async def scan_market(req: MarketScanRequest) -> MarketScanResponse:
         f"(1=cheapest). Recommended {h['recommended_action']} at {h['recommended_price_vnd']:,}₫ "
         f"(margin {h['margin_pct_at_recommended']}%). Advise the seller.",
         label="market_scan",
-    )
+    ) if narrate else None
     reasoning = (data or {}).get("reasoning") if data else None
     if not (reasoning and reasoning.strip()):
         reasoning = (f"Trên {len(prices)} nhà bán, giá ta xếp hạng {our_rank} (1=rẻ nhất). "

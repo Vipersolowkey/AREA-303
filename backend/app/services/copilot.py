@@ -316,7 +316,7 @@ def _build_actions() -> list[BriefingAction]:
     return actions
 
 
-async def briefing() -> BriefingResponse:
+async def briefing(narrate: bool = True) -> BriefingResponse:
     actions = _build_actions()
     total = sum(a.impact_vnd for a in actions)
     top = actions[:3]
@@ -326,7 +326,7 @@ async def briefing() -> BriefingResponse:
         "sentence (motivating, concrete). Reply JSON: {\"summary\": \"...\"}",
         f"Top actions: {top_txt}. Total impact ~{total:,}₫ across {len(actions)} items.",
         label="copilot.briefing",
-    )
+    ) if narrate else None
     summary = (data or {}).get("summary") if data else None
     if not (summary and summary.strip()):
         summary = (f"Hôm nay có {len(actions)} việc nên làm, tổng tác động ~{total:,}₫. "
@@ -377,7 +377,7 @@ _AGENT_SYSTEM = (
 async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
     """Run a tool; return (compact_result_for_model, human_summary_for_ui)."""
     if name == "product_graph":
-        rg = await graph_svc.explore(ProductGraphRequest(query=args.get("product", "")))
+        rg = await graph_svc.explore(ProductGraphRequest(query=args.get("product", "")), narrate=False)
         if not rg.found or rg.product is None:
             return {"found": False}, f"Không tìm thấy sản phẩm '{args.get('product', '')}'"
         return (
@@ -387,7 +387,7 @@ async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
             f"Product graph: {rg.product.name} (SKU {rg.product.sku})",
         )
     if name == "market_scan":
-        rm = await market_svc.scan_market(MarketScanRequest(query=args.get("product", "")))
+        rm = await market_svc.scan_market(MarketScanRequest(query=args.get("product", "")), narrate=False)
         return (
             {"product": rm.product_name, "our_rank": rm.our_rank, "of_total": rm.of_total,
              "recommended_price_vnd": rm.recommended_price_vnd, "margin_pct": rm.margin_pct_at_recommended},
@@ -395,7 +395,7 @@ async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
         )
     if name == "creator_correlation":
         rc = await creator_svc.analyze_correlation(
-            CorrelationRequest(category=cast(Any, args.get("category", "Mỹ phẩm"))))
+            CorrelationRequest(category=cast(Any, args.get("category", "Mỹ phẩm"))), narrate=False)
         return (
             {"best_creator": rc.best_creator,
              "ranked": [{"creator": c.creator, "correlation": c.correlation} for c in rc.ranked[:3]]},
@@ -403,14 +403,14 @@ async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
         )
     if name == "decision_playbook":
         rd = await decision_svc.playbook(PlaybookRequest(
-            situation=args.get("situation", "n/a"), category=cast(Any, args.get("category", "Thời trang"))))
+            situation=args.get("situation", "n/a"), category=cast(Any, args.get("category", "Thời trang"))), narrate=False)
         return (
             {"best": rd.best.description, "metric": rd.best.metric, "value": rd.best.value,
              "best_ad_month": rd.best_ad_month},
             f"Decision playbook: {rd.best.description}",
         )
     if name == "daily_briefing":
-        rb = await briefing()
+        rb = await briefing(narrate=False)
         return (
             {"total_impact_vnd": rb.total_impact_vnd,
              "top": [{"title": a.title, "impact_vnd": a.impact_vnd} for a in rb.actions[:3]]},

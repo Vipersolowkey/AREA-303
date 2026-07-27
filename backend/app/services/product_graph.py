@@ -72,7 +72,7 @@ def _promotions(p: dict) -> list[PromotionInfo]:
                           lift_pct=lift, effectiveness=eff)]
 
 
-async def explore(req: ProductGraphRequest) -> ProductGraphResponse:
+async def explore(req: ProductGraphRequest, narrate: bool = True) -> ProductGraphResponse:
     p = store.find_product(req.query)
     if not p:
         return ProductGraphResponse(
@@ -95,7 +95,8 @@ async def explore(req: ProductGraphRequest) -> ProductGraphResponse:
     category_peers = len(store.products_by_category(p["category"]))
     promos = _promotions(p)
 
-    summary = await _summarize(p, sales_meta, similar, promos, req.question)
+    summary = (await _summarize(p, sales_meta, similar, promos, req.question)
+               if narrate else _fallback_summary(p, sales_meta, similar))
     return ProductGraphResponse(
         found=True, product=entity, sales=sales, similar_products=similar,
         brand_siblings=brand_siblings, category_peers=category_peers,
