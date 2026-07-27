@@ -40,6 +40,10 @@ backend/build/
 */models/*.faiss
 */models/*.pkl.big
 
+# --- Customer Segmentation (#13): local docs/exports, not pushed ---
+customer_segmentation/docs/
+customer_segmentation/outputs/
+
 # --- Node ---
 frontend/node_modules/
 frontend/.next/

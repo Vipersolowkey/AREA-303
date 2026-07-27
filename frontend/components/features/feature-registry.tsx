@@ -7,6 +7,7 @@ import { ContentGeneratorPanel } from "./content-generator-panel";
 import { SellerCoachPanel } from "./seller-coach-panel";
 import { ReviewSentimentPanel } from "./review-sentiment-panel";
 import { FakeReviewPanel } from "./fake-review-panel";
+import { SegmentationPanel } from "./segmentation-panel";
 import { DynamicPricingPanel } from "./dynamic-pricing-panel";
 import { ChurnPanel } from "./churn-panel";
 import { CustomerJourneyPanel } from "./customer-journey-panel";
@@ -34,6 +35,7 @@ const PANELS: Record<string, ComponentType> = {
   "seller-coach": SellerCoachPanel,
   "review-analyzer": ReviewSentimentPanel,
   "fake-review": FakeReviewPanel,
+  segmentation: SegmentationPanel,
   "dynamic-pricing": DynamicPricingPanel,
   churn: ChurnPanel,
   "customer-journey": CustomerJourneyPanel,
