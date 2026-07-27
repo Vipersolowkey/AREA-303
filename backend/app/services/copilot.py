@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 from typing import Any, cast
 
+from app.core.logging import get_logger
 from app.schemas.copilot import (
     AgentStep,
     BriefingAction,
@@ -31,6 +32,8 @@ from app.services import knowledge as knowledge_svc
 from app.services import market as market_svc
 from app.services import product_graph as graph_svc
 from app.services.llm_reasoning import get_llm_client, llm_ready, reason_json
+
+log = get_logger("app.services.copilot")
 
 # --------------------------------------------------------------------------- #
 # Demo seller knowledge base — a small/medium fashion+cosmetics shop. Each
@@ -102,6 +105,13 @@ DECISIONS: list[dict] = [
 ]
 
 _CATS = ("Thời trang", "Mỹ phẩm", "Phụ kiện")
+_VN_CHARS = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ")
+
+
+def _detect_lang(text: str) -> str:
+    """vi if the text has Vietnamese diacritics, else en — used to force the
+    copilot's answer language (weak models otherwise follow the data's language)."""
+    return "vi" if any(c in _VN_CHARS for c in text.lower()) else "en"
 
 
 def _find_product(name: str | None) -> dict:
@@ -229,7 +239,7 @@ def _keyword_route(q: str) -> str:
 _SYNTH_SYSTEM = (
     "You are a seller's AI business copilot for a Vietnamese e-commerce shop "
     "(fashion & cosmetics). Given the seller's question and a tool result (JSON), "
-    "answer in ONE concise, actionable Vietnamese paragraph (2-4 sentences). Use "
+    "answer in ONE concise, actionable paragraph (2-4 sentences). Use "
     "the numbers from the tool result; if an estimated VND impact is provided, "
     "mention it. Do not invent data. Reply as JSON: {\"answer\": \"...\"}"
 )
@@ -306,17 +316,17 @@ def _build_actions() -> list[BriefingAction]:
     return actions
 
 
-async def briefing() -> BriefingResponse:
+async def briefing(narrate: bool = True) -> BriefingResponse:
     actions = _build_actions()
     total = sum(a.impact_vnd for a in actions)
     top = actions[:3]
     top_txt = "; ".join(f"{a.title} (~{a.impact_vnd:,}₫)" for a in top)
     data = await reason_json(
         "You are a seller's AI copilot. Summarize today's top actions in ONE short "
-        "Vietnamese sentence (motivating, concrete). Reply JSON: {\"summary\": \"...\"}",
+        "sentence (motivating, concrete). Reply JSON: {\"summary\": \"...\"}",
         f"Top actions: {top_txt}. Total impact ~{total:,}₫ across {len(actions)} items.",
         label="copilot.briefing",
-    )
+    ) if narrate else None
     summary = (data or {}).get("summary") if data else None
     if not (summary and summary.strip()):
         summary = (f"Hôm nay có {len(actions)} việc nên làm, tổng tác động ~{total:,}₫. "
@@ -353,17 +363,25 @@ _TOOL_SPECS = [
 ]
 
 _AGENT_SYSTEM = (
-    "Bạn là AI Copilot của một seller thương mại điện tử Việt Nam (thời trang & mỹ phẩm). "
-    "Dùng các công cụ được cung cấp để lấy dữ liệu THẬT của shop trước khi trả lời — có thể "
-    "gọi NHIỀU công cụ nếu câu hỏi cần. Sau khi có dữ liệu, trả lời ngắn gọn bằng tiếng Việt, "
-    "cụ thể, kèm con số và tác động. Không bịa số."
+    "You are the AI Copilot for a Vietnamese e-commerce seller (fashion & cosmetics). "
+    "Use the provided tools to fetch the shop's REAL data before answering.\n\n"
+    "TOOL BUDGET: call the FEWEST tools needed. A question about ONE topic/product "
+    "usually needs exactly ONE tool. Only call several tools when the question clearly "
+    "spans multiple distinct topics (e.g. 'why did sales drop AND how should I price it', "
+    "or 'which KOL AND when to run ads'). Never call a tool you don't need.\n\n"
+    "After you have the data, give a CONCISE answer (≤120 words: a few short bullets or "
+    "2-3 sentences) with the key numbers and impact. Do not invent numbers.\n\n"
+    "CRITICAL LANGUAGE RULE: Answer in the SAME language as the user's question, NOT "
+    "the language of the tool data. If the question is in English, answer in English "
+    "(even though product names/data are Vietnamese). If the question is in Vietnamese, "
+    "answer in Vietnamese."
 )
 
 
 async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
     """Run a tool; return (compact_result_for_model, human_summary_for_ui)."""
     if name == "product_graph":
-        rg = await graph_svc.explore(ProductGraphRequest(query=args.get("product", "")))
+        rg = await graph_svc.explore(ProductGraphRequest(query=args.get("product", "")), narrate=False)
         if not rg.found or rg.product is None:
             return {"found": False}, f"Không tìm thấy sản phẩm '{args.get('product', '')}'"
         return (
@@ -373,7 +391,7 @@ async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
             f"Product graph: {rg.product.name} (SKU {rg.product.sku})",
         )
     if name == "market_scan":
-        rm = await market_svc.scan_market(MarketScanRequest(query=args.get("product", "")))
+        rm = await market_svc.scan_market(MarketScanRequest(query=args.get("product", "")), narrate=False)
         return (
             {"product": rm.product_name, "our_rank": rm.our_rank, "of_total": rm.of_total,
              "recommended_price_vnd": rm.recommended_price_vnd, "margin_pct": rm.margin_pct_at_recommended},
@@ -381,7 +399,7 @@ async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
         )
     if name == "creator_correlation":
         rc = await creator_svc.analyze_correlation(
-            CorrelationRequest(category=cast(Any, args.get("category", "Mỹ phẩm"))))
+            CorrelationRequest(category=cast(Any, args.get("category", "Mỹ phẩm"))), narrate=False)
         return (
             {"best_creator": rc.best_creator,
              "ranked": [{"creator": c.creator, "correlation": c.correlation} for c in rc.ranked[:3]]},
@@ -389,14 +407,14 @@ async def _dispatch(name: str, args: dict) -> tuple[dict, str]:
         )
     if name == "decision_playbook":
         rd = await decision_svc.playbook(PlaybookRequest(
-            situation=args.get("situation", "n/a"), category=cast(Any, args.get("category", "Thời trang"))))
+            situation=args.get("situation", "n/a"), category=cast(Any, args.get("category", "Thời trang"))), narrate=False)
         return (
             {"best": rd.best.description, "metric": rd.best.metric, "value": rd.best.value,
              "best_ad_month": rd.best_ad_month},
             f"Decision playbook: {rd.best.description}",
         )
     if name == "daily_briefing":
-        rb = await briefing()
+        rb = await briefing(narrate=False)
         return (
             {"total_impact_vnd": rb.total_impact_vnd,
              "top": [{"title": a.title, "impact_vnd": a.impact_vnd} for a in rb.actions[:3]]},
@@ -416,7 +434,12 @@ async def agent_ask(question: str, history: list[dict] | None = None) -> Copilot
             multi_step=False,
         )
 
-    messages: list[dict] = [{"role": "system", "content": _AGENT_SYSTEM}]
+    # Force the answer language from a code-side detection (weak models drift to
+    # the tool data's language otherwise).
+    directive = ("\n\nYou MUST write the final answer in ENGLISH ONLY."
+                 if _detect_lang(question) == "en"
+                 else "\n\nBạn PHẢI viết câu trả lời cuối cùng HOÀN TOÀN bằng tiếng Việt.")
+    messages: list[dict] = [{"role": "system", "content": _AGENT_SYSTEM + directive}]
     for h in history or []:
         messages.append({"role": h["role"], "content": h["content"]})
     messages.append({"role": "user", "content": question})
@@ -425,7 +448,7 @@ async def agent_ask(question: str, history: list[dict] | None = None) -> Copilot
     tools_used: list[str] = []
     answer = ""
     for _ in range(4):  # bounded agent loop
-        msg = await client.chat_tools(messages, _TOOL_SPECS)
+        msg = await client.chat_tools(messages, _TOOL_SPECS, max_tokens=420)
         tool_calls = msg.get("tool_calls")
         if not tool_calls:
             answer = (msg.get("content") or "").strip()
@@ -437,7 +460,15 @@ async def agent_ask(question: str, history: list[dict] | None = None) -> Copilot
                 args = json.loads(tc["function"].get("arguments") or "{}")
             except json.JSONDecodeError:
                 args = {}
-            result, summary = await _dispatch(fn, args)
+            # A weaker model may pass invalid args (e.g. a product name where a
+            # category is expected). Never let that crash the request — return an
+            # error to the model so it can correct itself on the next turn.
+            try:
+                result, summary = await _dispatch(fn, args)
+            except Exception as exc:  # noqa: BLE001 — tool errors are recoverable
+                result = {"error": f"invalid arguments for {fn}: {exc}"}
+                summary = f"{fn}: lỗi tham số"
+                log.warning("copilot.tool_error", tool=fn, args=args, error=str(exc))
             tools_used.append(fn)
             steps.append(AgentStep(tool=fn, args=args, summary=summary))
             messages.append({"role": "tool", "tool_call_id": tc["id"],
@@ -447,7 +478,8 @@ async def agent_ask(question: str, history: list[dict] | None = None) -> Copilot
         # Loop hit the cap without a final text — ask once more for a plain answer.
         try:
             final = await client.chat_tools(messages + [
-                {"role": "user", "content": "Tổng hợp câu trả lời cuối cùng bằng tiếng Việt."}], [])
+                {"role": "user", "content": "Tổng hợp câu trả lời cuối cùng bằng đúng ngôn ngữ của câu hỏi."}],
+                [], max_tokens=420)
             answer = (final.get("content") or "").strip()
         except Exception:  # noqa: BLE001
             answer = ""

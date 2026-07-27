@@ -152,7 +152,8 @@ _SENTIMENT_SYSTEM = (
     '{"sentiment": "positive|neutral|negative", "confidence": 0.0-1.0, '
     '"reason": "one short sentence"}\n'
     "Weigh the star rating heavily when present. 'neutral' is for mixed or "
-    "purely factual reviews."
+    "purely factual reviews. Write the reason in the SAME language as the review "
+    "(Vietnamese review → Vietnamese reason, English → English)."
 )
 
 _FAKE_SYSTEM = (
@@ -162,7 +163,9 @@ _FAKE_SYSTEM = (
     "over-enthusiastic, and lack product detail. Reply with ONLY a compact "
     "JSON object, no prose:\n"
     '{"is_fake": true|false, "confidence": 0.0-1.0, '
-    '"signals": ["short phrase", ...], "reason": "one short sentence"}'
+    '"signals": ["short phrase", ...], "reason": "one short sentence"}\n'
+    "Write the reason in the SAME language as the review "
+    "(Vietnamese review → Vietnamese, English → English)."
 )
 
 

@@ -28,6 +28,7 @@ from app.api.v1.endpoints import (
     review_sentiment,
     segmentation,
     seller_coach,
+    storefront,
     supply_chain,
     users,
 )
@@ -105,3 +106,5 @@ api_router.include_router(
 )
 # --- Seller Copilot: conversational agent that routes to the features above ---
 api_router.include_router(copilot.router, prefix="/copilot", tags=["copilot-agent"])
+# --- Buyer storefront catalog ---
+api_router.include_router(storefront.router, prefix="/storefront", tags=["storefront"])

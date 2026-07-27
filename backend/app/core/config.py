@@ -65,6 +65,9 @@ class Settings(BaseSettings):
     GEMINI_MODEL: str = "gemini-1.5-pro"
     OPENAI_API_KEY: str | None = None
     OPENAI_MODEL: str = "gpt-4o-mini"
+    # OpenAI-compatible base URL. Point at Groq / OpenRouter to run open-source
+    # models (Llama 3.3 70B, DeepSeek, Qwen…) via their free API instead of OpenAI.
+    OPENAI_BASE_URL: str = "https://api.openai.com"
     # SerpApi — real Google News for Supply Chain early warning.
     SERPAPI_KEY: str | None = None
 

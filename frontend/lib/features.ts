@@ -492,3 +492,24 @@ export async function analyzeHesitation(input: {
     revisit_count: input.revisitCount, cart_opened_no_purchase: input.cartOpenedNoPurchase, price_vnd: input.priceVnd,
   });
 }
+
+// --- Buyer storefront catalog ---------------------------------------------
+export type StoreProduct = {
+  id: string; sku: string; name: string; brand: string; category: string;
+  price_vnd: number; rating: number; reviews: number; trend: string;
+  image_url: string; attributes: Record<string, string>;
+};
+export type StoreList = { products: StoreProduct[]; total: number };
+export type StoreDetail = { product: StoreProduct | null; similar: StoreProduct[] };
+
+export async function getStoreProducts(q?: string, category?: string): Promise<StoreList | null> {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (category) params.set("category", category);
+  const qs = params.toString();
+  return get<StoreList>(`/storefront/products${qs ? `?${qs}` : ""}`);
+}
+
+export async function getStoreProduct(id: string): Promise<StoreDetail | null> {
+  return get<StoreDetail>(`/storefront/products/${encodeURIComponent(id)}`);
+}

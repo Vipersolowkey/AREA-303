@@ -11,6 +11,7 @@ small/medium Vietnamese fashion & cosmetics shop.
 from __future__ import annotations
 
 import random
+import unicodedata
 from functools import lru_cache
 
 Category = str  # "Thời trang" | "Mỹ phẩm" | "Phụ kiện"
@@ -75,7 +76,10 @@ _STOCK_STATUS = ["ok", "ok", "ok", "low", "out"]
 
 
 def _slug(name: str, i: int) -> str:
-    base = "".join(c for c in name.lower().replace(" ", "-") if c.isalnum() or c == "-")
+    # Fold Vietnamese diacritics to ASCII so product ids are clean URL segments.
+    lowered = name.lower().replace("đ", "d")  # đ doesn't NFD-decompose; map first
+    ascii_name = unicodedata.normalize("NFD", lowered).encode("ascii", "ignore").decode("ascii")
+    base = "".join(c for c in ascii_name.replace(" ", "-") if c.isalnum() or c == "-")
     return f"{base[:24]}-{i:02d}"
 
 

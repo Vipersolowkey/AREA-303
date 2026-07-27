@@ -31,8 +31,11 @@ class OpenAIClient(LlmClient):
                 code="LLM_NOT_CONFIGURED",
                 status_code=503,
             )
+        # Base URL is configurable so this OpenAI-compatible client can also talk
+        # to Groq / OpenRouter / any /v1/chat/completions endpoint (open-source
+        # models via a free API). Default stays OpenAI.
         self._http = httpx.AsyncClient(
-            base_url="https://api.openai.com",
+            base_url=settings.OPENAI_BASE_URL.rstrip("/"),
             timeout=httpx.Timeout(60.0, connect=10.0),
             headers={
                 "Authorization": f"Bearer {self._api_key}",

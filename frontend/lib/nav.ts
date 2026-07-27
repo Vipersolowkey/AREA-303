@@ -26,6 +26,7 @@ import {
   Bot,
   ClipboardCheck,
   Network,
+  Store,
   type LucideIcon,
 } from "lucide-react";
 
@@ -58,6 +59,7 @@ export type NavItem = {
 // href = /<app>/<slug>. `implemented` features (below) render a live panel.
 export const NAV_ITEMS: NavItem[] = [
   // --- SHOP (buyer-facing) ---
+  { id: "ST", slug: "store",            label: "Cửa hàng",           href: "/shop/store",            icon: Store,         app: "shop",   section: "commerce",     category: "Behavioral AI",   owner: "FS" },
   { id: "03", slug: "personal-shopper", label: "Personal Shopper",   href: "/shop/personal-shopper", icon: ShoppingBag,   app: "shop",   section: "commerce",     category: "Generative AI",   owner: "FS" },
   { id: "11", slug: "recsys",           label: "For You (RecSys)",   href: "/shop/recsys",           icon: Sparkles,      app: "shop",   section: "commerce",     category: "Generative AI",   owner: "FS" },
   { id: "07", slug: "visual-search",    label: "Visual Search",      href: "/shop/visual-search",    icon: ImageIcon,     app: "shop",   section: "commerce",     category: "Computer Vision", owner: "DA" },
