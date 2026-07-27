@@ -1,0 +1,133 @@
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { Search, Store, Loader2, PackageOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { getStoreProducts, type StoreProduct } from "@/lib/features";
+import { trackEvent } from "@/lib/journey-track";
+import { StoreProductCard } from "@/components/store/store-product-card";
+
+const CATEGORIES = ["Tất cả", "Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
+
+export default function StorePage() {
+  const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("Tất cả");
+  const [products, setProducts] = useState<StoreProduct[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async (q: string, category: string) => {
+    setLoading(true);
+    const cat = category === "Tất cả" ? undefined : category;
+    const res = await getStoreProducts(q || undefined, cat);
+    setProducts(res ? res.products : null);
+    setLoading(false);
+  }, []);
+
+  // Load all products on mount.
+  useEffect(() => {
+    load("", "Tất cả");
+  }, [load]);
+
+  const activeCat = activeCategory === "Tất cả" ? undefined : activeCategory;
+
+  const submitSearch = () => {
+    trackEvent("search", { category: activeCat, query });
+    load(query, activeCategory);
+  };
+
+  const selectCategory = (category: string) => {
+    setActiveCategory(category);
+    load(query, category);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start gap-4">
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border-2 border-text/80 text-text">
+          <Store className="h-5 w-5" strokeWidth={2} />
+        </span>
+        <div>
+          <h1 className="text-2xl font-extrabold tracking-tight">Cửa hàng AREA-303</h1>
+          <p className="mt-1 max-w-2xl text-text-muted">
+            Duyệt catalog thời trang &amp; mỹ phẩm — mỗi thao tác được ghi lại cho phiên mua sắm.
+          </p>
+        </div>
+      </div>
+
+      {/* Search + filters */}
+      <div className="space-y-4">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-dim" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submitSearch();
+              }}
+              placeholder="Tìm sản phẩm, thương hiệu…"
+              className="w-full rounded-2xl border border-border bg-surface py-2.5 pl-9 pr-3 text-sm text-text outline-none transition-colors focus:border-accent"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={submitSearch}
+            className="inline-flex items-center gap-1.5 rounded-2xl bg-accent px-5 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
+          >
+            <Search className="h-4 w-4" /> Tìm
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => selectCategory(c)}
+              className={cn(
+                "rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors",
+                activeCategory === c
+                  ? "border-accent bg-accent/10 text-accent"
+                  : "border-border text-text-muted hover:border-text hover:text-text",
+              )}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Grid / states */}
+      {loading ? (
+        <div className="grid place-items-center rounded-3xl border border-border bg-surface py-20 text-text-muted">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <p className="mt-3 text-sm">Đang tải sản phẩm…</p>
+        </div>
+      ) : products === null ? (
+        <div className="grid place-items-center rounded-3xl border border-border bg-surface py-20 text-center">
+          <PackageOpen className="h-8 w-8 text-text-dim" />
+          <p className="mt-3 text-lg font-extrabold">Cửa hàng đang nghỉ một chút</p>
+          <p className="mt-1 text-text-muted">Chưa tải được sản phẩm. Bạn thử lại sau nhé!</p>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="grid place-items-center rounded-3xl border border-border bg-surface py-20 text-center">
+          <PackageOpen className="h-8 w-8 text-text-dim" />
+          <p className="mt-3 text-lg font-extrabold">Không có sản phẩm phù hợp</p>
+          <p className="mt-1 text-text-muted">Thử từ khoá khác hoặc chọn danh mục khác nhé.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          {products.map((p) => (
+            <StoreProductCard
+              key={p.id}
+              product={p}
+              onClick={() => trackEvent("click", { category: p.category })}
+              onCart={() => trackEvent("cart", { category: p.category })}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
