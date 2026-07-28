@@ -110,7 +110,6 @@ export default function StoreDetailPage() {
       if (timer) clearTimeout(timer);
     };
   }, [product, reviews.length]);
-
   if (loading) {
     return (
       <div className="grid place-items-center rounded-3xl border border-border bg-surface py-24 text-text-muted">
@@ -274,7 +273,6 @@ export default function StoreDetailPage() {
           </div>
         </section>
       )}
-
       {/* Similar products */}
       {similar.length > 0 && (
         <section>

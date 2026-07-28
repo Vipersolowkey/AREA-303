@@ -122,6 +122,36 @@ export async function sellerCoach(
   return { overall: data.overall, audit: data.audit, roadmap: data.roadmap, live: true };
 }
 
+// --- #19 Customer Segmentation ---------------------------------------------
+export type SegmentationFeatures = {
+  log_recency: number;
+  seniority_months: number;
+  log_followers: number;
+  log_follows: number;
+  log_products_liked: number;
+  log_products_listed: number;
+  log_products_sold: number;
+  products_pass_rate: number;
+  log_products_wished: number;
+  log_products_bought: number;
+  buy_ratio: number;
+  wish_to_buy: number;
+  has_any_app: number;
+  has_profile_picture: number;
+};
+
+export type SegmentationResult = {
+  persona: string;
+  probabilities: Record<string, number>;
+  model_version: string;
+};
+
+export async function predictSegmentation(
+  features: SegmentationFeatures,
+): Promise<SegmentationResult | null> {
+  return post<SegmentationResult>("/segmentation/", features);
+}
+
 // --- #02 Dynamic Pricing ----------------------------------------------------
 export type PricingResult = {
   recommended_price: number; low: number; high: number;

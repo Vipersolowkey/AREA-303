@@ -25,7 +25,6 @@ class ReviewItem(BaseModel):
     text: str
     days_ago: int
 
-
 class StoreListResponse(BaseModel):
     products: list[StoreProduct]
     total: int
