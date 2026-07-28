@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.api.v1.endpoints.ideas import IDEAS
 from app.core.exceptions import AppError, NotFoundError
 from app.core.responses import ApiResponse, ErrorPayload, PageMeta
 from app.main import app
@@ -80,7 +81,7 @@ async def test_ideas_list_uses_pagination_meta():
     assert body["success"] is True
     assert body["meta"]["page"] == 1
     assert body["meta"]["page_size"] == 5
-    assert body["meta"]["total"] == 17
+    assert body["meta"]["total"] == len(IDEAS)
     assert len(body["data"]) == 5
 
 
