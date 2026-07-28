@@ -190,119 +190,106 @@ export type Product = {
   description: string;
 };
 
-// Unsplash photo IDs for accurate product images
-const UNSPLASH_IMAGES: Record<string, string> = {
-  // Thời trang - Áo
-  polo: "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400&h=400&fit=crop&q=80",
-  dress_shirt: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=400&fit=crop&q=80",
-  tshirt: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop&q=80",
-  hoodie: "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop&q=80",
-  bomber_jacket: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop&q=80",
-  denim_jacket: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&h=400&fit=crop&q=80",
-  knitwear: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=400&fit=crop&q=80",
-  winter_coat: "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=400&h=400&fit=crop&q=80",
-  blazer: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&q=80",
-
-  // Thời trang - Quần
-  jogger: "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=400&h=400&fit=crop&q=80",
-  shorts: "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&h=400&fit=crop&q=80",
-  jeans: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop&q=80",
-  leggings: "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&h=400&fit=crop&q=80",
-
-  // Thời trang - Váy/Đầm
-  skirt: "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400&h=400&fit=crop&q=80",
-  dress: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop&q=80",
-
-  // Thời trang - Giày
-  sneakers: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&q=80",
-  boots: "https://images.unsplash.com/photo-1542840410-8e73aa1f5d9c?w=400&h=400&fit=crop&q=80",
-  sandals: "https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400&h=400&fit=crop&q=80",
-
-  // Mỹ phẩm
-  lipstick: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=400&fit=crop&q=80",
-  serum: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop&q=80",
-  moisturizer: "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=400&h=400&fit=crop&q=80",
-  sunscreen: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&q=80",
-  foundation: "https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?w=400&h=400&fit=crop&q=80",
-  toner: "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=400&h=400&fit=crop&q=80",
-  eyeshadow: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop&q=80",
-  mascara: "https://images.unsplash.com/photo-1631214540553-ff044a3ff1d4?w=400&h=400&fit=crop&q=80",
-  blush: "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=400&h=400&fit=crop&q=80",
-  perfume: "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=400&fit=crop&q=80",
-  face_mask: "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=400&h=400&fit=crop&q=80",
-  face_wash: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&q=80",
-
-  // Phụ kiện - Túi
-  handbag: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=400&fit=crop&q=80",
-  tote_bag: "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=400&h=400&fit=crop&q=80",
-  crossbody_bag: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop&q=80",
-  backpack: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&q=80",
-  wallet: "https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&h=400&fit=crop&q=80",
-
-  // Phụ kiện - Khác
-  sunglasses: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop&q=80",
-  cap: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&q=80",
-  watch: "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop&q=80",
-  necklace: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=400&fit=crop&q=80",
-  bracelet: "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=400&fit=crop&q=80",
-  earrings: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&h=400&fit=crop&q=80",
-  scarf: "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=400&h=400&fit=crop&q=80",
-
-  // Khác
-  pajamas: "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&h=400&fit=crop&q=80",
-  default: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop&q=80",
+// Tiki CDN product photos — same map as backend `demo_data._PRODUCT_IMAGES`
+// so RecSys / Personal Shopper / Store share consistent catalog imagery.
+const PRODUCT_IMAGES: Record<string, string> = {
+  polo: "https://salt.tikicdn.com/cache/280x280/ts/product/1f/92/47/3bf7e43d1a4a909601a3abddd7cc19ee.jpg",
+  dress_shirt: "https://salt.tikicdn.com/cache/280x280/ts/product/00/4e/0d/d5a4d4377729ca891ace108e545dc4f5.jpg",
+  tshirt: "https://salt.tikicdn.com/cache/280x280/ts/product/b5/c1/93/90b8ba8e894db21a6c71a781202f1421.jpg",
+  hoodie: "https://salt.tikicdn.com/cache/280x280/ts/product/f4/29/35/590921289b459569b9733adb0cf1cd5d.jpg",
+  bomber_jacket: "https://salt.tikicdn.com/cache/280x280/ts/product/d1/0b/54/0787b8fd1f3cc408e093e85433dc47b5.jpg",
+  denim_jacket: "https://salt.tikicdn.com/cache/280x280/ts/product/d2/1b/23/2d908dedbbb7d21a1d9f4d0599b42511.jpg",
+  knitwear: "https://salt.tikicdn.com/cache/280x280/ts/product/d2/ed/a6/8d672991bc29e141ca411b459e1cdb3b.jpg",
+  winter_coat: "https://salt.tikicdn.com/cache/280x280/ts/product/6b/70/1a/7cb328d8b1787e797c282335beac76d6.jpg",
+  blazer: "https://salt.tikicdn.com/cache/280x280/ts/product/03/a8/05/cab44ca4741ab95b4ff17ee4d3f2ee43.jpg",
+  jogger: "https://salt.tikicdn.com/cache/280x280/ts/product/41/da/94/af279036fc2fd4b263aa6bcc061eebbb.jpg",
+  shorts: "https://salt.tikicdn.com/cache/280x280/ts/product/0e/50/7a/e220b835b8653637d1a9950e761320fe.png",
+  jeans: "https://salt.tikicdn.com/cache/280x280/ts/product/a4/c5/3a/899cdaaed1874ee8c00524c5d7e9e269.jpg",
+  leggings: "https://salt.tikicdn.com/cache/280x280/ts/product/4f/3d/b0/799b8f0120cc15024af1f8b32a5f93fb.jpg",
+  skirt: "https://salt.tikicdn.com/cache/280x280/ts/product/9d/92/8e/09d967370fd4de808e8c0972130b878a.png",
+  dress: "https://salt.tikicdn.com/cache/280x280/ts/product/21/c4/fc/bcdb27da2082a5b6ebcefdcd3999d955.jpg",
+  sneakers: "https://salt.tikicdn.com/cache/280x280/ts/product/f3/89/cb/972f0726ef4b4e128176ef01051321a8.jpg",
+  boots: "https://salt.tikicdn.com/cache/280x280/ts/product/1c/8e/49/1080a94340c12ee2e428331c5087faf1.jpeg",
+  sandals: "https://salt.tikicdn.com/cache/280x280/ts/product/07/ba/2b/db637a555bef5b7be027356087672174.jpg",
+  lipstick: "https://salt.tikicdn.com/cache/280x280/ts/product/12/ff/1d/7f2418faf53502dc31a69095815b1864.jpg",
+  serum: "https://salt.tikicdn.com/cache/280x280/ts/product/bd/20/ae/d2325cb41ce023ca708232b3315940be.jpg",
+  moisturizer: "https://salt.tikicdn.com/cache/280x280/ts/product/0e/7c/53/e730aa98f95bedd2753de95367515b18.png",
+  sunscreen: "https://salt.tikicdn.com/cache/280x280/ts/product/54/04/ed/806b70fec51463a302ee57e361049064.jpg",
+  foundation: "https://salt.tikicdn.com/cache/280x280/ts/product/1c/31/14/eb7c32a4236bf73fe815e855f0dcd9cf.jpg",
+  toner: "https://salt.tikicdn.com/cache/280x280/ts/product/d2/95/4f/cc9f7d61dd9a8a8d8dd5eac78a68b2bf.jpg",
+  eyeshadow: "https://salt.tikicdn.com/cache/280x280/ts/product/9c/c3/e1/4ead17820b2c0992f7e8ea0e1d42468f.jpg",
+  mascara: "https://salt.tikicdn.com/cache/280x280/ts/product/49/f9/83/b5aaea1b6f97dcd18132c8839a48729e.jpg",
+  blush: "https://salt.tikicdn.com/cache/280x280/ts/product/b8/a0/61/3ba36a6f299762970ae56d1d7dfc8fc0.png",
+  perfume: "https://salt.tikicdn.com/cache/280x280/ts/product/01/61/55/08525c6ff5034a9ccbe5495eaa9899d2.jpg",
+  face_mask: "https://salt.tikicdn.com/cache/280x280/ts/product/c1/3b/92/93a88c230bc1fba5bd0aa2d0648b5ad3.jpg",
+  face_wash: "https://salt.tikicdn.com/cache/280x280/ts/product/a4/d6/b3/c2637f1105a8fc3d232812e0e3d38561.png",
+  handbag: "https://salt.tikicdn.com/cache/280x280/ts/product/cb/52/9f/d97ef63258d9c79dce12a08eff3718c0.PNG",
+  tote_bag: "https://salt.tikicdn.com/cache/280x280/ts/product/e5/21/9e/05fa9414afae9bce11503326dac015ee.jpg",
+  crossbody_bag: "https://salt.tikicdn.com/cache/280x280/ts/product/ad/f1/b6/2ad59cf9888c28cddf6780b77a255f64.PNG",
+  backpack: "https://salt.tikicdn.com/cache/280x280/ts/product/07/59/2f/efc5263b83456776466b67351668ad31.png",
+  wallet: "https://salt.tikicdn.com/cache/280x280/ts/product/16/26/54/444523b65575e0e90ace430477ee0bb4.jpg",
+  sunglasses: "https://salt.tikicdn.com/cache/280x280/ts/product/d1/02/57/816bd74884726910f904f5d3f2c5be97.jpg",
+  cap: "https://salt.tikicdn.com/cache/280x280/ts/product/de/82/f7/3b7a598d562117ef01bbf83fdd292c41.jpg",
+  watch: "https://salt.tikicdn.com/cache/280x280/ts/product/e2/01/46/10adc7c87e995232a86596a744bc888a.jpg",
+  necklace: "https://salt.tikicdn.com/cache/280x280/ts/product/e9/e5/9d/7133a234155897a85ca519e9211397d8.jpg",
+  bracelet: "https://salt.tikicdn.com/cache/280x280/ts/product/0a/b8/7b/70056be8ca9f810be223e2599b05ec24.png",
+  earrings: "https://salt.tikicdn.com/cache/280x280/ts/product/67/45/5e/3b56fa91b600fc9f694497e2c314397b.jpg",
+  scarf: "https://salt.tikicdn.com/cache/280x280/ts/product/a5/94/57/513f2a07227304a6095a14d256c95e13.png",
+  pajamas: "https://salt.tikicdn.com/cache/280x280/ts/product/4e/f9/1b/a21111c4f916e276d044855f2e940ff3.png",
+  default: "https://salt.tikicdn.com/cache/280x280/ts/product/b5/c1/93/90b8ba8e894db21a6c71a781202f1421.jpg",
 };
 
-function getMockImageUrl(name: string, category: string): string {
+/** Resolve a catalog-style product photo from name + category (demo imagery). */
+export function getMockImageUrl(name: string, category: string): string {
   const n = `${name} ${category}`.toLowerCase();
   const has = (...ks: string[]) => ks.some((k) => n.includes(k));
 
   // Thời trang
-  if (has("áo polo", "polo")) return UNSPLASH_IMAGES.polo;
-  if (has("áo sơ mi", "sơ mi")) return UNSPLASH_IMAGES.dress_shirt;
-  if (has("áo thun", "áo phông", "thun", "oversize")) return UNSPLASH_IMAGES.tshirt;
-  if (has("hoodie", "áo hoodie")) return UNSPLASH_IMAGES.hoodie;
-  if (has("áo khoác bomber", "bomber")) return UNSPLASH_IMAGES.bomber_jacket;
-  if (has("áo khoác denim", "denim", "áo khoác")) return UNSPLASH_IMAGES.denim_jacket;
-  if (has("áo len", "cardigan", "áo vest", "blazer")) return UNSPLASH_IMAGES.knitwear;
-  if (has("áo dạ", "áo phao", "down jacket")) return UNSPLASH_IMAGES.winter_coat;
-  if (has("áo vest", "blazer")) return UNSPLASH_IMAGES.blazer;
-  if (has("quần jogger", "jogger", "quần baggy", "baggy")) return UNSPLASH_IMAGES.jogger;
-  if (has("quần short", "short")) return UNSPLASH_IMAGES.shorts;
-  if (has("quần", "jean", "denim")) return UNSPLASH_IMAGES.jeans;
-  if (has("váy", "đầm", "dress", "midi")) return has("đầm") ? UNSPLASH_IMAGES.dress : UNSPLASH_IMAGES.skirt;
-  if (has("giày", "sneaker", "dép", "sandal")) return has("sandal") ? UNSPLASH_IMAGES.sandals : UNSPLASH_IMAGES.sneakers;
-  if (has("boots", "boot")) return UNSPLASH_IMAGES.boots;
+  if (has("áo polo", "polo")) return PRODUCT_IMAGES.polo;
+  if (has("áo sơ mi", "sơ mi")) return PRODUCT_IMAGES.dress_shirt;
+  if (has("áo thun", "áo phông", "thun", "oversize")) return PRODUCT_IMAGES.tshirt;
+  if (has("hoodie", "áo hoodie")) return PRODUCT_IMAGES.hoodie;
+  if (has("áo khoác bomber", "bomber")) return PRODUCT_IMAGES.bomber_jacket;
+  if (has("áo khoác denim", "denim", "áo khoác")) return PRODUCT_IMAGES.denim_jacket;
+  if (has("áo len", "cardigan", "áo vest", "blazer")) return PRODUCT_IMAGES.knitwear;
+  if (has("áo dạ", "áo phao", "down jacket")) return PRODUCT_IMAGES.winter_coat;
+  if (has("áo vest", "blazer")) return PRODUCT_IMAGES.blazer;
+  if (has("quần jogger", "jogger", "quần baggy", "baggy")) return PRODUCT_IMAGES.jogger;
+  if (has("quần short", "short")) return PRODUCT_IMAGES.shorts;
+  if (has("quần", "jean", "denim")) return PRODUCT_IMAGES.jeans;
+  if (has("váy", "đầm", "dress", "midi")) return has("đầm") ? PRODUCT_IMAGES.dress : PRODUCT_IMAGES.skirt;
+  if (has("giày", "sneaker", "dép", "sandal")) return has("sandal") ? PRODUCT_IMAGES.sandals : PRODUCT_IMAGES.sneakers;
+  if (has("boots", "boot")) return PRODUCT_IMAGES.boots;
 
   // Mỹ phẩm
-  if (has("son", "tint", "lipstick")) return UNSPLASH_IMAGES.lipstick;
-  if (has("serum", "vitamin c", "bha", "aha", "tinh chất", "essence")) return UNSPLASH_IMAGES.serum;
-  if (has("mặt nạ", "mask", "laneige", "sleeping")) return UNSPLASH_IMAGES.face_mask;
-  if (has("kem", "cream", "dưỡng", "lotion", "cushion")) return UNSPLASH_IMAGES.moisturizer;
-  if (has("toner", "rửa mặt", "sữa rửa", "sữa tắm")) return UNSPLASH_IMAGES.face_wash;
-  if (has("chống nắng", "anessa", "spf")) return UNSPLASH_IMAGES.sunscreen;
-  if (has("nước hoa", "perfume", "fragrance")) return UNSPLASH_IMAGES.perfume;
-  if (has("phấn", "makeup")) return UNSPLASH_IMAGES.foundation;
-  if (has("mascara", "eyeliner", "kẻ mắt")) return UNSPLASH_IMAGES.mascara;
-  if (has("phấn má", "blush", "highlighter")) return UNSPLASH_IMAGES.blush;
+  if (has("son", "tint", "lipstick")) return PRODUCT_IMAGES.lipstick;
+  if (has("serum", "vitamin c", "bha", "aha", "tinh chất", "essence")) return PRODUCT_IMAGES.serum;
+  if (has("mặt nạ", "mask", "laneige", "sleeping")) return PRODUCT_IMAGES.face_mask;
+  if (has("kem", "cream", "dưỡng", "lotion", "cushion")) return PRODUCT_IMAGES.moisturizer;
+  if (has("toner", "rửa mặt", "sữa rửa", "sữa tắm")) return PRODUCT_IMAGES.face_wash;
+  if (has("chống nắng", "anessa", "spf")) return PRODUCT_IMAGES.sunscreen;
+  if (has("nước hoa", "perfume", "fragrance")) return PRODUCT_IMAGES.perfume;
+  if (has("phấn", "makeup")) return PRODUCT_IMAGES.foundation;
+  if (has("mascara", "eyeliner", "kẻ mắt")) return PRODUCT_IMAGES.mascara;
+  if (has("phấn má", "blush", "highlighter")) return PRODUCT_IMAGES.blush;
 
   // Phụ kiện
   if (has("túi", "tote", "bag", "balo")) {
-    if (has("tote")) return UNSPLASH_IMAGES.tote_bag;
-    if (has("đeo chéo", "chéo")) return UNSPLASH_IMAGES.crossbody_bag;
-    if (has("balo")) return UNSPLASH_IMAGES.backpack;
-    return UNSPLASH_IMAGES.handbag;
+    if (has("tote")) return PRODUCT_IMAGES.tote_bag;
+    if (has("đeo chéo", "chéo")) return PRODUCT_IMAGES.crossbody_bag;
+    if (has("balo")) return PRODUCT_IMAGES.backpack;
+    return PRODUCT_IMAGES.handbag;
   }
-  if (has("kính", "sunglass", "mát")) return UNSPLASH_IMAGES.sunglasses;
-  if (has("đồng hồ", "casio", "watch")) return UNSPLASH_IMAGES.watch;
-  if (has("ví", "wallet")) return UNSPLASH_IMAGES.wallet;
-  if (has("dây chuyền", "necklace")) return UNSPLASH_IMAGES.necklace;
-  if (has("vòng tay", "bracelet", "lắc")) return UNSPLASH_IMAGES.bracelet;
-  if (has("bông tai", " earrings", "hoa tai")) return UNSPLASH_IMAGES.earrings;
-  if (has("khăn", "scarf", "choàng")) return UNSPLASH_IMAGES.scarf;
-  if (has("mũ", "nón", "cap")) return UNSPLASH_IMAGES.cap;
+  if (has("kính", "sunglass", "mát")) return PRODUCT_IMAGES.sunglasses;
+  if (has("đồng hồ", "casio", "watch")) return PRODUCT_IMAGES.watch;
+  if (has("ví", "wallet")) return PRODUCT_IMAGES.wallet;
+  if (has("dây chuyền", "necklace")) return PRODUCT_IMAGES.necklace;
+  if (has("vòng tay", "bracelet", "lắc")) return PRODUCT_IMAGES.bracelet;
+  if (has("bông tai", " earrings", "hoa tai")) return PRODUCT_IMAGES.earrings;
+  if (has("khăn", "scarf", "choàng")) return PRODUCT_IMAGES.scarf;
+  if (has("mũ", "nón", "cap")) return PRODUCT_IMAGES.cap;
 
-  return UNSPLASH_IMAGES.default;
+  return PRODUCT_IMAGES.default;
 }
 
 export const PRODUCTS: Product[] = [
@@ -576,7 +563,10 @@ export const PRODUCTS: Product[] = [
     description:
       "Balo chống nước, ngăn laptop 15.6 inch có đệm, cổng sạc USB. Đi học/đi làm.",
   },
-];
+].map((p) => ({
+  ...p,
+  imageUrl: getMockImageUrl(p.name, p.category),
+}));
 
 /* Personal Shopper quick-prompt chips — Vietnamese. */
 export const SHOPPER_CHIPS = [

@@ -6,6 +6,7 @@ pre-built shopping sessions (real data to test, not a manual simulation).
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, cast
 
 from app.schemas.insights import ChurnRequest, RegretRequest, ReturnRequest
@@ -61,10 +62,18 @@ def regret_portfolio() -> dict:
 
 
 async def journey_sessions() -> dict:
-    out = []
-    for s in store.all_sessions():
-        res = await journey_svc.analyze_journey(
-            JourneyRequest(events=[JourneyEvent(**e) for e in s["events"]]))
-        out.append({"id": s["id"], "label": s["label"], "events": s["events"],
-                    "analysis": res.model_dump()})
-    return {"sessions": out, "total": len(out)}
+    sessions = store.all_sessions()
+    # Each analysis makes its own LLM narration call — run them concurrently
+    # instead of sequentially, so N sample sessions cost ~1 round-trip, not N.
+    results = await asyncio.gather(*(
+        journey_svc.analyze_journey(JourneyRequest(events=[JourneyEvent(**e) for e in s["events"]]))
+        for s in sessions
+    ))
+    return {
+        "sessions": [
+            {"id": s["id"], "label": s["label"], "events": s["events"],
+             "video_url": s.get("video_url"), "analysis": res.model_dump()}
+            for s, res in zip(sessions, results, strict=True)
+        ],
+        "total": len(sessions),
+    }

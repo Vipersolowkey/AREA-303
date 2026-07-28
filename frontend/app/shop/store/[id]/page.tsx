@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Star, ShoppingBag, CheckCircle2, Loader2, PackageOpen, Flame, Eye } from "lucide-react";
+import { ArrowLeft, Star, ShoppingBag, CheckCircle2, Loader2, PackageOpen, Flame, Eye, MessageSquareText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { getStoreProduct, type StoreProduct } from "@/lib/features";
+import { getStoreProduct, type StoreProduct, type StoreReview } from "@/lib/features";
 import { trackEvent } from "@/lib/journey-track";
 import { addToCart } from "@/lib/cart";
 import { StoreImage } from "@/components/store/store-image";
@@ -24,6 +24,7 @@ export default function StoreDetailPage() {
 
   const [product, setProduct] = useState<StoreProduct | null>(null);
   const [similar, setSimilar] = useState<StoreProduct[]>([]);
+  const [reviews, setReviews] = useState<StoreReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [ordered, setOrdered] = useState(false);
   const [added, setAdded] = useState(false);
@@ -69,6 +70,7 @@ export default function StoreDetailPage() {
       const p = res?.product ?? null;
       setProduct(p);
       setSimilar(res?.similar ?? []);
+      setReviews(res?.review_items ?? []);
       setLoading(false);
       if (p) trackEvent("view", { category: p.category });
     });
@@ -77,6 +79,37 @@ export default function StoreDetailPage() {
     };
   }, [id]);
 
+  // Reading reviews is a real purchase-intent signal — track it once the
+  // section has actually sat in view for a bit, not on a drive-by scroll past.
+  const reviewsRef = useRef<HTMLDivElement | null>(null);
+  const reviewTrackedRef = useRef(false);
+  useEffect(() => {
+    if (!product || reviews.length === 0) return;
+    const el = reviewsRef.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !reviewTrackedRef.current) {
+          timer = setTimeout(() => {
+            if (!reviewTrackedRef.current) {
+              reviewTrackedRef.current = true;
+              trackEvent("review", { category: product.category });
+            }
+          }, 1500);
+        } else if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      },
+      { threshold: 0.5 },
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      if (timer) clearTimeout(timer);
+    };
+  }, [product, reviews.length]);
   if (loading) {
     return (
       <div className="grid place-items-center rounded-3xl border border-border bg-surface py-24 text-text-muted">
@@ -206,6 +239,40 @@ export default function StoreDetailPage() {
         </div>
       </div>
 
+      {/* Reviews */}
+      {reviews.length > 0 && (
+        <section ref={reviewsRef}>
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-extrabold">
+            <MessageSquareText className="h-5 w-5 text-text-dim" />
+            Đánh giá sản phẩm
+            <span className="mono text-sm font-normal text-text-dim">({reviews.length})</span>
+          </h2>
+          <div className="space-y-3">
+            {reviews.map((r, i) => (
+              <div key={i} className="rounded-2xl border border-border bg-surface p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-bold text-text">{r.author}</span>
+                  <span className="text-2xs text-text-dim">
+                    {r.days_ago === 0 ? "Hôm nay" : `${r.days_ago} ngày trước`}
+                  </span>
+                </div>
+                <div className="mt-1 flex items-center gap-0.5">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Star
+                      key={j}
+                      className={cn(
+                        "h-3.5 w-3.5",
+                        j < r.rating ? "fill-warning stroke-warning" : "fill-none stroke-border",
+                      )}
+                    />
+                  ))}
+                </div>
+                <p className="mt-2 text-sm text-text-muted">{r.text}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {/* Similar products */}
       {similar.length > 0 && (
         <section>

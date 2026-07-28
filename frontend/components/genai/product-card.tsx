@@ -8,6 +8,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Product } from "@/lib/mock-data";
+import { getMockImageUrl } from "@/lib/mock-data";
 
 const VND = new Intl.NumberFormat("vi-VN", {
   style: "currency",
@@ -53,11 +54,11 @@ function imageTag(p: Product): string {
 
 function imageUrl(p: Product): string | null {
   const real = p.imageUrl?.trim();
-  if (real) return real;
-  // Fallback: placeholder service with product name
-  const text = encodeURIComponent(p.name.substring(0, 30));
-  const hue = p.imageHue;
-  return `https://placehold.co/400x400/${hue.toString(16).padStart(6, '0')}/ffffff?text=${text}`;
+  if (real && !real.includes("picsum.photos") && !real.includes("placehold.co")) {
+    return real;
+  }
+  // Keyword → Tiki CDN catalog photo (same map as storefront / backend)
+  return getMockImageUrl(p.name, p.category);
 }
 
 /** Fallback icon if the photo fails to load. */

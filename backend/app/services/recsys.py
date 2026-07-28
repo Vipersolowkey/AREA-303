@@ -9,7 +9,11 @@ from app.core.logging import get_logger
 from app.schemas.genai import Recommendation, RecsysRequest, RecsysResponse
 from app.services.genai import RECSYS_REASONING_PROMPT, llm_cache
 from app.services.genai.base import LlmMessage
-from app.services.genai.demo_data import RECSYS_AI, RECSYS_TRADITIONAL
+from app.services.genai.demo_data import (
+    RECSYS_AI,
+    RECSYS_TRADITIONAL,
+    get_product_image_url,
+)
 from app.services.genai.factory import get_llm_client
 
 log = get_logger("app.services.recsys")
@@ -85,6 +89,8 @@ async def recommend(req: RecsysRequest) -> RecsysResponse:
                 reviews=raw["reviews"],
                 similarity=raw["similarity"],
                 reason=reason,
+                image_url=get_product_image_url(raw["name"]),
+                image_hue=raw.get("image_hue", 215),
             )
         )
 

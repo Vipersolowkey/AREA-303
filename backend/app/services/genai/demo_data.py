@@ -12,82 +12,91 @@ Used in two places:
 from __future__ import annotations
 
 # --------------------------------------------------------------------- #
-# Image URL helper — returns Unsplash URL for a product
-# Using specific photo IDs from Unsplash for accurate product images
+# Image URL helper — returns a real product photo for a catalog type_key
+# Sourced from Tiki (salt.tikicdn.com) product listings — real VN
+# e-commerce photos instead of generic stock photography. Every URL below
+# was opened and visually checked before being added here (Tiki's search
+# ranking is noisy — plain keyword matching alone isn't reliable).
 # --------------------------------------------------------------------- #
-
-# Unsplash photo IDs for accurate product images
-_UNSPLASH_IMAGES = {
+_PRODUCT_IMAGES = {
     # Thời trang - Áo
-    "polo": "https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?w=400&h=400&fit=crop&q=80",
-    "dress_shirt": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=400&fit=crop&q=80",
-    "tshirt": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop&q=80",
-    "hoodie": "https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=400&h=400&fit=crop&q=80",
-    "bomber_jacket": "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop&q=80",
-    "denim_jacket": "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=400&h=400&fit=crop&q=80",
-    "knitwear": "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=400&h=400&fit=crop&q=80",
-    "winter_coat": "https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=400&h=400&fit=crop&q=80",
-    "blazer": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&q=80",
-    "crop_top": "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?w=400&h=400&fit=crop&q=80",
-    
+    "polo": "https://salt.tikicdn.com/cache/280x280/ts/product/1f/92/47/3bf7e43d1a4a909601a3abddd7cc19ee.jpg",
+    "dress_shirt": "https://salt.tikicdn.com/cache/280x280/ts/product/00/4e/0d/d5a4d4377729ca891ace108e545dc4f5.jpg",
+    "tshirt": "https://salt.tikicdn.com/cache/280x280/ts/product/b5/c1/93/90b8ba8e894db21a6c71a781202f1421.jpg",
+    "hoodie": "https://salt.tikicdn.com/cache/280x280/ts/product/f4/29/35/590921289b459569b9733adb0cf1cd5d.jpg",
+    "bomber_jacket": "https://salt.tikicdn.com/cache/280x280/ts/product/d1/0b/54/0787b8fd1f3cc408e093e85433dc47b5.jpg",
+    "denim_jacket": "https://salt.tikicdn.com/cache/280x280/ts/product/d2/1b/23/2d908dedbbb7d21a1d9f4d0599b42511.jpg",
+    "knitwear": "https://salt.tikicdn.com/cache/280x280/ts/product/d2/ed/a6/8d672991bc29e141ca411b459e1cdb3b.jpg",
+    "winter_coat": "https://salt.tikicdn.com/cache/280x280/ts/product/6b/70/1a/7cb328d8b1787e797c282335beac76d6.jpg",
+    "blazer": "https://salt.tikicdn.com/cache/280x280/ts/product/03/a8/05/cab44ca4741ab95b4ff17ee4d3f2ee43.jpg",
+    "crop_top": "https://salt.tikicdn.com/cache/280x280/ts/product/6f/42/06/9e7e2db72c02e1699da33a3ecb04f467.jpeg",
+
     # Thời trang - Quần
-    "jogger": "https://images.unsplash.com/photo-1552902865-b72c031ac5ea?w=400&h=400&fit=crop&q=80",
-    "shorts": "https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=400&h=400&fit=crop&q=80",
-    "jeans": "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop&q=80",
-    "leggings": "https://images.unsplash.com/photo-1506629082955-511b1aa562c8?w=400&h=400&fit=crop&q=80",
-    
+    "jogger": "https://salt.tikicdn.com/cache/280x280/ts/product/41/da/94/af279036fc2fd4b263aa6bcc061eebbb.jpg",
+    "shorts": "https://salt.tikicdn.com/cache/280x280/ts/product/0e/50/7a/e220b835b8653637d1a9950e761320fe.png",
+    "jeans": "https://salt.tikicdn.com/cache/280x280/ts/product/a4/c5/3a/899cdaaed1874ee8c00524c5d7e9e269.jpg",
+    "leggings": "https://salt.tikicdn.com/cache/280x280/ts/product/4f/3d/b0/799b8f0120cc15024af1f8b32a5f93fb.jpg",
+
     # Thời trang - Váy/Đầm
-    "skirt": "https://images.unsplash.com/photo-1583496661160-fb5886a0aaaa?w=400&h=400&fit=crop&q=80",
-    "dress": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=400&fit=crop&q=80",
-    
+    "skirt": "https://salt.tikicdn.com/cache/280x280/ts/product/9d/92/8e/09d967370fd4de808e8c0972130b878a.png",
+    "dress": "https://salt.tikicdn.com/cache/280x280/ts/product/21/c4/fc/bcdb27da2082a5b6ebcefdcd3999d955.jpg",
+
     # Thời trang - Giày
-    "sneakers": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop&q=80",
-    "boots": "https://images.unsplash.com/photo-1542840410-8e73aa1f5d9c?w=400&h=400&fit=crop&q=80",
-    "sandals": "https://images.unsplash.com/photo-1603487742131-4160ec999306?w=400&h=400&fit=crop&q=80",
-    "oxford_shoes": "https://images.unsplash.com/photo-1614252235316-8c857d38b5f4?w=400&h=400&fit=crop&q=80",
-    
+    "sneakers": "https://salt.tikicdn.com/cache/280x280/ts/product/f3/89/cb/972f0726ef4b4e128176ef01051321a8.jpg",
+    "boots": "https://salt.tikicdn.com/cache/280x280/ts/product/1c/8e/49/1080a94340c12ee2e428331c5087faf1.jpeg",
+    "sandals": "https://salt.tikicdn.com/cache/280x280/ts/product/07/ba/2b/db637a555bef5b7be027356087672174.jpg",
+    "oxford_shoes": "https://salt.tikicdn.com/cache/280x280/ts/product/58/a2/30/e002cba70a4458ddf573ed9f610833e5.jpg",
+
     # Mỹ phẩm - Son
-    "lipstick": "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=400&h=400&fit=crop&q=80",
-    
+    "lipstick": "https://salt.tikicdn.com/cache/280x280/ts/product/12/ff/1d/7f2418faf53502dc31a69095815b1864.jpg",
+
     # Mỹ phẩm - Serum/Kem
-    "serum": "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop&q=80",
-    "moisturizer": "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=400&h=400&fit=crop&q=80",
-    "sunscreen": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&q=80",
-    "foundation": "https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?w=400&h=400&fit=crop&q=80",
-    "toner": "https://images.unsplash.com/photo-1608248597279-f99d160bfcbc?w=400&h=400&fit=crop&q=80",
-    
+    "serum": "https://salt.tikicdn.com/cache/280x280/ts/product/bd/20/ae/d2325cb41ce023ca708232b3315940be.jpg",
+    "moisturizer": "https://salt.tikicdn.com/cache/280x280/ts/product/0e/7c/53/e730aa98f95bedd2753de95367515b18.png",
+    "sunscreen": "https://salt.tikicdn.com/cache/280x280/ts/product/54/04/ed/806b70fec51463a302ee57e361049064.jpg",
+    "foundation": "https://salt.tikicdn.com/cache/280x280/ts/product/1c/31/14/eb7c32a4236bf73fe815e855f0dcd9cf.jpg",
+    "toner": "https://salt.tikicdn.com/cache/280x280/ts/product/d2/95/4f/cc9f7d61dd9a8a8d8dd5eac78a68b2bf.jpg",
+
     # Mỹ phẩm - Makeup
-    "eyeshadow": "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?w=400&h=400&fit=crop&q=80",
-    "mascara": "https://images.unsplash.com/photo-1631214540553-ff044a3ff1d4?w=400&h=400&fit=crop&q=80",
-    "blush": "https://images.unsplash.com/photo-1596704017254-9b121068fb31?w=400&h=400&fit=crop&q=80",
-    "perfume": "https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&h=400&fit=crop&q=80",
-    "face_mask": "https://images.unsplash.com/photo-1596755389378-c31d21fd1273?w=400&h=400&fit=crop&q=80",
-    "face_wash": "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop&q=80",
-    
+    "eyeshadow": "https://salt.tikicdn.com/cache/280x280/ts/product/9c/c3/e1/4ead17820b2c0992f7e8ea0e1d42468f.jpg",
+    "mascara": "https://salt.tikicdn.com/cache/280x280/ts/product/49/f9/83/b5aaea1b6f97dcd18132c8839a48729e.jpg",
+    "blush": "https://salt.tikicdn.com/cache/280x280/ts/product/b8/a0/61/3ba36a6f299762970ae56d1d7dfc8fc0.png",
+    "perfume": "https://salt.tikicdn.com/cache/280x280/ts/product/01/61/55/08525c6ff5034a9ccbe5495eaa9899d2.jpg",
+    "face_mask": "https://salt.tikicdn.com/cache/280x280/ts/product/c1/3b/92/93a88c230bc1fba5bd0aa2d0648b5ad3.jpg",
+    "face_wash": "https://salt.tikicdn.com/cache/280x280/ts/product/a4/d6/b3/c2637f1105a8fc3d232812e0e3d38561.png",
+
     # Phụ kiện - Túi
-    "handbag": "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=400&fit=crop&q=80",
-    "tote_bag": "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=400&h=400&fit=crop&q=80",
-    "crossbody_bag": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop&q=80",
-    "backpack": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&q=80",
-    "wallet": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&h=400&fit=crop&q=80",
-    "clutch_bag": "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=400&h=400&fit=crop&q=80",
-    
+    "handbag": "https://salt.tikicdn.com/cache/280x280/ts/product/cb/52/9f/d97ef63258d9c79dce12a08eff3718c0.PNG",
+    "tote_bag": "https://salt.tikicdn.com/cache/280x280/ts/product/e5/21/9e/05fa9414afae9bce11503326dac015ee.jpg",
+    "crossbody_bag": "https://salt.tikicdn.com/cache/280x280/ts/product/ad/f1/b6/2ad59cf9888c28cddf6780b77a255f64.PNG",
+    "backpack": "https://salt.tikicdn.com/cache/280x280/ts/product/07/59/2f/efc5263b83456776466b67351668ad31.png",
+    "wallet": "https://salt.tikicdn.com/cache/280x280/ts/product/16/26/54/444523b65575e0e90ace430477ee0bb4.jpg",
+    "clutch_bag": "https://salt.tikicdn.com/cache/280x280/ts/product/8e/9e/bb/19d531301fb4ca0b891edaa02e358597.jpg",
+
     # Phụ kiện - Kính/Mũ
-    "sunglasses": "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop&q=80",
-    "cap": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400&h=400&fit=crop&q=80",
-    
+    "sunglasses": "https://salt.tikicdn.com/cache/280x280/ts/product/d1/02/57/816bd74884726910f904f5d3f2c5be97.jpg",
+    "cap": "https://salt.tikicdn.com/cache/280x280/ts/product/de/82/f7/3b7a598d562117ef01bbf83fdd292c41.jpg",
+
     # Phụ kiện - Đồng hồ/Trang sức
-    "watch": "https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=400&h=400&fit=crop&q=80",
-    "necklace": "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=400&fit=crop&q=80",
-    "bracelet": "https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=400&fit=crop&q=80",
-    "earrings": "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=400&h=400&fit=crop&q=80",
-    "scarf": "https://images.unsplash.com/photo-1520903920243-00d872a2d1c9?w=400&h=400&fit=crop&q=80",
-    "belt": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop&q=80",
-    
+    "watch": "https://salt.tikicdn.com/cache/280x280/ts/product/e2/01/46/10adc7c87e995232a86596a744bc888a.jpg",
+    "necklace": "https://salt.tikicdn.com/cache/280x280/ts/product/e9/e5/9d/7133a234155897a85ca519e9211397d8.jpg",
+    "bracelet": "https://salt.tikicdn.com/cache/280x280/ts/product/0a/b8/7b/70056be8ca9f810be223e2599b05ec24.png",
+    "earrings": "https://salt.tikicdn.com/cache/280x280/ts/product/67/45/5e/3b56fa91b600fc9f694497e2c314397b.jpg",
+    "scarf": "https://salt.tikicdn.com/cache/280x280/ts/product/a5/94/57/513f2a07227304a6095a14d256c95e13.png",
+    "belt": "https://salt.tikicdn.com/cache/280x280/ts/product/9a/bc/37/edf65a85c7e53e9bae1ea01d8f6af49e.jpg",
+
     # Khác
-    "pajamas": "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=400&h=400&fit=crop&q=80",
+    "pajamas": "https://salt.tikicdn.com/cache/280x280/ts/product/4e/f9/1b/a21111c4f916e276d044855f2e940ff3.png",
     "default": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop&q=80",
 }
+
+
+def image_url_for_type(type_key: str) -> str:
+    """Exact image lookup by a known catalog type_key (e.g. "dress", "serum").
+
+    Used by the storefront, which tags every product with its real type at
+    catalog-definition time — precise, unlike guessing from the free-text title."""
+    return _PRODUCT_IMAGES.get(type_key, _PRODUCT_IMAGES["default"])
 
 
 def get_product_image_url(title: str) -> str:
@@ -96,190 +105,190 @@ def get_product_image_url(title: str) -> str:
     
     # Thời trang - Áo
     if any(k in t for k in ['áo polo', 'polo']):
-        return _UNSPLASH_IMAGES["polo"]
+        return _PRODUCT_IMAGES["polo"]
     if any(k in t for k in ['áo sơ mi', 'sơ mi', 'oxford']):
-        return _UNSPLASH_IMAGES["dress_shirt"]
+        return _PRODUCT_IMAGES["dress_shirt"]
     if any(k in t for k in ['áo phông', 'áo thun', 'tshirt', 't-shirt', 'áo thun oversize']):
-        return _UNSPLASH_IMAGES["tshirt"]
+        return _PRODUCT_IMAGES["tshirt"]
     if any(k in t for k in ['áo hoodie', 'hoodie']):
-        return _UNSPLASH_IMAGES["hoodie"]
-    if any(k in t for k in ['áo khoác bomber', 'bomber']):
-        return _UNSPLASH_IMAGES["bomber_jacket"]
+        return _PRODUCT_IMAGES["hoodie"]
+    if any(k in t for k in ['áo khoác bomber', 'bomber', 'áo khoác dù', 'áo gió', 'áo khoác gió']):
+        return _PRODUCT_IMAGES["bomber_jacket"]
     if any(k in t for k in ['áo khoác denim', 'áo khoác', 'denim']):
-        return _UNSPLASH_IMAGES["denim_jacket"]
+        return _PRODUCT_IMAGES["denim_jacket"]
     if any(k in t for k in ['áo len', 'len cổ lọ', 'cardigan', 'áo cổ lọ']):
-        return _UNSPLASH_IMAGES["knitwear"]
+        return _PRODUCT_IMAGES["knitwear"]
     if any(k in t for k in ['áo dạ', 'áo phao', 'áo lông', 'down jacket', 'áo gió']):
-        return _UNSPLASH_IMAGES["winter_coat"]
+        return _PRODUCT_IMAGES["winter_coat"]
     if any(k in t for k in ['áo croptop', 'croptop', 'crop top']):
-        return _UNSPLASH_IMAGES["crop_top"]
+        return _PRODUCT_IMAGES["crop_top"]
     if any(k in t for k in ['áo nịt', 'corset']):
-        return _UNSPLASH_IMAGES["crop_top"]
+        return _PRODUCT_IMAGES["crop_top"]
     if any(k in t for k in ['áo vest', 'blazer', 'vest']):
-        return _UNSPLASH_IMAGES["blazer"]
+        return _PRODUCT_IMAGES["blazer"]
     if any(k in t for k in ['áo hai dây', 'bra top', 'bra', 'áo yếm']):
-        return _UNSPLASH_IMAGES["crop_top"]
+        return _PRODUCT_IMAGES["crop_top"]
     
     # Thời trang - Quần
     if any(k in t for k in ['quần jogger', 'jogger']):
-        return _UNSPLASH_IMAGES["jogger"]
+        return _PRODUCT_IMAGES["jogger"]
     if any(k in t for k in ['quần short', 'short']):
-        return _UNSPLASH_IMAGES["shorts"]
+        return _PRODUCT_IMAGES["shorts"]
     if any(k in t for k in ['quần baggy', 'baggy']):
-        return _UNSPLASH_IMAGES["jogger"]
+        return _PRODUCT_IMAGES["jogger"]
     if any(k in t for k in ['quần jeans', 'jeans', 'quần jean']):
-        return _UNSPLASH_IMAGES["jeans"]
+        return _PRODUCT_IMAGES["jeans"]
     if any(k in t for k in ['quần bó', 'quần thể thao', 'legging', 'sport', 'quần ống rộng', 'ống rộng']):
-        return _UNSPLASH_IMAGES["leggings"]
+        return _PRODUCT_IMAGES["leggings"]
     if any(k in t for k in ['quần yếm', 'yếm']):
-        return _UNSPLASH_IMAGES["jeans"]
+        return _PRODUCT_IMAGES["jeans"]
     if any(k in t for k in ['quần culottes', 'culottes', 'quần ống suông']):
-        return _UNSPLASH_IMAGES["leggings"]
+        return _PRODUCT_IMAGES["leggings"]
     if any(k in t for k in ['quần cargo']):
-        return _UNSPLASH_IMAGES["jogger"]
+        return _PRODUCT_IMAGES["jogger"]
     
     # Thời trang - Váy/Đầm
     if any(k in t for k in ['váy chữ a', 'váy a', 'váy maxi', 'váy tennis', 'váy', 'váy đầm']):
-        return _UNSPLASH_IMAGES["skirt"]
+        return _PRODUCT_IMAGES["skirt"]
     if any(k in t for k in ['đầm', 'đầm midi', 'đầm maxi', 'dress']):
-        return _UNSPLASH_IMAGES["dress"]
+        return _PRODUCT_IMAGES["dress"]
     if any(k in t for k in ['váy tennis', 'tennis skirt']):
-        return _UNSPLASH_IMAGES["skirt"]
+        return _PRODUCT_IMAGES["skirt"]
     
     # Thời trang - Giày
     if any(k in t for k in ['giày oxford', 'oxford']):
-        return _UNSPLASH_IMAGES["oxford_shoes"]
+        return _PRODUCT_IMAGES["oxford_shoes"]
     if any(k in t for k in ['boots', 'boot', 'bootcut']):
-        return _UNSPLASH_IMAGES["boots"]
+        return _PRODUCT_IMAGES["boots"]
     if any(k in t for k in ['dép sandal', 'sandal', 'dép', 'dép xuồng']):
-        return _UNSPLASH_IMAGES["sandals"]
+        return _PRODUCT_IMAGES["sandals"]
     if any(k in t for k in ['giày thể thao', 'giày chạy', 'sneaker', 'giày sneaker', 'giày']):
-        return _UNSPLASH_IMAGES["sneakers"]
+        return _PRODUCT_IMAGES["sneakers"]
     
     # Thời trang - Khác
     if any(k in t for k in ['pajamas', 'bộ pajamas', 'đồ ngủ', 'đồ ngủ nữ']):
-        return _UNSPLASH_IMAGES["pajamas"]
+        return _PRODUCT_IMAGES["pajamas"]
     if any(k in t for k in ['jumpsuit']):
-        return _UNSPLASH_IMAGES["dress"]
+        return _PRODUCT_IMAGES["dress"]
     
     # Mỹ phẩm - Son
     if any(k in t for k in ['son dưỡng', 'son kem', 'son', 'lipstick', 'lip glow', 'tint', 'son tint']):
-        return _UNSPLASH_IMAGES["lipstick"]
+        return _PRODUCT_IMAGES["lipstick"]
     
     # Mỹ phẩm - Kem
     if any(k in t for k in ['kem nền', 'foundation', 'cushion']):
-        return _UNSPLASH_IMAGES["foundation"]
+        return _PRODUCT_IMAGES["foundation"]
     if any(k in t for k in ['kem dưỡng', 'moisturizer', 'kem body', 'kem ẩm']):
-        return _UNSPLASH_IMAGES["moisturizer"]
+        return _PRODUCT_IMAGES["moisturizer"]
     if any(k in t for k in ['kem chống nắng', 'sunscreen', 'chống nắng']):
-        return _UNSPLASH_IMAGES["sunscreen"]
+        return _PRODUCT_IMAGES["sunscreen"]
     if any(k in t for k in ['kem mắt', 'eye cream', 'kem trị mụn']):
-        return _UNSPLASH_IMAGES["serum"]
+        return _PRODUCT_IMAGES["serum"]
     if any(k in t for k in ['kem trị']):
-        return _UNSPLASH_IMAGES["serum"]
+        return _PRODUCT_IMAGES["serum"]
     
     # Mỹ phẩm - Serum/Active
-    if any(k in t for k in ['serum', 'essence', 'vitamin c', 'bha', 'aha', 'tinh chất']):
-        return _UNSPLASH_IMAGES["serum"]
+    if any(k in t for k in ['serum', 'essence', 'vitamin c', 'bha', 'aha', 'tinh chất', 'retinol', 'niacinamide']):
+        return _PRODUCT_IMAGES["serum"]
     
     # Mỹ phẩm - Cleansing
-    if any(k in t for k in ['sữa rửa mặt', 'face wash', 'nước tẩy trang', 'rửa mặt']):
-        return _UNSPLASH_IMAGES["face_wash"]
+    if any(k in t for k in ['sữa rửa mặt', 'face wash', 'nước tẩy trang', 'rửa mặt', 'tẩy trang']):
+        return _PRODUCT_IMAGES["face_wash"]
     if any(k in t for k in ['toner', 'nước hoa hồng']):
-        return _UNSPLASH_IMAGES["toner"]
+        return _PRODUCT_IMAGES["toner"]
     if any(k in t for k in ['sữa tắm', 'body wash', 'tắm']):
-        return _UNSPLASH_IMAGES["face_wash"]
+        return _PRODUCT_IMAGES["face_wash"]
     
     # Mỹ phẩm - Makeup
     if any(k in t for k in ['phấn mắt', 'eyeshadow', 'palette']):
-        return _UNSPLASH_IMAGES["eyeshadow"]
+        return _PRODUCT_IMAGES["eyeshadow"]
     if any(k in t for k in ['mascara']):
-        return _UNSPLASH_IMAGES["mascara"]
+        return _PRODUCT_IMAGES["mascara"]
     if any(k in t for k in ['eyeliner', 'kẻ mắt']):
-        return _UNSPLASH_IMAGES["mascara"]
+        return _PRODUCT_IMAGES["mascara"]
     if any(k in t for k in ['phấn má', 'blush', 'má hồng']):
-        return _UNSPLASH_IMAGES["blush"]
+        return _PRODUCT_IMAGES["blush"]
     if any(k in t for k in ['highlighter']):
-        return _UNSPLASH_IMAGES["blush"]
+        return _PRODUCT_IMAGES["blush"]
     if any(k in t for k in ['phấn nén', 'powder', 'phấn']):
-        return _UNSPLASH_IMAGES["foundation"]
+        return _PRODUCT_IMAGES["foundation"]
     
     # Mỹ phẩm - Fragrance
     if any(k in t for k in ['nước hoa', 'perfume', 'xịt thơm']):
-        return _UNSPLASH_IMAGES["perfume"]
+        return _PRODUCT_IMAGES["perfume"]
     
     # Mỹ phẩm - Hair
     if any(k in t for k in ['dầu gội', 'shampoo', 'dầu xả', 'conditioner', 'gội đầu']):
-        return _UNSPLASH_IMAGES["face_wash"]
+        return _PRODUCT_IMAGES["face_wash"]
     if any(k in t for k in ['mặt nạ', 'face mask', 'mask', 'mặt nạ ngủ']):
-        return _UNSPLASH_IMAGES["face_mask"]
+        return _PRODUCT_IMAGES["face_mask"]
     if any(k in t for k in ['xịt khoáng', 'face mist', 'xịt thơm']):
-        return _UNSPLASH_IMAGES["toner"]
+        return _PRODUCT_IMAGES["toner"]
     
     # Phụ kiện - Túi
     if any(k in t for k in ['túi clutch', 'clutch']):
-        return _UNSPLASH_IMAGES["clutch_bag"]
+        return _PRODUCT_IMAGES["clutch_bag"]
     if any(k in t for k in ['túi đeo chéo', 'túi chéo', 'crossbody', 'đeo chéo']):
-        return _UNSPLASH_IMAGES["crossbody_bag"]
+        return _PRODUCT_IMAGES["crossbody_bag"]
     if any(k in t for k in ['túi xách', 'túi làm việc', 'túi đeo vai']):
-        return _UNSPLASH_IMAGES["handbag"]
+        return _PRODUCT_IMAGES["handbag"]
     if any(k in t for k in ['túi tote', 'tote', 'túi trống']):
-        return _UNSPLASH_IMAGES["tote_bag"]
+        return _PRODUCT_IMAGES["tote_bag"]
     if any(k in t for k in ['túi belt', 'belt bag', 'fanny pack']):
-        return _UNSPLASH_IMAGES["crossbody_bag"]
+        return _PRODUCT_IMAGES["crossbody_bag"]
     if any(k in t for k in ['ví đựng điện thoại', 'ví phone', 'ví điện thoại']):
-        return _UNSPLASH_IMAGES["wallet"]
+        return _PRODUCT_IMAGES["wallet"]
     if any(k in t for k in ['ví', 'wallet', 'ví nam', 'ví nữ']):
-        return _UNSPLASH_IMAGES["wallet"]
+        return _PRODUCT_IMAGES["wallet"]
     if any(k in t for k in ['balo', 'ba lô', 'backpack']):
-        return _UNSPLASH_IMAGES["backpack"]
+        return _PRODUCT_IMAGES["backpack"]
     
     # Phụ kiện - Mũ/Kính
-    if any(k in t for k in ['mũ lưỡi trai', 'snapback', 'mũ snapback', 'nón lưỡi trai', 'nón']):
-        return _UNSPLASH_IMAGES["cap"]
+    if any(k in t for k in ['mũ lưỡi trai', 'snapback', 'mũ snapback', 'nón lưỡi trai', 'nón', 'mũ bucket', 'bucket', 'mũ']):
+        return _PRODUCT_IMAGES["cap"]
     if any(k in t for k in ['kính râm', 'sunglasses', 'kính', 'mắt kính', 'gọng kính']):
-        return _UNSPLASH_IMAGES["sunglasses"]
+        return _PRODUCT_IMAGES["sunglasses"]
     
     # Phụ kiện - Trang sức
     if any(k in t for k in ['dây chuyền', 'necklace', 'chain']):
-        return _UNSPLASH_IMAGES["necklace"]
+        return _PRODUCT_IMAGES["necklace"]
     if any(k in t for k in ['vòng tay', 'bracelet', 'lắc tay']):
-        return _UNSPLASH_IMAGES["bracelet"]
+        return _PRODUCT_IMAGES["bracelet"]
     if any(k in t for k in ['bông tai', ' earrings', 'hoa tai', 'khuyên tai']):
-        return _UNSPLASH_IMAGES["earrings"]
+        return _PRODUCT_IMAGES["earrings"]
     if any(k in t for k in ['bộ trang sức', 'trang sức']):
-        return _UNSPLASH_IMAGES["necklace"]
+        return _PRODUCT_IMAGES["necklace"]
     
     # Phụ kiện - Thắt lưng/Găng
     if any(k in t for k in ['thắt lưng', 'belt', 'dây nịt']):
-        return _UNSPLASH_IMAGES["belt"]
+        return _PRODUCT_IMAGES["belt"]
     if any(k in t for k in ['găng tay', 'gloves']):
-        return _UNSPLASH_IMAGES["scarf"]
+        return _PRODUCT_IMAGES["scarf"]
     
     # Phụ kiện - Khăn
     if any(k in t for k in ['khăn choàng', 'scarf', 'khăn', 'khăn quàng']):
-        return _UNSPLASH_IMAGES["scarf"]
+        return _PRODUCT_IMAGES["scarf"]
     
     # Phụ kiện - Đồng hồ
     if any(k in t for k in ['đồng hồ', 'watch', 'đồng hồ nam', 'đồng hồ nữ']):
-        return _UNSPLASH_IMAGES["watch"]
+        return _PRODUCT_IMAGES["watch"]
     if any(k in t for k in ['dây đồng hồ', 'dây apple watch', 'dây đeo']):
-        return _UNSPLASH_IMAGES["watch"]
+        return _PRODUCT_IMAGES["watch"]
     
     # Phụ kiện - Hair accessories
     if any(k in t for k in ['nơ tóc', 'hair bow', 'hair ribbon']):
-        return _UNSPLASH_IMAGES["earrings"]
+        return _PRODUCT_IMAGES["earrings"]
     if any(k in t for k in ['kẹp tóc', 'hair clip', 'hair claw']):
-        return _UNSPLASH_IMAGES["earrings"]
+        return _PRODUCT_IMAGES["earrings"]
     if any(k in t for k in ['dây buộc tóc', 'hair tie']):
-        return _UNSPLASH_IMAGES["bracelet"]
+        return _PRODUCT_IMAGES["bracelet"]
     if any(k in t for k in ['móc khóa']):
-        return _UNSPLASH_IMAGES["bracelet"]
+        return _PRODUCT_IMAGES["bracelet"]
     if any(k in t for k in ['gương makeup', 'gương']):
-        return _UNSPLASH_IMAGES["handbag"]
+        return _PRODUCT_IMAGES["handbag"]
     
     # Default fallback
-    return _UNSPLASH_IMAGES["default"]
+    return _PRODUCT_IMAGES["default"]
 
 
 # --------------------------------------------------------------------- #
@@ -477,8 +486,8 @@ DEMO_CATALOG: list[dict] = [
     },
     {
         "id": "P030",
-        "title": "Dép sandal nữ đế b平台的 3cm",
-        "text": "Sandal đế b平台的 3cm, quai ngang da PU, lót đệm mềm. Phong cách tối giản Nhật Bản.",
+        "title": "Dép sandal nữ đế bệt 3cm",
+        "text": "Sandal đế bệt 3cm, quai ngang da PU, lót đệm mềm. Phong cách tối giản Nhật Bản.",
         "metadata": {"category": "Thời trang", "platform": "Shopee", "price_vnd": 219_000, "brand": "Minimal", "image_url": ""},
     },
     {
@@ -682,7 +691,7 @@ DEMO_CATALOG: list[dict] = [
     },
     {
         "id": "P064",
-        "title": "Kem body trắng da Lactacyd om和保护",
+        "title": "Kem body trắng da Lactacyd dưỡng ẩm",
         "text": "Kem dưỡng thể Lactacyd 200ml, dưỡng trắng, mềm mịn. Hương hoa nhài thơm nhẹ. Dùng sau tắm.",
         "metadata": {"category": "Mỹ phẩm", "platform": "TikTok Shop", "price_vnd": 129_000, "brand": "Lactacyd", "image_url": ""},
     },
