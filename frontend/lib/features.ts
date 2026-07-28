@@ -165,7 +165,7 @@ export async function getChurnPortfolio(): Promise<ChurnPortfolio | null> {
 }
 
 // --- Customer Journey Intelligence (Track 1, Đề 2 — bonus) ----------------
-export type JourneyEventType = "search" | "click" | "view" | "cart" | "purchase" | "livestream";
+export type JourneyEventType = "search" | "click" | "view" | "review" | "cart" | "purchase" | "livestream";
 export type JourneyEventInput = { type: JourneyEventType; category?: string; query?: string };
 export type NextAction = "checkout" | "add_to_cart" | "compare" | "keep_browsing" | "leave";
 export type FunnelStage = "awareness" | "consideration" | "intent" | "purchase";
@@ -188,6 +188,7 @@ export async function analyzeJourney(events: JourneyEventInput[]): Promise<Journ
 export type JourneySession = {
   id: string; label: string;
   events: { type: string; category?: string; query?: string }[];
+  video_url?: string | null;
   analysis: JourneyResult;
 };
 export type JourneySessions = { sessions: JourneySession[]; total: number };
@@ -270,20 +271,6 @@ export type SupplyChainResult = { alerts: DisruptionAlert[]; overall_risk: "low"
 
 export async function checkSupplyChain(region: string, category: string): Promise<SupplyChainResult | null> {
   return post<SupplyChainResult>("/supply-chain/", { region, category });
-}
-
-// --- #14 AI Negotiation Bot cho B2B -----------------------------------------
-export type NegotiationResult = {
-  decision: "accept" | "counter" | "reject"; counter_price_vnd: number | null; message: string; round: number;
-};
-
-export async function negotiate(input: {
-  productName: string; listPriceVnd: number; minPriceVnd: number; buyerOfferVnd: number; round: number;
-}): Promise<NegotiationResult | null> {
-  return post<NegotiationResult>("/negotiation/", {
-    product_name: input.productName, list_price_vnd: input.listPriceVnd, min_price_vnd: input.minPriceVnd,
-    buyer_offer_vnd: input.buyerOfferVnd, round: input.round,
-  });
 }
 
 // --- Shared category type (Thời trang / Mỹ phẩm / Phụ kiện) ----------------
@@ -470,7 +457,10 @@ export type StoreProduct = {
   image_url: string; attributes: Record<string, string>;
 };
 export type StoreList = { products: StoreProduct[]; total: number };
-export type StoreDetail = { product: StoreProduct | null; similar: StoreProduct[] };
+export type StoreReview = { author: string; rating: number; text: string; days_ago: number };
+export type StoreDetail = {
+  product: StoreProduct | null; similar: StoreProduct[]; review_items: StoreReview[];
+};
 
 export async function getStoreProducts(q?: string, category?: string): Promise<StoreList | null> {
   const params = new URLSearchParams();

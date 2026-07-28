@@ -92,6 +92,8 @@ class Recommendation(BaseModel):
     reviews: int
     similarity: float = Field(ge=0.0, le=1.0)
     reason: str
+    image_url: str | None = None
+    image_hue: int = Field(default=215, ge=0, lt=360)
 
 
 class RecsysResponse(BaseModel):

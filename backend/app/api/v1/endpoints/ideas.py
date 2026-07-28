@@ -23,7 +23,6 @@ IDEAS: list[dict] = [
     {"id": 11, "slug": "recsys",                "category": "Generative AI"},
     {"id": 12, "slug": "virtual-tryon",         "category": "Computer Vision"},
     {"id": 13, "slug": "segmentation",          "category": "Behavioral AI"},
-    {"id": 14, "slug": "negotiation",           "category": "Generative AI"},
     {"id": 15, "slug": "price-sensitivity",     "category": "Time Series"},
     {"id": 16, "slug": "supply-chain",          "category": "Time Series"},
     {"id": 17, "slug": "seller-intelligence",   "category": "Generative AI"},

@@ -20,7 +20,6 @@ from app.api.v1.endpoints import (
     knowledge,
     kpis,
     market,
-    negotiation,
     personal_shopper,
     recsys,
     regret,
@@ -84,9 +83,6 @@ api_router.include_router(
 )
 api_router.include_router(
     supply_chain.router, prefix="/supply-chain", tags=["16-supply-chain"]
-)
-api_router.include_router(
-    negotiation.router, prefix="/negotiation", tags=["14-negotiation"]
 )
 api_router.include_router(
     flash_sale.router, prefix="/flash-sale", tags=["13-flash-sale"]

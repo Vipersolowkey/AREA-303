@@ -15,7 +15,9 @@ from pydantic import BaseModel, Field
 from app.schemas.genai import ProductCard
 
 # Full journey event vocabulary from the Đề 2 brief (search + click added).
-EventType = Literal["search", "click", "view", "cart", "purchase", "livestream"]
+# "review" = the shopper opened/scrolled into a product's review section — a
+# trust-building signal, not just passive browsing.
+EventType = Literal["search", "click", "view", "cart", "purchase", "livestream", "review"]
 Category = Literal["Thời trang", "Mỹ phẩm", "Phụ kiện"]
 NextAction = Literal["checkout", "add_to_cart", "compare", "keep_browsing", "leave"]
 FunnelStage = Literal["awareness", "consideration", "intent", "purchase"]

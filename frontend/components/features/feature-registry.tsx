@@ -14,7 +14,6 @@ import { ReturnPredictionPanel } from "./return-prediction-panel";
 import { RegretPredictorPanel } from "./regret-predictor-panel";
 import { InventoryAlertPanel } from "./inventory-alert-panel";
 import { SupplyChainPanel } from "./supply-chain-panel";
-import { NegotiationPanel } from "./negotiation-panel";
 import { FlashSalePanel } from "./flash-sale-panel";
 import { ProductKnowledgePanel } from "./product-knowledge-panel";
 import { MarketIntelligencePanel } from "./market-intelligence-panel";
@@ -41,7 +40,6 @@ const PANELS: Record<string, ComponentType> = {
   "regret-predict": RegretPredictorPanel,
   "sentiment-alert": InventoryAlertPanel,
   "supply-chain": SupplyChainPanel,
-  negotiation: NegotiationPanel,
   "emotion-sale": FlashSalePanel,
   "product-knowledge": ProductKnowledgePanel,
   "market-intelligence": MarketIntelligencePanel,

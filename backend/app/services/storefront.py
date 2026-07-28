@@ -6,9 +6,14 @@ derived from the product id so the catalog looks real and is stable across runs.
 
 from __future__ import annotations
 
-from app.schemas.storefront import StoreDetailResponse, StoreListResponse, StoreProduct
+from app.schemas.storefront import (
+    ReviewItem,
+    StoreDetailResponse,
+    StoreListResponse,
+    StoreProduct,
+)
 from app.services import commerce_store as store
-from app.services.genai.demo_data import get_product_image_url
+from app.services.genai.demo_data import image_url_for_type
 
 
 def _to_product(p: dict) -> StoreProduct:
@@ -16,7 +21,7 @@ def _to_product(p: dict) -> StoreProduct:
     return StoreProduct(
         id=p["id"], sku=p["sku"], name=p["name"], brand=p["brand"], category=p["category"],
         price_vnd=p["price_vnd"], rating=round(4.0 + (h % 10) / 10, 1), reviews=120 + (h % 4200),
-        trend=p["trend"], image_url=get_product_image_url(p["name"]), attributes=p.get("attributes", {}),
+        trend=p["trend"], image_url=image_url_for_type(p["type_key"]), attributes=p.get("attributes", {}),
     )
 
 
@@ -40,4 +45,5 @@ def get_product(pid: str) -> StoreDetailResponse:
     if not p:
         return StoreDetailResponse(product=None, similar=[])
     similar = [_to_product(s) for s in store.similar_products(p, 4)]
-    return StoreDetailResponse(product=_to_product(p), similar=similar)
+    review_items = [ReviewItem(**r) for r in p.get("reviews_list", [])]
+    return StoreDetailResponse(product=_to_product(p), similar=similar, review_items=review_items)

@@ -16,57 +16,100 @@ from functools import lru_cache
 
 Category = str  # "Thời trang" | "Mỹ phẩm" | "Phụ kiện"
 
+# --- fabricated review pool (deterministic per product, not real customers) - #
+_REVIEWER_NAMES = [
+    "Minh Anh", "Thảo Vy", "Quốc Huy", "Ngọc Hân", "Bảo Trâm", "Hoàng Nam",
+    "Thu Hiền", "Đức Anh", "Lan Chi", "Gia Bảo", "Phương Linh", "Minh Khang",
+    "Tuấn Kiệt", "Hải Yến", "Kim Ngân", "Anh Tuấn", "Diệu Linh", "Xuân Mai",
+]
+_REVIEW_TEMPLATES_5 = [
+    "Chất lượng {name} rất tốt, đúng như hình, đóng gói kỹ. Sẽ ủng hộ shop tiếp!",
+    "{Name} đẹp hơn mình tưởng, {brand} làm ăn uy tín. Giao nhanh, đóng gói cẩn thận.",
+    "Dùng được một thời gian rồi vẫn ưng, chất lượng xứng giá tiền. Recommend mọi người!",
+    "Mua tặng người nhà cũng thích lắm, chắc sẽ quay lại mua thêm ở shop.",
+    "Y như hình, chất liệu ưng ý, {brand} đóng gói kỹ, giao đúng hẹn.",
+]
+_REVIEW_TEMPLATES_4 = [
+    "Sản phẩm ổn, đúng mô tả, chỉ hơi lâu giao (4-5 ngày) so với dự kiến.",
+    "Chất lượng tốt so với giá tiền, trừ 1 sao vì hộp hơi móp lúc nhận hàng.",
+    "Ưng chất liệu {name}, đóng gói cẩn thận, sẽ cân nhắc mua thêm màu khác.",
+    "Nhìn chung ok, giao hàng đúng hẹn, {name} dùng tạm hài lòng.",
+]
+_REVIEW_TEMPLATES_3 = [
+    "Tạm được, không xuất sắc như review khác nói nhưng cũng không tệ.",
+    "Giao hơi trễ, sản phẩm {name} ổn, không có gì nổi bật.",
+    "Chất lượng ở mức trung bình, đúng giá tiền thôi.",
+]
+
+
+def _gen_reviews(rng: random.Random, product_name: str, brand: str) -> list[dict]:
+    n = rng.randint(5, 8)
+    reviews: list[dict] = []
+    for _ in range(n):
+        # Skew toward positive, matching a shop with mostly-good ratings.
+        r = rng.choices([5, 4, 3], weights=[0.55, 0.32, 0.13])[0]
+        tmpl = rng.choice({5: _REVIEW_TEMPLATES_5, 4: _REVIEW_TEMPLATES_4, 3: _REVIEW_TEMPLATES_3}[r])
+        text = tmpl.format(name=product_name.lower(), Name=product_name, brand=brand)
+        reviews.append({
+            "author": rng.choice(_REVIEWER_NAMES),
+            "rating": r,
+            "text": text,
+            "days_ago": rng.randint(1, 120),
+        })
+    reviews.sort(key=lambda r: r["days_ago"])
+    return reviews
+
 # --- brand + product vocabulary per category ------------------------------- #
 _CATALOG_SPEC: dict[str, dict] = {
     "Thời trang": {
         "brands": ["Local Brand HANOI", "Coolmate", "YODY", "Routine", "IVY moda"],
         "items": [
-            ("Áo thun cotton unisex", (180000, 320000), {"chất liệu": "cotton", "form": "rộng"}),
-            ("Áo khoác dù 2 lớp", (280000, 520000), {"chất liệu": "dù", "form": "regular"}),
-            ("Váy hoa nhí midi", (250000, 450000), {"chất liệu": "voan", "form": "xoè"}),
-            ("Đầm suông linen", (320000, 600000), {"chất liệu": "linen", "form": "suông"}),
-            ("Quần jean ống rộng", (300000, 550000), {"chất liệu": "denim", "form": "ống rộng"}),
-            ("Áo sơ mi oversize", (220000, 400000), {"chất liệu": "kate", "form": "oversize"}),
-            ("Hoodie nỉ bông", (280000, 480000), {"chất liệu": "nỉ", "form": "rộng"}),
-            ("Chân váy tennis", (190000, 350000), {"chất liệu": "poly", "form": "chữ A"}),
-            ("Áo croptop gân", (120000, 250000), {"chất liệu": "gân", "form": "ôm"}),
-            ("Quần short kaki", (160000, 300000), {"chất liệu": "kaki", "form": "regular"}),
-            ("Blazer linen", (450000, 850000), {"chất liệu": "linen", "form": "regular"}),
-            ("Áo len tăm cổ lọ", (260000, 460000), {"chất liệu": "len", "form": "ôm"}),
+            ("Áo thun cotton unisex", (180000, 320000), {"chất liệu": "cotton", "form": "rộng"}, "tshirt"),
+            ("Áo khoác dù 2 lớp", (280000, 520000), {"chất liệu": "dù", "form": "regular"}, "bomber_jacket"),
+            ("Váy hoa nhí midi", (250000, 450000), {"chất liệu": "voan", "form": "xoè"}, "skirt"),
+            ("Đầm suông linen", (320000, 600000), {"chất liệu": "linen", "form": "suông"}, "dress"),
+            ("Quần jean ống rộng", (300000, 550000), {"chất liệu": "denim", "form": "ống rộng"}, "jeans"),
+            ("Áo sơ mi oversize", (220000, 400000), {"chất liệu": "kate", "form": "oversize"}, "dress_shirt"),
+            ("Hoodie nỉ bông", (280000, 480000), {"chất liệu": "nỉ", "form": "rộng"}, "hoodie"),
+            ("Chân váy tennis", (190000, 350000), {"chất liệu": "poly", "form": "chữ A"}, "skirt"),
+            ("Áo croptop gân", (120000, 250000), {"chất liệu": "gân", "form": "ôm"}, "crop_top"),
+            ("Quần short kaki", (160000, 300000), {"chất liệu": "kaki", "form": "regular"}, "shorts"),
+            ("Blazer linen", (450000, 850000), {"chất liệu": "linen", "form": "regular"}, "blazer"),
+            ("Áo len tăm cổ lọ", (260000, 460000), {"chất liệu": "len", "form": "ôm"}, "knitwear"),
         ],
     },
     "Mỹ phẩm": {
         "brands": ["NUDESTIX", "Bourjois", "Laneige", "Cocoon", "The Ordinary"],
         "items": [
-            ("Serum Vitamin C 15%", (280000, 720000), {"loại": "serum", "công dụng": "sáng da"}),
-            ("Kem chống nắng SPF50", (150000, 320000), {"loại": "kcn", "spf": "50"}),
-            ("Son tint lì velvet", (150000, 350000), {"loại": "son", "finish": "lì"}),
-            ("Toner cấp ẩm", (120000, 300000), {"loại": "toner", "công dụng": "cấp ẩm"}),
-            ("Sữa rửa mặt dịu nhẹ", (110000, 260000), {"loại": "srm", "da": "nhạy cảm"}),
-            ("Mặt nạ ngủ dưỡng ẩm", (180000, 650000), {"loại": "mask", "công dụng": "cấp ẩm"}),
-            ("Cushion che khuyết điểm", (250000, 550000), {"loại": "cushion", "finish": "căng bóng"}),
-            ("Retinol 0.5%", (220000, 480000), {"loại": "serum", "công dụng": "chống lão hoá"}),
-            ("Tẩy trang dầu", (130000, 290000), {"loại": "tẩy trang", "da": "mọi loại"}),
-            ("Kem dưỡng ẩm ban đêm", (200000, 450000), {"loại": "kem dưỡng", "công dụng": "phục hồi"}),
-            ("Mascara làm dày mi", (160000, 330000), {"loại": "mascara", "finish": "dày"}),
-            ("Niacinamide 10%", (180000, 360000), {"loại": "serum", "công dụng": "giảm thâm"}),
+            ("Serum Vitamin C 15%", (280000, 720000), {"loại": "serum", "công dụng": "sáng da"}, "serum"),
+            ("Kem chống nắng SPF50", (150000, 320000), {"loại": "kcn", "spf": "50"}, "sunscreen"),
+            ("Son tint lì velvet", (150000, 350000), {"loại": "son", "finish": "lì"}, "lipstick"),
+            ("Toner cấp ẩm", (120000, 300000), {"loại": "toner", "công dụng": "cấp ẩm"}, "toner"),
+            ("Sữa rửa mặt dịu nhẹ", (110000, 260000), {"loại": "srm", "da": "nhạy cảm"}, "face_wash"),
+            ("Mặt nạ ngủ dưỡng ẩm", (180000, 650000), {"loại": "mask", "công dụng": "cấp ẩm"}, "face_mask"),
+            ("Cushion che khuyết điểm", (250000, 550000), {"loại": "cushion", "finish": "căng bóng"}, "foundation"),
+            ("Retinol 0.5%", (220000, 480000), {"loại": "serum", "công dụng": "chống lão hoá"}, "serum"),
+            ("Tẩy trang dầu", (130000, 290000), {"loại": "tẩy trang", "da": "mọi loại"}, "face_wash"),
+            ("Kem dưỡng ẩm ban đêm", (200000, 450000), {"loại": "kem dưỡng", "công dụng": "phục hồi"}, "moisturizer"),
+            ("Mascara làm dày mi", (160000, 330000), {"loại": "mascara", "finish": "dày"}, "mascara"),
+            ("Niacinamide 10%", (180000, 360000), {"loại": "serum", "công dụng": "giảm thâm"}, "serum"),
         ],
     },
     "Phụ kiện": {
         "brands": ["Bag House", "Casio VN", "Local Studio", "Daily Basics", "OEM"],
         "items": [
-            ("Túi tote canvas", (120000, 250000), {"chất liệu": "canvas", "kiểu": "tote"}),
-            ("Túi đeo chéo da PU", (200000, 420000), {"chất liệu": "da pu", "kiểu": "đeo chéo"}),
-            ("Balo laptop chống nước", (300000, 650000), {"chất liệu": "poly", "kiểu": "balo"}),
-            ("Ví cầm tay nữ", (150000, 320000), {"chất liệu": "da pu", "kiểu": "ví"}),
-            ("Kính mát gọng vuông", (180000, 400000), {"kiểu": "vuông", "chống": "uv400"}),
-            ("Đồng hồ dây da", (350000, 900000), {"dây": "da", "kiểu": "classic"}),
-            ("Mũ bucket", (90000, 200000), {"chất liệu": "kaki", "kiểu": "bucket"}),
-            ("Thắt lưng da", (160000, 350000), {"chất liệu": "da", "kiểu": "bản nhỏ"}),
-            ("Vòng tay charm", (80000, 180000), {"chất liệu": "thép", "kiểu": "charm"}),
-            ("Tất cổ trung combo", (60000, 130000), {"chất liệu": "cotton", "kiểu": "combo"}),
-            ("Khăn lụa vuông", (110000, 240000), {"chất liệu": "lụa", "kiểu": "vuông"}),
-            ("Kẹp tóc ngọc trai", (50000, 120000), {"chất liệu": "ngọc trai", "kiểu": "kẹp"}),
+            ("Túi tote canvas", (120000, 250000), {"chất liệu": "canvas", "kiểu": "tote"}, "tote_bag"),
+            ("Túi đeo chéo da PU", (200000, 420000), {"chất liệu": "da pu", "kiểu": "đeo chéo"}, "crossbody_bag"),
+            ("Balo laptop chống nước", (300000, 650000), {"chất liệu": "poly", "kiểu": "balo"}, "backpack"),
+            ("Ví cầm tay nữ", (150000, 320000), {"chất liệu": "da pu", "kiểu": "ví"}, "wallet"),
+            ("Kính mát gọng vuông", (180000, 400000), {"kiểu": "vuông", "chống": "uv400"}, "sunglasses"),
+            ("Đồng hồ dây da", (350000, 900000), {"dây": "da", "kiểu": "classic"}, "watch"),
+            ("Mũ bucket", (90000, 200000), {"chất liệu": "kaki", "kiểu": "bucket"}, "cap"),
+            ("Thắt lưng da", (160000, 350000), {"chất liệu": "da", "kiểu": "bản nhỏ"}, "belt"),
+            ("Vòng tay charm", (80000, 180000), {"chất liệu": "thép", "kiểu": "charm"}, "bracelet"),
+            ("Tất cổ trung combo", (60000, 130000), {"chất liệu": "cotton", "kiểu": "combo"}, "leggings"),
+            ("Khăn lụa vuông", (110000, 240000), {"chất liệu": "lụa", "kiểu": "vuông"}, "scarf"),
+            ("Kẹp tóc ngọc trai", (50000, 120000), {"chất liệu": "ngọc trai", "kiểu": "kẹp"}, "earrings"),
         ],
     },
 }
@@ -90,7 +133,7 @@ def _build() -> dict:
     pid = 0
     for category, spec in _CATALOG_SPEC.items():
         brands = spec["brands"]
-        for name, (lo, hi), attrs in spec["items"]:
+        for name, (lo, hi), attrs, type_key in spec["items"]:
             pid += 1
             price = int(round(rng.randint(lo, hi) / 1000) * 1000)
             cost = int(round(price * rng.uniform(0.42, 0.6) / 1000) * 1000)
@@ -139,6 +182,7 @@ def _build() -> dict:
                 "name": name,
                 "brand": brand,
                 "category": category,
+                "type_key": type_key,
                 "price_vnd": price,
                 "cost_vnd": cost,
                 "stock": stock,
@@ -151,6 +195,7 @@ def _build() -> dict:
                 "sales_curr": sales_curr,
                 "promotion": promo,
                 "competitors": competitors,
+                "reviews_list": _gen_reviews(rng, name, brand),
             })
 
     # --- creators with multi-campaign history (for Đề 4 correlation) --------- #
@@ -222,22 +267,40 @@ def _build() -> dict:
 
     # --- pre-built shopping sessions (real journeys to test, not manual) ---- #
     sessions: list[dict] = [
-        {"id": "S1", "label": "Săn serum — vừa thêm giỏ", "events": [
+        {"id": "S1", "label": "Săn serum — vừa thêm giỏ", "video_url": "/demo-videos/s1-serum.webm", "events": [
             {"type": "search", "category": "Mỹ phẩm", "query": "serum vitamin c"},
             {"type": "click", "category": "Mỹ phẩm"}, {"type": "view", "category": "Mỹ phẩm"},
+            {"type": "review", "category": "Mỹ phẩm"},
             {"type": "livestream", "category": "Mỹ phẩm"}, {"type": "cart", "category": "Mỹ phẩm"}]},
-        {"id": "S2", "label": "Lướt thời trang — chưa quyết", "events": [
+        {"id": "S2", "label": "Lướt thời trang — chưa quyết", "video_url": "/demo-videos/s2-vay.webm", "events": [
             {"type": "search", "category": "Thời trang", "query": "váy hoa nhí"},
             {"type": "view", "category": "Thời trang"}, {"type": "view", "category": "Thời trang"},
             {"type": "click", "category": "Thời trang"}]},
-        {"id": "S3", "label": "Mua xong — có thể cross-sell", "events": [
-            {"type": "view", "category": "Mỹ phẩm"}, {"type": "cart", "category": "Mỹ phẩm"},
-            {"type": "purchase", "category": "Mỹ phẩm"}]},
-        {"id": "S4", "label": "Bỏ giỏ giữa chừng — nguy cơ rời", "events": [
+        {"id": "S3", "label": "Mua xong — có thể cross-sell", "video_url": "/demo-videos/s3-cushion-purchase.webm", "events": [
+            {"type": "view", "category": "Mỹ phẩm"}, {"type": "review", "category": "Mỹ phẩm"},
+            {"type": "cart", "category": "Mỹ phẩm"}, {"type": "purchase", "category": "Mỹ phẩm"}]},
+        {"id": "S4", "label": "Bỏ giỏ giữa chừng — nguy cơ rời", "video_url": "/demo-videos/s4-tui-abandon.webm", "events": [
             {"type": "click", "category": "Phụ kiện"}, {"type": "view", "category": "Phụ kiện"}]},
-        {"id": "S5", "label": "Fan livestream thời trang", "events": [
+        {"id": "S5", "label": "Fan livestream thời trang", "video_url": "/demo-videos/s5-ao-len-hoodie.webm", "events": [
             {"type": "livestream", "category": "Thời trang"}, {"type": "livestream", "category": "Thời trang"},
             {"type": "cart", "category": "Thời trang"}, {"type": "view", "category": "Thời trang"}]},
+        {"id": "S6", "label": "Phụ kiện — chốt đơn nhanh", "video_url": "/demo-videos/s6-tui-cheo-purchase.webm", "events": [
+            {"type": "search", "category": "Phụ kiện", "query": "túi đeo chéo"},
+            {"type": "view", "category": "Phụ kiện"}, {"type": "review", "category": "Phụ kiện"},
+            {"type": "cart", "category": "Phụ kiện"}, {"type": "purchase", "category": "Phụ kiện"}]},
+        {"id": "S7", "label": "So sánh giá mỹ phẩm — chưa chốt", "video_url": "/demo-videos/s7-kem-chong-nang-compare.webm", "events": [
+            {"type": "search", "category": "Mỹ phẩm", "query": "kem chống nắng"},
+            {"type": "click", "category": "Mỹ phẩm"}, {"type": "view", "category": "Mỹ phẩm"},
+            {"type": "click", "category": "Mỹ phẩm"}, {"type": "view", "category": "Mỹ phẩm"}]},
+        {"id": "S8", "label": "Khách mới ghé qua — nguy cơ rời ngay", "video_url": "/demo-videos/s8-blazer-bounce.webm", "events": [
+            {"type": "view", "category": "Thời trang"}]},
+        {"id": "S9", "label": "Gom nhiều món rồi thanh toán", "video_url": "/demo-videos/s9-multi-item-checkout.webm", "events": [
+            {"type": "view", "category": "Thời trang"}, {"type": "cart", "category": "Thời trang"},
+            {"type": "view", "category": "Thời trang"}, {"type": "cart", "category": "Thời trang"},
+            {"type": "purchase", "category": "Thời trang"}]},
+        {"id": "S10", "label": "Khách cũ quay lại xem thêm", "video_url": "/demo-videos/s10-vong-tay-then-dong-ho.webm", "events": [
+            {"type": "purchase", "category": "Phụ kiện"}, {"type": "search", "category": "Phụ kiện", "query": "đồng hồ"},
+            {"type": "view", "category": "Phụ kiện"}]},
     ]
 
     return {"products": products, "creators": creators, "decisions": decisions,
@@ -307,14 +370,20 @@ def products_by_brand(brand: str) -> list[dict]:
 
 
 def similar_products(product: dict, k: int = 5) -> list[dict]:
-    """Rank other products by relatedness: same category (base) + same brand +
-    price proximity + shared attribute values."""
+    """Rank other products by relatedness: same concrete type (dominant) + same
+    category + same brand + price proximity + shared attribute values.
+
+    ``type_key`` (e.g. "dress", "serum") is the strongest signal — it's what
+    stops a dress being "similar to" a jacket just because both are Thời
+    trang at a similar price."""
     scored: list[tuple[float, dict]] = []
     p_attrs = set(product.get("attributes", {}).values())
     for q in all_products():
         if q["id"] == product["id"]:
             continue
         score = 0.0
+        if q["type_key"] == product["type_key"]:
+            score += 4.0
         if q["category"] == product["category"]:
             score += 2.0
         if q["brand"] == product["brand"]:

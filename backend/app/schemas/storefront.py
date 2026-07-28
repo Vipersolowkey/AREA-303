@@ -19,6 +19,13 @@ class StoreProduct(BaseModel):
     attributes: dict[str, str]
 
 
+class ReviewItem(BaseModel):
+    author: str
+    rating: int
+    text: str
+    days_ago: int
+
+
 class StoreListResponse(BaseModel):
     products: list[StoreProduct]
     total: int
@@ -27,3 +34,4 @@ class StoreListResponse(BaseModel):
 class StoreDetailResponse(BaseModel):
     product: StoreProduct | None
     similar: list[StoreProduct]
+    review_items: list[ReviewItem] = []

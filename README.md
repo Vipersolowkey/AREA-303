@@ -39,7 +39,7 @@ real Vietnamese e-commerce data.
 | **NLP** | #01 Review Sentiment · #05 Fake Review Detection · #08 Social Trend Analyzer · #09 Content Generator |
 | **Time Series** | #02 Dynamic Pricing · #06 Demand Forecasting · #15 Price Sensitivity · #16 Supply-Chain Disruption |
 | **Computer Vision** | #07 Visual Search · #12 Virtual Try-On |
-| **Generative AI** | #03 Personal Shopper · #11 Recommendation System · #14 Negotiation Chatbot · #17 Seller Intelligence |
+| **Generative AI** | #03 Personal Shopper · #11 Recommendation System · #17 Seller Intelligence |
 | **Behavioral AI** | #04 Churn Prediction · #10 Return Prediction · #13 Customer Segmentation |
 
 Each idea is powered by 1–2 curated datasets and a recommended model. Full

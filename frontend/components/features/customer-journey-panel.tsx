@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Search, MousePointerClick, Eye, ShoppingCart, CreditCard, Radio, Loader2, RefreshCw, Sparkles, X, ArrowRight, ChevronDown } from "lucide-react";
+import { Search, MousePointerClick, Eye, MessageSquareText, ShoppingCart, CreditCard, Radio, Loader2, RefreshCw, Sparkles, X, ArrowRight, Video } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +18,11 @@ import { getTracked, clearTracked, JOURNEY_EVENT, type TrackedEvent } from "@/li
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES = ["Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
-
 const EVENT_TYPES = [
   { type: "search", label: "Tìm kiếm", icon: Search },
   { type: "click", label: "Click", icon: MousePointerClick },
   { type: "view", label: "Xem sản phẩm", icon: Eye },
+  { type: "review", label: "Đọc đánh giá", icon: MessageSquareText },
   { type: "cart", label: "Thêm vào giỏ", icon: ShoppingCart },
   { type: "purchase", label: "Mua hàng", icon: CreditCard },
   { type: "livestream", label: "Xem livestream", icon: Radio },
@@ -64,56 +63,19 @@ export function CustomerJourneyPanel() {
     loadSessions();
   }, [loadSessions]);
 
-  // --- shared result + event state ---
-  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("Mỹ phẩm");
-  const [events, setEvents] = useState<JourneyEventInput[]>([
-    { type: "search", category: "Mỹ phẩm", query: "serum vitamin c" },
-    { type: "click", category: "Mỹ phẩm" },
-    { type: "view", category: "Mỹ phẩm" },
-    { type: "livestream", category: "Mỹ phẩm" },
-    { type: "cart", category: "Mỹ phẩm" },
-  ]);
+  // --- shared result state ---
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState(false);
-  const [showManual, setShowManual] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   function pickSession(s: JourneySession) {
     setSelectedId(s.id);
     setError(false);
-    // Load the session's events into the shared timeline.
-    setEvents(s.events.map((e) => ({
-      type: e.type as JourneyEventInput["type"],
-      category: e.category,
-      query: e.query,
-    })));
+    setVideoUrl(s.video_url ?? null);
     // Reuse the existing rich result view. The session analysis is the raw
     // JourneyResult shape; product cards are skipped to avoid type friction.
     setResult({ ...s.analysis, recommended_products: [] });
-  }
-
-  function addEvent(type: JourneyEventInput["type"]) {
-    setEvents((prev) => [...prev, { type, category }]);
-    setResult(null);
-    setError(false);
-    setSelectedId(null);
-  }
-  function removeEvent(i: number) {
-    setEvents((prev) => prev.filter((_, idx) => idx !== i));
-    setResult(null);
-    setError(false);
-    setSelectedId(null);
-  }
-
-  async function run() {
-    if (busy || !events.length) return;
-    setBusy(true);
-    setError(false);
-    setSelectedId(null);
-    const r = await analyzeJourney(events);
-    setError(r === null);
-    setResult(r);
-    setBusy(false);
   }
 
   // --- live: the shopper's real tracked session (from the Shop app) ---
@@ -134,10 +96,10 @@ export function CustomerJourneyPanel() {
     setBusy(true);
     setError(false);
     setSelectedId(null);
+    setVideoUrl(null);
     const evs: JourneyEventInput[] = live.map((e) => ({
       type: e.type as JourneyEventInput["type"], category: e.category, query: e.query,
     }));
-    setEvents(evs);
     const r = await analyzeJourney(evs);
     setError(r === null);
     setResult(r);
@@ -231,9 +193,12 @@ export function CustomerJourneyPanel() {
                       active ? "border-accent bg-accent/10" : "border-border bg-bg-alt hover:border-accent/60",
                     )}
                   >
-                    <div className="text-sm font-medium text-text">{s.label}</div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-text">
+                      {s.label}
+                      {s.video_url && <Video className="h-3.5 w-3.5 shrink-0 text-accent" />}
+                    </div>
                     <div className="mono mt-1 text-2xs uppercase tracking-wider text-text-dim">
-                      {s.events.length} sự kiện
+                      {s.events.length} sự kiện{s.video_url && " · có video"}
                     </div>
                     <div className={cn("mt-2 flex items-center gap-1 text-xs font-medium", style?.cls)}>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -249,6 +214,25 @@ export function CustomerJourneyPanel() {
 
       {error && (
         <p className="text-sm text-danger">Không lấy được kết quả. Kiểm tra kết nối backend rồi thử lại.</p>
+      )}
+
+      {result && videoUrl && (
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Bằng chứng — video hành vi thật</CardTitle>
+              <p className="mt-1 text-xs text-text-muted">
+                Ghi lại đúng thao tác của phiên này trên storefront thật — so với kết luận AI bên dưới.
+              </p>
+            </div>
+            <Badge variant="muted">
+              <Video className="h-3 w-3" /> evidence
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <video key={videoUrl} controls className="w-full rounded-md border border-border" src={videoUrl} />
+          </CardContent>
+        </Card>
       )}
 
       {result && (
@@ -357,88 +341,6 @@ export function CustomerJourneyPanel() {
         </Card>
       )}
 
-      {/* Secondary: manual session builder */}
-      <Card>
-        <CardHeader>
-          <button
-            type="button"
-            onClick={() => setShowManual((v) => !v)}
-            className="flex w-full items-center justify-between text-left"
-          >
-            <div>
-              <CardTitle>Tự dựng phiên</CardTitle>
-              <p className="mt-1 text-xs text-text-muted">
-                Thêm sự kiện (tìm kiếm / click / xem / giỏ hàng / mua / livestream) để mô phỏng hành trình.
-              </p>
-            </div>
-            <ChevronDown className={cn("h-4 w-4 text-text-muted transition-transform", showManual && "rotate-180")} />
-          </button>
-        </CardHeader>
-        {showManual && (
-          <CardContent className="space-y-4">
-            <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Danh mục của sự kiện tiếp theo</label>
-              <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
-                {CATEGORIES.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCategory(c)}
-                    className={cn(
-                      "px-3 py-2 text-xs font-medium transition-colors",
-                      category === c ? "bg-accent/15 text-accent" : "text-text-muted hover:text-text",
-                    )}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {EVENT_TYPES.map((e) => (
-                <Button key={e.type} variant="secondary" size="sm" onClick={() => addEvent(e.type)}>
-                  <e.icon className="h-3.5 w-3.5" /> + {e.label}
-                </Button>
-              ))}
-            </div>
-
-            <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">
-                Timeline phiên ({events.length} sự kiện)
-              </label>
-              <div className="mt-2 flex min-h-[44px] flex-wrap gap-1.5 rounded-md border border-border bg-bg-alt p-2">
-                {events.length === 0 && (
-                  <span className="text-xs text-text-dim">Chưa có sự kiện — bấm nút phía trên để thêm.</span>
-                )}
-                {events.map((e, i) => {
-                  const meta = EVENT_TYPES.find((t) => t.type === e.type);
-                  const Icon = meta?.icon ?? Search;
-                  return (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-2xs text-text"
-                    >
-                      <Icon className="h-3 w-3" />
-                      {meta?.label ?? e.type}
-                      {e.query && <span className="text-text-dim">· &ldquo;{e.query}&rdquo;</span>}
-                      {e.category && <span className="text-text-dim">· {e.category}</span>}
-                      <button onClick={() => removeEvent(i)} className="text-text-dim hover:text-danger">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-
-            <Button onClick={run} disabled={busy || !events.length} className="w-full">
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-              Phân tích phiên
-            </Button>
-          </CardContent>
-        )}
-      </Card>
     </div>
   );
 }

@@ -95,10 +95,11 @@ def _build_context_block(docs: list) -> str:
     return "\n".join(lines)
 
 
-def _card(item: dict, score: float) -> ProductCard:
+def _card(item: dict, score: float, image_url: str | None = None) -> ProductCard:
     meta = item.get("metadata", {})
-    # Generate image URL based on product title
-    img_url = get_product_image_url(item["title"])
+    # Generate image URL based on product title, unless the caller already
+    # has an exact one (e.g. a commerce_store product's type_key lookup).
+    img_url = image_url or get_product_image_url(item["title"])
     return ProductCard(
         id=item["id"],
         name=item["title"],

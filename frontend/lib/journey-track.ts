@@ -5,7 +5,7 @@
  * Customer Journey panel then analyses that REAL session (same origin, so the
  * data is shared across /shop and /seller). No backend session store needed.
  */
-export type TrackType = "search" | "click" | "view" | "cart" | "purchase" | "livestream";
+export type TrackType = "search" | "click" | "view" | "review" | "cart" | "purchase" | "livestream";
 export type TrackedEvent = { type: TrackType; category?: string; query?: string; ts: number };
 
 const KEY = "area303:journey";
