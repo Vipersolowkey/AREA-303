@@ -5,8 +5,7 @@ import { PersonalShopperPanel } from "./personal-shopper-panel";
 import { RecsysPanel } from "./recsys-panel";
 import { ContentGeneratorPanel } from "./content-generator-panel";
 import { SellerCoachPanel } from "./seller-coach-panel";
-import { ReviewSentimentPanel } from "./review-sentiment-panel";
-import { FakeReviewPanel } from "./fake-review-panel";
+import { ReviewIntelligencePanel } from "./review-intelligence-panel";
 import { SegmentationPanel } from "./segmentation-panel";
 import { DynamicPricingPanel } from "./dynamic-pricing-panel";
 import { ChurnPanel } from "./churn-panel";
@@ -32,8 +31,7 @@ const PANELS: Record<string, ComponentType> = {
   recsys: RecsysPanel,
   "content-generator": ContentGeneratorPanel,
   "seller-coach": SellerCoachPanel,
-  "review-analyzer": ReviewSentimentPanel,
-  "fake-review": FakeReviewPanel,
+  "review-intelligence": ReviewIntelligencePanel,
   segmentation: SegmentationPanel,
   "dynamic-pricing": DynamicPricingPanel,
   churn: ChurnPanel,

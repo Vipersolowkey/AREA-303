@@ -28,7 +28,7 @@ export default function SellerHome() {
           <Badge variant="live"><span className="live-dot" />live</Badge>
           <span className="mono text-xs text-text-muted">{okNodes}/{PROVINCES.length} tỉnh ổn định</span>
           <Button asChild size="sm" variant="primary">
-            <Link href="/seller/review-analyzer"><Star className="h-3.5 w-3.5" />Phân tích review</Link>
+            <Link href="/seller/review-intelligence"><Star className="h-3.5 w-3.5" />Phân tích review</Link>
           </Button>
         </div>
       </div>

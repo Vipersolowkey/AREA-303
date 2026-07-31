@@ -74,9 +74,8 @@ export const TIMESERIES: Array<{ t: string; fashion: number; beauty: number; acc
 export type AlertSeverity = "critical" | "warning" | "info";
 export type AlertStatus = "open" | "monitoring" | "resolved";
 export type AlertSource =
-  | "review-analyzer"
+  | "review-intelligence"
   | "churn"
-  | "fake-review"
   | "return-predict"
   | "supply-chain"
   | "sentiment-alert";
@@ -135,8 +134,8 @@ export const ALERTS: Alert[] = [
   },
   {
     id: "ALT-2403",
-    feature: "fake-review",
-    featureLabel: "Fake Review",
+    feature: "review-intelligence",
+    featureLabel: "Review Intelligence",
     region: "—",
     severity: "info",
     status: "resolved",
@@ -292,7 +291,7 @@ export function getMockImageUrl(name: string, category: string): string {
   return PRODUCT_IMAGES.default;
 }
 
-export const PRODUCTS: Product[] = [
+const PRODUCTS_BASE: Product[] = [
   {
     id: "P001",
     name: "Áo khoác denim unisex form rộng",
@@ -563,7 +562,9 @@ export const PRODUCTS: Product[] = [
     description:
       "Balo chống nước, ngăn laptop 15.6 inch có đệm, cổng sạc USB. Đi học/đi làm.",
   },
-].map((p) => ({
+];
+
+export const PRODUCTS: Product[] = PRODUCTS_BASE.map((p) => ({
   ...p,
   imageUrl: getMockImageUrl(p.name, p.category),
 }));
