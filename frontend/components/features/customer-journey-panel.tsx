@@ -68,11 +68,13 @@ export function CustomerJourneyPanel() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   function pickSession(s: JourneySession) {
     setSelectedId(s.id);
     setError(false);
     setVideoUrl(s.video_url ?? null);
+    setVideoFailed(false);
     // Reuse the existing rich result view. The session analysis is the raw
     // JourneyResult shape; product cards are skipped to avoid type friction.
     setResult({ ...s.analysis, recommended_products: [] });
@@ -97,6 +99,7 @@ export function CustomerJourneyPanel() {
     setError(false);
     setSelectedId(null);
     setVideoUrl(null);
+    setVideoFailed(false);
     const evs: JourneyEventInput[] = live.map((e) => ({
       type: e.type as JourneyEventInput["type"], category: e.category, query: e.query,
     }));
@@ -108,13 +111,13 @@ export function CustomerJourneyPanel() {
 
   return (
     <div className="space-y-4">
-      {/* Live: the shopper's real session tracked from the Shop app */}
+      {/* Shopper activity from the Shop app. */}
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Phiên trực tiếp của bạn</CardTitle>
+            <CardTitle>Phiên của bạn</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
-              Vào <Link href="/shop/personal-shopper" className="text-accent hover:underline">Shop</Link> thao tác thật (tìm kiếm, xem, thêm giỏ…) — hành vi được ghi lại tại đây để phân tích.
+              Hoạt động trong <Link href="/shop/store" className="text-accent hover:underline">Cửa hàng</Link> sẽ xuất hiện ở đây. Phiên này không ghi video.
             </p>
           </div>
           <Badge variant={live.length ? "live" : "muted"}>{live.length} hành động</Badge>
@@ -122,8 +125,7 @@ export function CustomerJourneyPanel() {
         <CardContent className="space-y-3">
           {live.length === 0 ? (
             <p className="text-sm text-text-muted">
-              Chưa có hành vi nào. Mở <Link href="/shop/personal-shopper" className="text-accent hover:underline">Shop → Personal Shopper</Link>,
-              tìm vài sản phẩm và bấm &ldquo;Thêm vào giỏ&rdquo;, rồi quay lại đây bấm phân tích.
+              Chưa có hoạt động. Hãy mở <Link href="/shop/store" className="text-accent hover:underline">Cửa hàng</Link> và xem vài sản phẩm.
             </p>
           ) : (
             <>
@@ -144,7 +146,7 @@ export function CustomerJourneyPanel() {
               <div className="flex gap-2">
                 <Button onClick={analyzeLive} disabled={busy}>
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  Phân tích phiên của tôi
+                  Xem kết quả
                 </Button>
                 <Button variant="secondary" onClick={() => clearTracked()}>
                   <X className="h-3.5 w-3.5" /> Xóa phiên
@@ -155,15 +157,15 @@ export function CustomerJourneyPanel() {
         </CardContent>
       </Card>
 
-      {/* Pre-built real sessions picker */}
+      {/* Pre-built sessions picker. */}
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Phiên có sẵn (dữ liệu thật)</CardTitle>
+            <CardTitle>Phiên mẫu</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
               {sessions
-                ? `${sessions.total} phiên — chọn một phiên để xem phân tích hành trình.`
-                : "Chọn một phiên mua sắm thật để phân tích bước tiếp theo của khách."}
+                ? `${sessions.total} phiên để xem lại.`
+                : "Chọn một phiên để xem lại."}
             </p>
           </div>
           <Button variant="secondary" size="sm" onClick={loadSessions} disabled={sessionsLoading}>
@@ -173,7 +175,7 @@ export function CustomerJourneyPanel() {
         </CardHeader>
         <CardContent>
           {sessionsError ? (
-            <p className="text-sm text-danger">Không lấy được phiên. Kiểm tra kết nối backend rồi thử lại.</p>
+            <p className="text-sm text-danger">Không tải được phiên. Hãy thử lại.</p>
           ) : !sessions ? (
             <p className="text-sm text-text-muted">{sessionsLoading ? "Đang tải phiên…" : "Chưa có dữ liệu."}</p>
           ) : sessions.sessions.length === 0 ? (
@@ -198,7 +200,7 @@ export function CustomerJourneyPanel() {
                       {s.video_url && <Video className="h-3.5 w-3.5 shrink-0 text-accent" />}
                     </div>
                     <div className="mono mt-1 text-2xs uppercase tracking-wider text-text-dim">
-                      {s.events.length} sự kiện{s.video_url && " · có video"}
+                      {s.events.length} bước{s.video_url && " · video"}
                     </div>
                     <div className={cn("mt-2 flex items-center gap-1 text-xs font-medium", style?.cls)}>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -213,33 +215,42 @@ export function CustomerJourneyPanel() {
       </Card>
 
       {error && (
-        <p className="text-sm text-danger">Không lấy được kết quả. Kiểm tra kết nối backend rồi thử lại.</p>
+        <p className="text-sm text-danger">Không tải được kết quả. Hãy thử lại.</p>
       )}
 
-      {result && videoUrl && (
+      {result && videoUrl && !videoFailed && (
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Bằng chứng — video hành vi thật</CardTitle>
-              <p className="mt-1 text-xs text-text-muted">
-                Ghi lại đúng thao tác của phiên này trên storefront thật — so với kết luận AI bên dưới.
-              </p>
+              <CardTitle>Video phiên mẫu</CardTitle>
             </div>
             <Badge variant="muted">
-              <Video className="h-3 w-3" /> evidence
+              <Video className="h-3 w-3" /> mẫu
             </Badge>
           </CardHeader>
           <CardContent>
-            <video key={videoUrl} controls className="w-full rounded-md border border-border" src={videoUrl} />
+            <video
+              key={videoUrl}
+              controls
+              preload="metadata"
+              className="w-full rounded-md border border-border"
+              src={videoUrl}
+              onError={() => setVideoFailed(true)}
+            />
           </CardContent>
         </Card>
+      )}
+
+      {result && videoUrl && videoFailed && (
+        <p className="rounded-md border border-warning/40 bg-warning/5 px-3 py-2 text-sm text-warning">
+          Không tải được video. Kết quả bên dưới vẫn dùng được.
+        </p>
       )}
 
       {result && (
         <Card>
           <CardHeader>
-            <CardTitle>Hành động tiếp theo dự đoán</CardTitle>
-            <Badge variant="muted">next-action prediction</Badge>
+            <CardTitle>Bước tiếp theo</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -266,14 +277,14 @@ export function CustomerJourneyPanel() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-md border border-border bg-bg-alt px-3 py-2">
-                <div className="mono text-2xs uppercase tracking-wider text-text-dim">Điểm tương tác</div>
+                <div className="mono text-2xs uppercase tracking-wider text-text-dim">Mức quan tâm</div>
                 <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-2">
                   <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(result.engagement_score * 100)}%` }} />
                 </div>
                 <div className="mono mt-1 text-2xs text-text-muted">{Math.round(result.engagement_score * 100)}%</div>
               </div>
               <div className="rounded-md border border-accent/30 bg-accent/5 px-3 py-2">
-                <div className="mono text-2xs uppercase tracking-wider text-accent">Gợi ý cho seller (nudge)</div>
+                <div className="mono text-2xs uppercase tracking-wider text-accent">Nên làm</div>
                 <p className="mt-1 text-xs text-text">{result.nudge}</p>
               </div>
             </div>
@@ -284,10 +295,10 @@ export function CustomerJourneyPanel() {
       {result && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <Card>
-            <CardHeader><CardTitle>Khả năng mua hay rời đi?</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Khả năng mua</CardTitle></CardHeader>
             <CardContent>
               <div className={cn("text-2xl font-semibold", result.will_purchase ? "text-success" : "text-danger")}>
-                {result.will_purchase ? "Có khả năng MUA" : "Có khả năng RỜI ĐI"}
+                {result.will_purchase ? "Khả năng cao" : "Khả năng thấp"}
               </div>
               <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-2">
                 <div
@@ -302,7 +313,7 @@ export function CustomerJourneyPanel() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Đang quan tâm danh mục nào?</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Danh mục quan tâm</CardTitle></CardHeader>
             <CardContent>
               <div className="text-xl font-semibold text-text">{result.top_category ?? "Chưa rõ"}</div>
               <div className="mt-3 space-y-1.5">
@@ -320,7 +331,7 @@ export function CustomerJourneyPanel() {
           </Card>
 
           <Card>
-            <CardHeader><CardTitle>Vì sao?</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Lý do</CardTitle></CardHeader>
             <CardContent>
               <p className="text-sm text-text-muted">{result.reasoning}</p>
             </CardContent>
@@ -330,7 +341,7 @@ export function CustomerJourneyPanel() {
 
       {result && result.recommended_products.length > 0 && (
         <Card>
-          <CardHeader><CardTitle>Top sản phẩm nên đề xuất</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Sản phẩm phù hợp</CardTitle></CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {result.recommended_products.map((p) => (

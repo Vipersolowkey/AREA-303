@@ -16,6 +16,7 @@ class StoreProduct(BaseModel):
     reviews: int
     trend: str
     image_url: str
+    image_urls: list[str]
     attributes: dict[str, str]
 
 
