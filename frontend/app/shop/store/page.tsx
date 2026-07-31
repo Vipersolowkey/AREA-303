@@ -50,9 +50,7 @@ export default function StorePage() {
         </span>
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Cửa hàng AREA-303</h1>
-          <p className="mt-1 max-w-2xl text-text-muted">
-            Duyệt catalog thời trang &amp; mỹ phẩm — mỗi thao tác được ghi lại cho phiên mua sắm.
-          </p>
+          <p className="mt-1 text-text-muted">Thời trang, mỹ phẩm và phụ kiện.</p>
         </div>
       </div>
 

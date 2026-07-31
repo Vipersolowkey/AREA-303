@@ -484,7 +484,7 @@ export async function analyzeHesitation(input: {
 export type StoreProduct = {
   id: string; sku: string; name: string; brand: string; category: string;
   price_vnd: number; rating: number; reviews: number; trend: string;
-  image_url: string; attributes: Record<string, string>;
+  image_url: string; image_urls: string[]; attributes: Record<string, string>;
 };
 export type StoreList = { products: StoreProduct[]; total: number };
 export type StoreReview = { author: string; rating: number; text: string; days_ago: number };

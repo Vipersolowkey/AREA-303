@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Star, ShoppingBag, CheckCircle2, Loader2, PackageOpen, Flame, Eye, MessageSquareText } from "lucide-react";
+import { ArrowLeft, Star, ShoppingBag, CheckCircle2, Loader2, PackageOpen, Flame, MessageSquareText, ChevronLeft, ChevronRight, Images } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { getStoreProduct, type StoreProduct, type StoreReview } from "@/lib/features";
 import { trackEvent } from "@/lib/journey-track";
@@ -28,6 +28,7 @@ export default function StoreDetailPage() {
   const [loading, setLoading] = useState(true);
   const [ordered, setOrdered] = useState(false);
   const [added, setAdded] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
   // behaviour signals: dwell time + max scroll depth
   const [dwell, setDwell] = useState(0);
   const [scroll, setScroll] = useState(0);
@@ -69,6 +70,7 @@ export default function StoreDetailPage() {
       if (!alive) return;
       const p = res?.product ?? null;
       setProduct(p);
+      setSelectedImage(0);
       setSimilar(res?.similar ?? []);
       setReviews(res?.review_items ?? []);
       setLoading(false);
@@ -132,6 +134,12 @@ export default function StoreDetailPage() {
   }
 
   const attributes = Object.entries(product.attributes ?? {});
+  const gallery = product.image_urls?.length ? product.image_urls : [product.image_url];
+  const activeImage = gallery[selectedImage] ?? gallery[0];
+
+  function moveImage(delta: number) {
+    setSelectedImage((current) => (current + delta + gallery.length) % gallery.length);
+  }
 
   return (
     <div className="space-y-8">
@@ -140,9 +148,67 @@ export default function StoreDetailPage() {
       </Link>
 
       <div className="grid gap-8 md:grid-cols-2">
-        {/* Image */}
-        <div className="group">
-          <StoreImage name={product.name} category={product.category} src={product.image_url} iconClassName="h-1/4 w-1/4" />
+        {/* Product gallery: exact Tiki hero + clearly-labelled curated demo imagery. */}
+        <div className="space-y-3">
+          <div className="group relative">
+            <StoreImage
+              key={activeImage}
+              name={`${product.name} — ảnh ${selectedImage + 1}`}
+              category={product.category}
+              src={activeImage}
+              iconClassName="h-1/4 w-1/4"
+            />
+            {gallery.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Ảnh trước"
+                  onClick={() => moveImage(-1)}
+                  className="absolute left-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-black/45 text-white shadow-sm backdrop-blur transition-colors hover:bg-black/65"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Ảnh tiếp theo"
+                  onClick={() => moveImage(1)}
+                  className="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full border border-white/70 bg-black/45 text-white shadow-sm backdrop-blur transition-colors hover:bg-black/65"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </>
+            )}
+            <span className="mono absolute bottom-3 right-3 rounded-full bg-black/55 px-2.5 py-1 text-2xs text-white backdrop-blur">
+              {selectedImage + 1} / {gallery.length}
+            </span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Thư viện ảnh sản phẩm">
+            {gallery.map((src, index) => (
+              <button
+                key={src}
+                type="button"
+                aria-label={`Xem ảnh ${index + 1}`}
+                aria-current={selectedImage === index}
+                onClick={() => setSelectedImage(index)}
+                className={cn(
+                  "group w-16 shrink-0 rounded-xl border-2 p-0.5 transition-colors sm:w-[4.5rem]",
+                  selectedImage === index ? "border-accent" : "border-transparent hover:border-border",
+                )}
+              >
+                <StoreImage
+                  name={`${product.name} — ảnh thu nhỏ ${index + 1}`}
+                  category={product.category}
+                  src={src}
+                  className="rounded-lg border-0"
+                  iconClassName="h-6 w-6"
+                />
+              </button>
+            ))}
+          </div>
+          <p className="flex items-center gap-1.5 text-2xs text-text-dim">
+            <Images className="h-3.5 w-3.5" />
+            {gallery.length} ảnh minh hoạ · Tiki/Unsplash
+          </p>
         </div>
 
         {/* Info */}
@@ -180,21 +246,18 @@ export default function StoreDetailPage() {
             </div>
           )}
 
-          <div className="flex items-center gap-3 text-2xs uppercase tracking-wider text-text-dim">
-            <span>SKU <span className="mono text-text-muted">{product.sku}</span></span>
-            <span className="inline-flex items-center gap-1">
-              <Eye className="h-3 w-3" /> Đang xem <span className="mono text-text-muted">{dwell}s</span> · cuộn <span className="mono text-text-muted">{scroll}%</span>
-            </span>
+          <div className="text-2xs uppercase tracking-wider text-text-dim">
+            SKU <span className="mono text-text-muted">{product.sku}</span>
           </div>
 
           {/* Emotion-aware flash-sale nudge, driven by real dwell/scroll */}
           {hesitating && (
             <div className="rounded-2xl border border-warning/50 bg-warning/10 px-4 py-3">
               <div className="flex items-center gap-2 text-sm font-bold text-warning">
-                <Flame className="h-4 w-4" /> Ưu đãi giữ chân · giảm thêm {nudgeDiscount}%
+                <Flame className="h-4 w-4" /> Ưu đãi dành cho bạn · giảm thêm {nudgeDiscount}%
               </div>
               <p className="mt-1 text-xs text-text-muted">
-                Bạn đang xem khá lâu ({dwell}s) — đặt trong 10 phút để nhận thêm ưu đãi {nudgeDiscount}% nhé! 🔥
+                Đặt trong 10 phút để nhận thêm ưu đãi.
               </p>
             </div>
           )}

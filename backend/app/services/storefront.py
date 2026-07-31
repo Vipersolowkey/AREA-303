@@ -13,15 +13,18 @@ from app.schemas.storefront import (
     StoreProduct,
 )
 from app.services import commerce_store as store
-from app.services.genai.demo_data import image_url_for_type
+from app.services.genai.demo_data import image_urls_for_type
 
 
 def _to_product(p: dict) -> StoreProduct:
     h = abs(hash(p["id"]))
+    image_urls = image_urls_for_type(p["type_key"], p["id"])
+    reviews = p.get("reviews_list", [])
     return StoreProduct(
         id=p["id"], sku=p["sku"], name=p["name"], brand=p["brand"], category=p["category"],
-        price_vnd=p["price_vnd"], rating=round(4.0 + (h % 10) / 10, 1), reviews=120 + (h % 4200),
-        trend=p["trend"], image_url=image_url_for_type(p["type_key"]), attributes=p.get("attributes", {}),
+        price_vnd=p["price_vnd"], rating=round(4.0 + (h % 10) / 10, 1), reviews=len(reviews),
+        trend=p["trend"], image_url=image_urls[0], image_urls=image_urls,
+        attributes=p.get("attributes", {}),
     )
 
 

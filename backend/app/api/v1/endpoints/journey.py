@@ -20,6 +20,6 @@ async def analyze(req: JourneyRequest) -> ApiResponse[dict]:
 
 @router.get("/sessions", response_model=ApiResponse[dict])
 async def sessions() -> ApiResponse[dict]:
-    """Pre-built real shopping sessions, each analysed — ready to test."""
+    """Pre-built demo shopping sessions with replay videos, ready to test."""
     data = await portfolio.journey_sessions()
     return ApiResponse[dict](success=True, data=data, meta=PageMeta(), error=None)

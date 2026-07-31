@@ -265,7 +265,7 @@ def _build() -> dict:
             "discount_driven": rng.random() < 0.5,
         })
 
-    # --- pre-built shopping sessions (real journeys to test, not manual) ---- #
+    # --- pre-built demo shopping sessions (replayable, not live recordings) - #
     sessions: list[dict] = [
         {"id": "S1", "label": "Săn serum — vừa thêm giỏ", "video_url": "/demo-videos/s1-serum.webm", "events": [
             {"type": "search", "category": "Mỹ phẩm", "query": "serum vitamin c"},
@@ -280,7 +280,8 @@ def _build() -> dict:
             {"type": "view", "category": "Mỹ phẩm"}, {"type": "review", "category": "Mỹ phẩm"},
             {"type": "cart", "category": "Mỹ phẩm"}, {"type": "purchase", "category": "Mỹ phẩm"}]},
         {"id": "S4", "label": "Bỏ giỏ giữa chừng — nguy cơ rời", "video_url": "/demo-videos/s4-tui-abandon.webm", "events": [
-            {"type": "click", "category": "Phụ kiện"}, {"type": "view", "category": "Phụ kiện"}]},
+            {"type": "click", "category": "Phụ kiện"}, {"type": "view", "category": "Phụ kiện"},
+            {"type": "cart", "category": "Phụ kiện"}]},
         {"id": "S5", "label": "Fan livestream thời trang", "video_url": "/demo-videos/s5-ao-len-hoodie.webm", "events": [
             {"type": "livestream", "category": "Thời trang"}, {"type": "livestream", "category": "Thời trang"},
             {"type": "cart", "category": "Thời trang"}, {"type": "view", "category": "Thời trang"}]},

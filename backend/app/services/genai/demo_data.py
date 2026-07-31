@@ -90,6 +90,67 @@ _PRODUCT_IMAGES = {
     "default": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=400&fit=crop&q=80",
 }
 
+# Curated, real product/lifestyle photography for the storefront PDP gallery.
+# The first PDP image remains the exact type-matched Tiki demo image above.
+# The remaining images are distinct Unsplash photos selected by product group;
+# they are intentionally presented as demo imagery, not as invented "angles"
+# of the same Tiki listing.
+_GALLERY_IMAGE_POOLS = {
+    "fashion": [
+        "https://images.unsplash.com/photo-1445205170230-053b83016050?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1496217590455-aa63a8350eea?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=900&h=900&fit=crop&q=82",
+    ],
+    "beauty": [
+        "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1612817288484-6f916006741a?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1599305090598-fe179d501227?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1580870069867-74c57ee1bb07?w=900&h=900&fit=crop&q=82",
+    ],
+    "accessories": [
+        "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1524805444758-089113d48a6d?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1594223274512-ad4803739b7c?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1602173574767-37ac01994b2a?w=900&h=900&fit=crop&q=82",
+        "https://images.unsplash.com/photo-1575890318083-4d7c6ebcd60a?w=900&h=900&fit=crop&q=82",
+    ],
+}
+
+_FASHION_TYPES = {
+    "polo", "dress_shirt", "tshirt", "hoodie", "bomber_jacket", "denim_jacket",
+    "knitwear", "winter_coat", "blazer", "crop_top", "jogger", "shorts", "jeans",
+    "leggings", "skirt", "dress", "sneakers", "boots", "sandals", "oxford_shoes",
+    "pajamas",
+}
+_BEAUTY_TYPES = {
+    "lipstick", "serum", "moisturizer", "sunscreen", "foundation", "toner",
+    "eyeshadow", "mascara", "blush", "perfume", "face_mask", "face_wash",
+}
+
 
 def image_url_for_type(type_key: str) -> str:
     """Exact image lookup by a known catalog type_key (e.g. "dress", "serum").
@@ -97,6 +158,23 @@ def image_url_for_type(type_key: str) -> str:
     Used by the storefront, which tags every product with its real type at
     catalog-definition time — precise, unlike guessing from the free-text title."""
     return _PRODUCT_IMAGES.get(type_key, _PRODUCT_IMAGES["default"])
+
+
+def image_urls_for_type(type_key: str, product_id: str, count: int = 10) -> list[str]:
+    """Return a stable PDP gallery: one exact type image plus distinct demo photos."""
+    if type_key in _FASHION_TYPES:
+        group = "fashion"
+    elif type_key in _BEAUTY_TYPES:
+        group = "beauty"
+    else:
+        group = "accessories"
+
+    pool = _GALLERY_IMAGE_POOLS[group]
+    # Rotate the curated pool per SKU so neighboring products do not show the
+    # exact same thumbnail order. sum(ord(...)) is stable across processes.
+    offset = sum(ord(char) for char in product_id) % len(pool)
+    rotated = pool[offset:] + pool[:offset]
+    return [image_url_for_type(type_key), *rotated[: max(0, count - 1)]]
 
 
 def get_product_image_url(title: str) -> str:
