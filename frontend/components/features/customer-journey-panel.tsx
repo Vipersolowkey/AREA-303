@@ -161,11 +161,11 @@ export function CustomerJourneyPanel() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>Phiên mẫu</CardTitle>
+            <CardTitle>Phiên demo dựng trước</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
               {sessions
-                ? `${sessions.total} phiên để xem lại.`
-                : "Chọn một phiên để xem lại."}
+                ? `${sessions.total} hành trình mẫu có video demo replay để xem lại.`
+                : "Chọn một hành trình mẫu để xem video demo replay."}
             </p>
           </div>
           <Button variant="secondary" size="sm" onClick={loadSessions} disabled={sessionsLoading}>
@@ -222,10 +222,13 @@ export function CustomerJourneyPanel() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>Video phiên mẫu</CardTitle>
+              <CardTitle>Video demo dựng trước</CardTitle>
+              <p className="mt-1 text-xs text-text-muted">
+                Demo replay minh hoạ đúng chuỗi hành động của phiên, không phải ghi hình thời gian thực.
+              </p>
             </div>
             <Badge variant="muted">
-              <Video className="h-3 w-3" /> mẫu
+              <Video className="h-3 w-3" /> demo replay
             </Badge>
           </CardHeader>
           <CardContent>

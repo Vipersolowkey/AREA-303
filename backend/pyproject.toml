@@ -22,7 +22,7 @@ dependencies = [
     "structlog>=24.4.0",
     "python-dotenv>=1.0.1",
     "xgboost>=2.0,<4.0",
-    "scikit-learn>=1.5,<2.0",
+    "scikit-learn==1.7.2",
     "pandas>=2.0",
     "numpy>=1.24",
 ]

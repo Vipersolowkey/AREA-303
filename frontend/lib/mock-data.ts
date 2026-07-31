@@ -26,7 +26,7 @@ export type Kpi = {
 export const KPIS: Kpi[] = [
   {
     id: "revenue",
-    label: "Revenue today",
+    label: "Doanh thu hôm nay",
     value: 184_230_000,
     unit: "₫",
     delta: 12.4,
@@ -34,14 +34,14 @@ export const KPIS: Kpi[] = [
   },
   {
     id: "orders",
-    label: "Orders today",
+    label: "Đơn hàng hôm nay",
     value: 2_847,
     delta: 8.6,
     spark: [1.8, 2.0, 1.9, 2.1, 2.3, 2.2, 2.4, 2.5, 2.6, 2.7, 2.75, 2.85].map((m) => m * 1000),
   },
   {
     id: "conversion",
-    label: "Conversion rate",
+    label: "Tỷ lệ chuyển đổi",
     value: 3.42,
     unit: "%",
     delta: 0.4,
@@ -49,7 +49,7 @@ export const KPIS: Kpi[] = [
   },
   {
     id: "aov",
-    label: "Avg order value",
+    label: "Giá trị đơn trung bình",
     value: 487_000,
     unit: "₫",
     delta: -1.8,

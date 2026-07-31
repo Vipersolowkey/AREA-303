@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Star, ShoppingBag, CheckCircle2, Loader2, PackageOpen, Flame, MessageSquareText, ChevronLeft, ChevronRight, Images } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,8 @@ export default function StoreDetailPage() {
   // behaviour signals: dwell time + max scroll depth
   const [dwell, setDwell] = useState(0);
   const [scroll, setScroll] = useState(0);
+  const reviewsRef = useRef<HTMLDivElement | null>(null);
+  const reviewTrackedRef = useRef(false);
 
   // Dwell timer (seconds on the product page).
   useEffect(() => {
@@ -62,6 +64,12 @@ export default function StoreDetailPage() {
     setAdded(true);
   }
 
+  const recordReviewRead = useCallback(() => {
+    if (!product || reviewTrackedRef.current) return;
+    reviewTrackedRef.current = true;
+    trackEvent("review", { category: product.category });
+  }, [product]);
+
   useEffect(() => {
     if (!id) return;
     let alive = true;
@@ -69,6 +77,7 @@ export default function StoreDetailPage() {
     getStoreProduct(id).then((res) => {
       if (!alive) return;
       const p = res?.product ?? null;
+      reviewTrackedRef.current = false;
       setProduct(p);
       setSelectedImage(0);
       setSimilar(res?.similar ?? []);
@@ -83,8 +92,6 @@ export default function StoreDetailPage() {
 
   // Reading reviews is a real purchase-intent signal — track it once the
   // section has actually sat in view for a bit, not on a drive-by scroll past.
-  const reviewsRef = useRef<HTMLDivElement | null>(null);
-  const reviewTrackedRef = useRef(false);
   useEffect(() => {
     if (!product || reviews.length === 0) return;
     const el = reviewsRef.current;
@@ -94,10 +101,7 @@ export default function StoreDetailPage() {
       ([entry]) => {
         if (entry.isIntersecting && !reviewTrackedRef.current) {
           timer = setTimeout(() => {
-            if (!reviewTrackedRef.current) {
-              reviewTrackedRef.current = true;
-              trackEvent("review", { category: product.category });
-            }
+            recordReviewRead();
           }, 1500);
         } else if (timer) {
           clearTimeout(timer);
@@ -111,7 +115,7 @@ export default function StoreDetailPage() {
       observer.disconnect();
       if (timer) clearTimeout(timer);
     };
-  }, [product, reviews.length]);
+  }, [product, reviews.length, recordReviewRead]);
   if (loading) {
     return (
       <div className="grid place-items-center rounded-3xl border border-border bg-surface py-24 text-text-muted">
@@ -207,7 +211,7 @@ export default function StoreDetailPage() {
           </div>
           <p className="flex items-center gap-1.5 text-2xs text-text-dim">
             <Images className="h-3.5 w-3.5" />
-            {gallery.length} ảnh minh hoạ · Tiki/Unsplash
+            {gallery.length} ảnh minh hoạ · giá bán chính xác hiển thị trong phần thông tin sản phẩm
           </p>
         </div>
 
@@ -230,6 +234,18 @@ export default function StoreDetailPage() {
             <Star className="h-4 w-4 fill-warning stroke-warning" />
             <span className="mono text-text">{product.rating.toFixed(1)}</span>
             <span className="mono text-text-dim">({product.reviews.toLocaleString()} đánh giá)</span>
+            {reviews.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  recordReviewRead();
+                  reviewsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                className="ml-2 font-semibold text-accent hover:underline"
+              >
+                Đọc đánh giá
+              </button>
+            )}
           </div>
 
           {attributes.length > 0 && (

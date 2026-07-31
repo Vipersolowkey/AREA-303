@@ -33,7 +33,7 @@ export default async function SellerFeaturePage({
       <FeatureHeader
         id={item.id}
         title={item.label}
-        subtitle={SUBTITLE[slug] ?? "Feature thuộc Seller Portal."}
+        subtitle={SUBTITLE[slug] ?? "Tính năng dành cho người bán."}
         category={item.category}
         owner={item.owner}
       />

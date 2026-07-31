@@ -18,10 +18,10 @@ export default function SellerHome() {
     <DashboardShell breadcrumb={[{ label: "Seller", href: "/seller" }, { label: "Overview" }]}>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="mono text-2xs uppercase tracking-wider text-text-dim">Seller Portal · today</div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text">Shop operations</h1>
+          <div className="mono text-2xs uppercase tracking-wider text-text-dim">Cổng người bán · hôm nay</div>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text">Tình hình cửa hàng</h1>
           <p className="mt-1 text-sm text-text-muted">
-            Theo dõi sức khoẻ shop + công cụ AI cho người bán trên Shopee · Tiki · TikTok Shop.
+            Theo dõi sức khỏe cửa hàng và các việc cần ưu tiên trên Shopee · Tiki · TikTok Shop.
           </p>
         </div>
         <div className="flex items-center gap-2">

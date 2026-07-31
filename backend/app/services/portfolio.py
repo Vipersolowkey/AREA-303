@@ -66,7 +66,10 @@ async def journey_sessions() -> dict:
     # Each analysis makes its own LLM narration call — run them concurrently
     # instead of sequentially, so N sample sessions cost ~1 round-trip, not N.
     results = await asyncio.gather(*(
-        journey_svc.analyze_journey(JourneyRequest(events=[JourneyEvent(**e) for e in s["events"]]))
+        journey_svc.analyze_journey(
+            JourneyRequest(events=[JourneyEvent(**e) for e in s["events"]]),
+            use_llm_reasoning=False,
+        )
         for s in sessions
     ))
     return {

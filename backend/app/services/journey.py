@@ -115,7 +115,7 @@ def _next_action(stage: FunnelStage, prob: float, engagement: float,
             f"khách vào phễu mua sắm.")
 
 
-async def analyze_journey(req: JourneyRequest) -> JourneyResponse:
+async def analyze_journey(req: JourneyRequest, *, use_llm_reasoning: bool = True) -> JourneyResponse:
     counts = {t: 0 for t in ("search", "click", "view", "cart", "purchase", "livestream", "review")}
     for e in req.events:
         counts[e.type] += 1
@@ -171,7 +171,11 @@ async def analyze_journey(req: JourneyRequest) -> JourneyResponse:
         for i, p in enumerate(picks)
     ]
 
-    reasoning = await _reason(counts, top_category, prob, engagement, stage, label)
+    reasoning = (
+        await _reason(counts, top_category, prob, engagement, stage, label)
+        if use_llm_reasoning
+        else _fallback_reasoning(counts, top_category, label, prob, engagement)
+    )
 
     return JourneyResponse(
         will_purchase=will_purchase,

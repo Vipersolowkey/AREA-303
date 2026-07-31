@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from app.schemas.journey import JourneyEvent, JourneyRequest
-from app.services import commerce_store
+from app.services import commerce_store, portfolio
 from app.services.journey import analyze_journey
 
 EXPECTED_VIDEO_NAMES = {
@@ -58,3 +58,14 @@ async def test_reading_a_review_increases_purchase_probability():
     )
 
     assert with_review.purchase_probability > without_review.purchase_probability
+
+
+@pytest.mark.asyncio
+async def test_prebuilt_sessions_use_fast_deterministic_reasoning(monkeypatch):
+    async def fail_if_called(*args, **kwargs):
+        raise AssertionError("prebuilt sessions must not wait for LLM reasoning")
+
+    monkeypatch.setattr("app.services.journey._reason", fail_if_called)
+    result = await portfolio.journey_sessions()
+    assert result["total"] == 10
+    assert all(session["analysis"]["reasoning"] for session in result["sessions"])
