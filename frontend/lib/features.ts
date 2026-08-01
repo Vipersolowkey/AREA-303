@@ -183,17 +183,6 @@ export async function scoreChurn(input: {
   });
 }
 
-// #04 Churn — auto-load portfolio of real customers
-export type ChurnRow = {
-  id: string; customer: string; recency_days: number; churn_risk: number;
-  risk_band: "low" | "medium" | "high"; drivers: string[]; retention_action: string;
-};
-export type ChurnPortfolio = { customers: ChurnRow[]; total: number; at_risk_count: number };
-
-export async function getChurnPortfolio(): Promise<ChurnPortfolio | null> {
-  return get<ChurnPortfolio>("/churn/portfolio");
-}
-
 // --- Customer Journey Intelligence (Track 1, Đề 2 — bonus) ----------------
 export type JourneyEventType = "search" | "click" | "view" | "review" | "cart" | "purchase" | "livestream";
 export type JourneyEventInput = { type: JourneyEventType; category?: string; query?: string };
@@ -240,17 +229,6 @@ export async function scoreReturn(input: {
   });
 }
 
-// #10 Return — auto-load portfolio of real orders
-export type ReturnRow = {
-  id: string; customer: string; product: string; order_value_vnd: number; return_risk: number;
-  risk_band: "low" | "medium" | "high"; drivers: string[]; action: string;
-};
-export type ReturnPortfolio = { orders: ReturnRow[]; total: number; high_risk_count: number };
-
-export async function getReturnPortfolio(): Promise<ReturnPortfolio | null> {
-  return get<ReturnPortfolio>("/return-prediction/portfolio");
-}
-
 // --- #15 Post-purchase Regret Predictor ------------------------------------
 export type RegretResult = {
   regret_risk: number; risk_band: "low" | "medium" | "high"; drivers: string[]; reassurance_message: string;
@@ -265,15 +243,23 @@ export async function scoreRegret(input: {
   });
 }
 
-// #15 Regret — auto-load portfolio of real orders
-export type RegretRow = {
-  id: string; customer: string; product: string; regret_risk: number;
-  risk_band: "low" | "medium" | "high"; drivers: string[]; reassurance_message: string;
+// --- Customer Risk Intelligence — #04 Churn + #10 Return + #15 Regret combined
+export type RiskBand = "low" | "medium" | "high" | null;
+export type RiskRow = {
+  id: string;
+  customer: string;
+  churn_risk: number | null;
+  churn_band: RiskBand;
+  return_risk: number | null;
+  return_band: RiskBand;
+  regret_risk: number | null;
+  regret_band: RiskBand;
+  high_risk_count: number;
 };
-export type RegretPortfolio = { orders: RegretRow[]; total: number; high_risk_count: number };
+export type RiskPortfolio = { customers: RiskRow[]; total: number; critical_count: number };
 
-export async function getRegretPortfolio(): Promise<RegretPortfolio | null> {
-  return get<RegretPortfolio>("/regret/portfolio");
+export async function getRiskPortfolio(): Promise<RiskPortfolio | null> {
+  return get<RiskPortfolio>("/risk-portfolio/");
 }
 
 // --- #08 Sentiment-driven Inventory Alert ----------------------------------

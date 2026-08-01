@@ -8,10 +8,8 @@ import { SellerCoachPanel } from "./seller-coach-panel";
 import { ReviewIntelligencePanel } from "./review-intelligence-panel";
 import { SegmentationPanel } from "./segmentation-panel";
 import { DynamicPricingPanel } from "./dynamic-pricing-panel";
-import { ChurnPanel } from "./churn-panel";
+import { CustomerRiskPanel } from "./customer-risk-panel";
 import { CustomerJourneyPanel } from "./customer-journey-panel";
-import { ReturnPredictionPanel } from "./return-prediction-panel";
-import { RegretPredictorPanel } from "./regret-predictor-panel";
 import { InventoryAlertPanel } from "./inventory-alert-panel";
 import { SupplyChainPanel } from "./supply-chain-panel";
 import { FlashSalePanel } from "./flash-sale-panel";
@@ -34,10 +32,8 @@ const PANELS: Record<string, ComponentType> = {
   "review-intelligence": ReviewIntelligencePanel,
   segmentation: SegmentationPanel,
   "dynamic-pricing": DynamicPricingPanel,
-  churn: ChurnPanel,
+  "customer-risk": CustomerRiskPanel,
   "customer-journey": CustomerJourneyPanel,
-  "return-predict": ReturnPredictionPanel,
-  "regret-predict": RegretPredictorPanel,
   "sentiment-alert": InventoryAlertPanel,
   "supply-chain": SupplyChainPanel,
   "emotion-sale": FlashSalePanel,
