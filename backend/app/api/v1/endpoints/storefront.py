@@ -11,6 +11,7 @@ from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.core.responses import ApiResponse, PageMeta
 from app.schemas.reviews import ReviewCreateRequest, ReviewQueueItem, ReviewSubmitResponse
+from app.schemas.storefront import ReviewItem
 from app.services import commerce_store as store
 from app.services import review_service
 from app.services import storefront as service
@@ -51,7 +52,7 @@ async def submit_review(
     resp = ReviewSubmitResponse(
         status=row.status,  # type: ignore[arg-type]
         message=_STATUS_MESSAGE[row.status],
-        review={"author": row.author_name, "rating": row.rating, "text": row.text, "days_ago": 0}
+        review=ReviewItem(author=row.author_name, rating=row.rating, text=row.text, days_ago=0)
         if row.status == "published" else None,
     )
     return ApiResponse[dict](success=True, data=resp.model_dump(), meta=PageMeta(), error=None)
