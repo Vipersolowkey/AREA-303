@@ -69,6 +69,7 @@ async def journey_sessions() -> dict:
         journey_svc.analyze_journey(
             JourneyRequest(events=[JourneyEvent(**e) for e in s["events"]]),
             use_llm_reasoning=False,
+            now_ms=s.get("checked_at_ms"),
         )
         for s in sessions
     ))

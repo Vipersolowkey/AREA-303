@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Sparkles, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, Sparkles, ShieldAlert, ShieldCheck, Check, X, Inbox } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { analyzeSentiment, detectFake, type Sentiment, type FakeVerdict } from "@/lib/features";
+import {
+  analyzeSentiment, detectFake, getReviewQueue, approveReview, rejectReview,
+  type Sentiment, type FakeVerdict, type ReviewQueueItem,
+} from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 const SAMPLES = [
@@ -47,6 +50,7 @@ export function ReviewIntelligencePanel() {
   const hasResult = sentiment || verdict;
 
   return (
+    <div className="space-y-4">
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <Card className="lg:col-span-7">
         <CardHeader>
@@ -165,5 +169,76 @@ export function ReviewIntelligencePanel() {
         </CardContent>
       </Card>
     </div>
+    <ReviewQueuePanel />
+    </div>
+  );
+}
+
+function ReviewQueuePanel() {
+  const [items, setItems] = useState<ReviewQueueItem[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
+
+  async function load() {
+    setLoading(true);
+    setItems(await getReviewQueue());
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  async function decide(id: number, action: "approve" | "reject") {
+    setBusyId(id);
+    const res = action === "approve" ? await approveReview(id) : await rejectReview(id);
+    if (res) setItems((prev) => (prev ?? []).filter((r) => r.id !== id));
+    setBusyId(null);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div>
+          <CardTitle>Đánh giá thật — chờ duyệt</CardTitle>
+          <p className="mt-1 text-xs text-text-muted">
+            Đánh giá do khách gửi bị hệ thống gắn cờ nghi ngờ, cần seller duyệt trước khi hiển thị.
+          </p>
+        </div>
+        <Badge variant="muted">{items?.length ?? 0} chờ duyệt</Badge>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <p className="text-sm text-text-muted">Đang tải…</p>
+        ) : !items || items.length === 0 ? (
+          <p className="flex items-center gap-2 text-sm text-text-muted">
+            <Inbox className="h-4 w-4" /> Không có đánh giá nào cần duyệt.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {items.map((r) => (
+              <div key={r.id} className="rounded-md border border-warning/40 bg-warning/5 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-text">{r.author_name} · {r.product_name}</span>
+                  <span className="mono text-2xs text-text-dim">{r.rating}★</span>
+                </div>
+                <p className="mt-1 text-sm text-text-muted">{r.text}</p>
+                {r.moderation_reason && (
+                  <p className="mt-1 text-xs text-warning">{r.moderation_reason}</p>
+                )}
+                <div className="mt-2 flex gap-2">
+                  <Button size="sm" onClick={() => decide(r.id, "approve")} disabled={busyId === r.id}>
+                    <Check className="h-3.5 w-3.5" /> Duyệt
+                  </Button>
+                  <Button size="sm" variant="secondary" onClick={() => decide(r.id, "reject")} disabled={busyId === r.id}>
+                    <X className="h-3.5 w-3.5" /> Từ chối
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
