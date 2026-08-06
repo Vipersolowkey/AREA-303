@@ -25,6 +25,7 @@ from app.api.v1.endpoints import (
     regret,
     return_prediction,
     review_sentiment,
+    risk_portfolio,
     segmentation,
     seller_coach,
     storefront,
@@ -78,6 +79,12 @@ api_router.include_router(
     return_prediction.router, prefix="/return-prediction", tags=["10-return-prediction"]
 )
 api_router.include_router(regret.router, prefix="/regret", tags=["15-regret-predictor"])
+api_router.include_router(
+    # Combined view over churn/return/regret — same store.all_customers()
+    # source, joined by id. See CONTEXT_HANDOVER discussion: gộp #04+#10+#15
+    # into "Customer Risk Intelligence".
+    risk_portfolio.router, prefix="/risk-portfolio", tags=["risk-portfolio"]
+)
 api_router.include_router(
     inventory_alert.router, prefix="/inventory-alert", tags=["08-inventory-alert"]
 )

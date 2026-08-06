@@ -61,6 +61,42 @@ def regret_portfolio() -> dict:
             "high_risk_count": sum(1 for r in rows if r["risk_band"] == "high")}
 
 
+def risk_portfolio() -> dict:
+    """#04+#10+#15 combined — one row per customer with all three risk scores,
+    joined on customer id (all three scan the same store.all_customers() list).
+    """
+    churn_by_id = {r["id"]: r for r in churn_portfolio()["customers"]}
+    return_by_id = {r["id"]: r for r in return_portfolio()["orders"]}
+    regret_by_id = {r["id"]: r for r in regret_portfolio()["orders"]}
+
+    rows = []
+    for c in store.all_customers():
+        cid = c["id"]
+        churn = churn_by_id.get(cid)
+        ret = return_by_id.get(cid)
+        regret = regret_by_id.get(cid)
+        high_count = sum(
+            1 for r in (churn, ret, regret) if r and r["risk_band"] == "high"
+        )
+        rows.append({
+            "id": cid,
+            "customer": c["name"],
+            "churn_risk": churn["churn_risk"] if churn else None,
+            "churn_band": churn["risk_band"] if churn else None,
+            "return_risk": ret["return_risk"] if ret else None,
+            "return_band": ret["risk_band"] if ret else None,
+            "regret_risk": regret["regret_risk"] if regret else None,
+            "regret_band": regret["risk_band"] if regret else None,
+            "high_risk_count": high_count,
+        })
+    rows.sort(key=lambda x: x["high_risk_count"], reverse=True)
+    return {
+        "customers": rows,
+        "total": len(rows),
+        "critical_count": sum(1 for r in rows if r["high_risk_count"] >= 2),
+    }
+
+
 async def journey_sessions() -> dict:
     sessions = store.all_sessions()
     # Each analysis makes its own LLM narration call — run them concurrently

@@ -75,8 +75,7 @@ export type AlertSeverity = "critical" | "warning" | "info";
 export type AlertStatus = "open" | "monitoring" | "resolved";
 export type AlertSource =
   | "review-intelligence"
-  | "churn"
-  | "return-predict"
+  | "customer-risk"
   | "supply-chain"
   | "sentiment-alert";
 
@@ -94,8 +93,8 @@ export type Alert = {
 export const ALERTS: Alert[] = [
   {
     id: "ALT-2407",
-    feature: "return-predict",
-    featureLabel: "Dự báo hoàn hàng",
+    feature: "customer-risk",
+    featureLabel: "Rủi ro khách hàng",
     region: "Hà Nội",
     severity: "critical",
     status: "open",
@@ -104,8 +103,8 @@ export const ALERTS: Alert[] = [
   },
   {
     id: "ALT-2406",
-    feature: "churn",
-    featureLabel: "Cảnh báo rời bỏ",
+    feature: "customer-risk",
+    featureLabel: "Rủi ro khách hàng",
     region: "TP.HCM",
     severity: "warning",
     status: "monitoring",
