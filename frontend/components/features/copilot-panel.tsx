@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2, Send, Bot, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { VoiceMicButton } from "@/components/genai/voice-mic-button";
 import { askAgent, type CopilotAgentResult } from "@/lib/features";
+import { speak } from "@/lib/voice";
 import { cn } from "@/lib/utils";
 
 type Message =
@@ -29,7 +31,7 @@ export function CopilotPanel() {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length, busy]);
 
-  async function send(question: string) {
+  async function send(question: string, viaVoice = false) {
     const q = question.trim();
     if (!q || busy) return;
     setBusy(true);
@@ -47,6 +49,7 @@ export function CopilotPanel() {
     setError(r === null);
     if (r) {
       setMessages((prev) => [...prev, { id: `a${Date.now()}`, role: "assistant", result: r }]);
+      if (viaVoice) speak(r.answer);
     }
     setBusy(false);
   }
@@ -123,10 +126,11 @@ export function CopilotPanel() {
               <Input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Ví dụ: vì sao doanh số giảm tuần này?"
+                placeholder='Ví dụ: vì sao doanh số giảm tuần này? · hoặc bấm mic và nói "Hey Cellaxnet"'
                 disabled={busy}
                 className="h-10"
               />
+              <VoiceMicButton disabled={busy} onTranscript={(t) => send(t, true)} />
               <Button type="submit" size="lg" disabled={busy || !draft.trim()}>
                 {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                 Gửi
@@ -160,7 +164,7 @@ export function CopilotPanel() {
         <div className="rounded-[10px] border border-border bg-surface p-4 text-xs text-text-muted">
           <span className="mono text-2xs uppercase tracking-wider text-text-dim">Cách hoạt động</span>
           <p className="mt-2">
-            Trợ lý kết hợp dữ liệu giá, doanh số, nhà sáng tạo và tồn kho để đưa ra câu trả lời ngắn gọn cùng việc nên làm tiếp theo.
+            Trợ lý kết hợp dữ liệu giá, doanh số, nhà sáng tạo và tồn kho để đưa ra câu trả lời ngắn gọn cùng việc nên làm tiếp theo. Có thể hỏi bằng giọng nói — bấm mic và nói.
           </p>
         </div>
       </aside>
