@@ -15,7 +15,7 @@ export default function SellerHome() {
   const okNodes = PROVINCES.filter((n) => n.status === "ok").length;
 
   return (
-    <DashboardShell breadcrumb={[{ label: "Seller", href: "/seller" }, { label: "Overview" }]}>
+    <DashboardShell breadcrumb={[{ label: "Người bán", href: "/seller" }, { label: "Tổng quan" }]}>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="mono text-2xs uppercase tracking-wider text-text-dim">Cổng người bán · hôm nay</div>
@@ -25,10 +25,10 @@ export default function SellerHome() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="live"><span className="live-dot" />live</Badge>
+          <Badge variant="live"><span className="live-dot" />trực tiếp</Badge>
           <span className="mono text-xs text-text-muted">{okNodes}/{PROVINCES.length} tỉnh ổn định</span>
           <Button asChild size="sm" variant="primary">
-            <Link href="/seller/review-intelligence"><Star className="h-3.5 w-3.5" />Phân tích review</Link>
+            <Link href="/seller/review-intelligence"><Star className="h-3.5 w-3.5" />Phân tích đánh giá</Link>
           </Button>
         </div>
       </div>
