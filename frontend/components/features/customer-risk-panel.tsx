@@ -83,7 +83,7 @@ function RiskPortfolioTable() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-border text-2xs uppercase tracking-wider text-text-dim">
+                <tr className="border-b border-border text-xs font-medium text-text-dim">
                   <th className="py-2 pr-3 font-medium">Khách hàng</th>
                   <th className="px-3 py-2 font-medium">Churn</th>
                   <th className="px-3 py-2 font-medium">Return</th>
@@ -131,7 +131,7 @@ function NumberField({ label, value, onChange, max }: { label: string; value: nu
   return (
     <div>
       <div className="flex items-center justify-between">
-        <label className="mono text-2xs uppercase tracking-wider text-text-dim">{label}</label>
+        <label className="text-xs font-medium text-text-dim">{label}</label>
         <span className="mono text-xs text-text">{value}</span>
       </div>
       <input
@@ -185,7 +185,7 @@ function ChurnTab() {
         <NumberField label="Số phiên truy cập / tháng" value={sessions} onChange={setSessions} max={30} />
         <NumberField label="Tỉ lệ bỏ giỏ hàng (%)" value={abandon} onChange={setAbandon} max={100} />
         <div>
-          <label className="mono text-2xs uppercase tracking-wider text-text-dim">Xu hướng hoạt động</label>
+          <label className="text-xs font-medium text-text-dim">Xu hướng hoạt động</label>
           <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
             {TRENDS.map((t) => (
               <button
@@ -226,7 +226,7 @@ function ChurnTab() {
               </div>
             </div>
             <div>
-              <div className="mono text-2xs uppercase tracking-wider text-text-dim">Yếu tố chính</div>
+              <div className="text-xs font-medium text-text-dim">Yếu tố chính</div>
               <ul className="mt-2 space-y-1">
                 {result.drivers.map((d, i) => (
                   <li key={i} className="text-xs text-text-muted">• {d}</li>
@@ -275,7 +275,7 @@ function ReturnTab() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <div className="space-y-4 lg:col-span-7">
         <div>
-          <label className="mono text-2xs uppercase tracking-wider text-text-dim">Danh mục</label>
+          <label className="text-xs font-medium text-text-dim">Danh mục</label>
           <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
             {CATEGORIES.map((c) => (
               <button key={c} type="button" onClick={() => setCategory(c)}
@@ -288,7 +288,7 @@ function ReturnTab() {
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Giá trị đơn (₫)</label>
+            <label className="text-xs font-medium text-text-dim">Giá trị đơn (₫)</label>
             <span className="mono text-xs text-text">{price.toLocaleString("vi-VN")}</span>
           </div>
           <input type="range" min={0} max={5_000_000} step={50_000} value={price}
@@ -296,7 +296,7 @@ function ReturnTab() {
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Giảm giá (%)</label>
+            <label className="text-xs font-medium text-text-dim">Giảm giá (%)</label>
             <span className="mono text-xs text-text">{discount}%</span>
           </div>
           <input type="range" min={0} max={100} value={discount}
@@ -304,7 +304,7 @@ function ReturnTab() {
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Số review đã đọc trước khi mua</label>
+            <label className="text-xs font-medium text-text-dim">Số review đã đọc trước khi mua</label>
             <span className="mono text-xs text-text">{reviewsRead}</span>
           </div>
           <input type="range" min={0} max={20} value={reviewsRead}
@@ -380,7 +380,7 @@ function RegretTab() {
       <div className="space-y-4 lg:col-span-7">
         <div>
           <div className="flex items-center justify-between">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Thời gian quyết định (giây)</label>
+            <label className="text-xs font-medium text-text-dim">Thời gian quyết định (giây)</label>
             <span className="mono text-xs text-text">{decisionTime}s</span>
           </div>
           <input type="range" min={0} max={600} value={decisionTime}
@@ -388,7 +388,7 @@ function RegretTab() {
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Số lần xem lại trước khi mua</label>
+            <label className="text-xs font-medium text-text-dim">Số lần xem lại trước khi mua</label>
             <span className="mono text-xs text-text">{revisits}</span>
           </div>
           <input type="range" min={0} max={10} value={revisits}
@@ -396,7 +396,7 @@ function RegretTab() {
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Giờ mua (0-23h)</label>
+            <label className="text-xs font-medium text-text-dim">Giờ mua (0-23h)</label>
             <span className="mono text-xs text-text">{hour}:00</span>
           </div>
           <input type="range" min={0} max={23} value={hour}
@@ -404,7 +404,7 @@ function RegretTab() {
         </div>
         <div>
           <div className="flex items-center justify-between">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Giá trị đơn (₫)</label>
+            <label className="text-xs font-medium text-text-dim">Giá trị đơn (₫)</label>
             <span className="mono text-xs text-text">{price.toLocaleString("vi-VN")}</span>
           </div>
           <input type="range" min={0} max={5_000_000} step={50_000} value={price}
@@ -435,7 +435,7 @@ function RegretTab() {
               ))}
             </ul>
             <div className="rounded-md border border-border bg-bg-alt px-3 py-2 text-xs text-text">
-              <div className="mono mb-1 text-2xs uppercase tracking-wider text-text-dim">Tin nhắn tự động gửi khách</div>
+              <div className="mono mb-1 text-xs font-medium text-text-dim">Tin nhắn tự động gửi khách</div>
               {result.reassurance_message}
             </div>
           </div>

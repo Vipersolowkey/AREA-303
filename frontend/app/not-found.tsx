@@ -9,7 +9,7 @@ export default function NotFound() {
   return (
     <DashboardShell breadcrumb={[{ label: "Không tìm thấy" }]}>
       <div className="flex flex-col items-start gap-4">
-        <div className="mono text-2xs uppercase tracking-wider text-text-dim">
+        <div className="text-xs font-medium text-text-dim">
           404 — không tìm thấy
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-text">

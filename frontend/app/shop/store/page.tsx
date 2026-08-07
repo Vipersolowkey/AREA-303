@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, Store, Loader2, PackageOpen } from "lucide-react";
+import { Search, Loader2, PackageOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStoreProducts, type StoreProduct } from "@/lib/features";
 import { trackEvent } from "@/lib/journey-track";
@@ -44,21 +44,16 @@ export default function StorePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border-2 border-text/80 text-text">
-          <Store className="h-5 w-5" strokeWidth={2} />
-        </span>
-        <div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Cửa hàng AREA-303</h1>
-          <p className="mt-1 text-text-muted">Thời trang, mỹ phẩm và phụ kiện.</p>
-        </div>
+      <div>
+        <h1 className="text-3xl font-extrabold">Cửa hàng Cellaxnet</h1>
+        <p className="mt-1 text-text-muted">Thời trang, mỹ phẩm và phụ kiện.</p>
       </div>
 
       {/* Search + filters */}
-      <div className="space-y-4">
+      <div className="space-y-4 border-b border-border pb-6">
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-dim" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-dim" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -66,15 +61,15 @@ export default function StorePage() {
                 if (e.key === "Enter") submitSearch();
               }}
               placeholder="Tìm sản phẩm, thương hiệu…"
-              className="w-full rounded-2xl border border-border bg-surface py-2.5 pl-9 pr-3 text-sm text-text outline-none transition-colors focus:border-accent"
+              className="h-11 w-full rounded-full border border-border bg-surface pl-11 pr-4 text-sm text-text outline-none transition-colors focus:border-accent"
             />
           </div>
           <button
             type="button"
             onClick={submitSearch}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-accent px-5 py-2.5 text-sm font-bold text-white transition-transform hover:-translate-y-0.5"
+            className="inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-hover"
           >
-            <Search className="h-4 w-4" /> Tìm
+            Tìm
           </button>
         </div>
 
@@ -85,10 +80,10 @@ export default function StorePage() {
               type="button"
               onClick={() => selectCategory(c)}
               className={cn(
-                "rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors",
+                "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                 activeCategory === c
-                  ? "border-accent bg-accent/10 text-accent"
-                  : "border-border text-text-muted hover:border-text hover:text-text",
+                  ? "bg-accent text-white"
+                  : "bg-surface-2 text-text-muted hover:text-text",
               )}
             >
               {c}
@@ -99,24 +94,24 @@ export default function StorePage() {
 
       {/* Grid / states */}
       {loading ? (
-        <div className="grid place-items-center rounded-3xl border border-border bg-surface py-20 text-text-muted">
+        <div className="grid place-items-center rounded-lg border border-border bg-surface py-20 text-text-muted">
           <Loader2 className="h-6 w-6 animate-spin" />
           <p className="mt-3 text-sm">Đang tải sản phẩm…</p>
         </div>
       ) : products === null ? (
-        <div className="grid place-items-center rounded-3xl border border-border bg-surface py-20 text-center">
-          <PackageOpen className="h-8 w-8 text-text-dim" />
-          <p className="mt-3 text-lg font-extrabold">Cửa hàng đang nghỉ một chút</p>
+        <div className="grid place-items-center rounded-lg border border-border bg-surface py-20 text-center">
+          <PackageOpen className="h-8 w-8 text-text-dim" strokeWidth={1.5} />
+          <p className="mt-3 text-lg font-bold">Cửa hàng đang nghỉ một chút</p>
           <p className="mt-1 text-text-muted">Chưa tải được sản phẩm. Bạn thử lại sau nhé!</p>
         </div>
       ) : products.length === 0 ? (
-        <div className="grid place-items-center rounded-3xl border border-border bg-surface py-20 text-center">
-          <PackageOpen className="h-8 w-8 text-text-dim" />
-          <p className="mt-3 text-lg font-extrabold">Không có sản phẩm phù hợp</p>
+        <div className="grid place-items-center rounded-lg border border-border bg-surface py-20 text-center">
+          <PackageOpen className="h-8 w-8 text-text-dim" strokeWidth={1.5} />
+          <p className="mt-3 text-lg font-bold">Không có sản phẩm phù hợp</p>
           <p className="mt-1 text-text-muted">Thử từ khoá khác hoặc chọn danh mục khác nhé.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4">
           {products.map((p) => (
             <StoreProductCard
               key={p.id}

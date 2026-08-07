@@ -202,7 +202,7 @@ export function CustomerJourneyPanel() {
                       {s.label}
                       {s.video_url && <Video className="h-3.5 w-3.5 shrink-0 text-accent" />}
                     </div>
-                    <div className="mono mt-1 text-2xs uppercase tracking-wider text-text-dim">
+                    <div className="mono mt-1 text-xs font-medium text-text-dim">
                       {s.events.length} bước{s.video_url && " · video"}
                     </div>
                     <div className={cn("mt-2 flex items-center gap-1 text-xs font-medium", style?.cls)}>
@@ -283,14 +283,14 @@ export function CustomerJourneyPanel() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="rounded-md border border-border bg-bg-alt px-3 py-2">
-                <div className="mono text-2xs uppercase tracking-wider text-text-dim">Mức quan tâm</div>
+                <div className="text-xs font-medium text-text-dim">Mức quan tâm</div>
                 <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-surface-2">
                   <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round(result.engagement_score * 100)}%` }} />
                 </div>
                 <div className="mono mt-1 text-2xs text-text-muted">{Math.round(result.engagement_score * 100)}%</div>
               </div>
               <div className="rounded-md border border-accent/30 bg-accent/5 px-3 py-2">
-                <div className="mono text-2xs uppercase tracking-wider text-accent">Nên làm</div>
+                <div className="text-xs font-medium text-accent">Nên làm</div>
                 <p className="mt-1 text-xs text-text">{result.nudge}</p>
               </div>
             </div>

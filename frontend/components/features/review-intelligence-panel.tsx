@@ -71,7 +71,7 @@ export function ReviewIntelligencePanel() {
             placeholder="Nhập nội dung review…"
           />
           <div className="flex flex-wrap items-center gap-3">
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Số sao</label>
+            <label className="text-xs font-medium text-text-dim">Số sao</label>
             <div className="inline-flex overflow-hidden rounded-md border border-border">
               {[1, 2, 3, 4, 5].map((r) => (
                 <button
@@ -122,7 +122,7 @@ export function ReviewIntelligencePanel() {
               {sentiment && (
                 <div className="space-y-2 border-b border-border pb-4">
                   <div className="flex items-center justify-between">
-                    <span className="mono text-2xs uppercase tracking-wider text-text-dim">Cảm xúc</span>
+                    <span className="text-xs font-medium text-text-dim">Cảm xúc</span>
                     <Badge variant="muted">Tin cậy {Math.round(sentiment.confidence * 100)}%</Badge>
                   </div>
                   <div className={cn("text-2xl font-semibold tracking-tight", tone?.cls)}>{tone?.label}</div>
@@ -139,7 +139,7 @@ export function ReviewIntelligencePanel() {
               {verdict && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="mono text-2xs uppercase tracking-wider text-text-dim">Độ đáng tin</span>
+                    <span className="text-xs font-medium text-text-dim">Độ đáng tin</span>
                     <Badge variant="muted">Tin cậy {Math.round(verdict.confidence * 100)}%</Badge>
                   </div>
                   <div className={cn("flex items-center gap-2 text-2xl font-semibold tracking-tight",
@@ -150,7 +150,7 @@ export function ReviewIntelligencePanel() {
                   <p className="text-sm text-text-muted">{verdict.reason}</p>
                   {verdict.signals.length > 0 && (
                     <div>
-                      <div className="mono text-2xs uppercase tracking-wider text-text-dim">Dấu hiệu</div>
+                      <div className="text-xs font-medium text-text-dim">Dấu hiệu</div>
                       <ul className="mt-2 space-y-1">
                         {verdict.signals.map((s, i) => (
                           <li key={i} className="flex items-start gap-2 text-xs text-text-muted">

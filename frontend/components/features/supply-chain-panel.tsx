@@ -51,7 +51,7 @@ export function SupplyChainPanel() {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-4">
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Khu vực kho/vận chuyển</label>
+              <label className="text-xs font-medium text-text-dim">Khu vực kho/vận chuyển</label>
               <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
                 {REGIONS.map((r) => (
                   <button key={r} type="button" onClick={() => setRegion(r)}
@@ -63,7 +63,7 @@ export function SupplyChainPanel() {
               </div>
             </div>
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Danh mục hàng</label>
+              <label className="text-xs font-medium text-text-dim">Danh mục hàng</label>
               <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
                 {CATEGORIES.map((c) => (
                   <button key={c} type="button" onClick={() => setCategory(c)}
@@ -111,7 +111,7 @@ export function SupplyChainPanel() {
                     </div>
                     <div className="mono text-2xs text-text-dim">Dự kiến chậm thêm {a.estimated_delay_days} ngày</div>
                     <div className="rounded-md border border-border bg-bg-alt px-3 py-2 text-xs text-text-muted">
-                      <span className="mono text-2xs uppercase tracking-wider text-text-dim">Phương án dự phòng: </span>
+                      <span className="text-xs font-medium text-text-dim">Phương án dự phòng: </span>
                       {a.contingency}
                     </div>
                   </CardContent>

@@ -54,10 +54,12 @@ _PERSONAS = {
 
 
 @pytest.mark.asyncio
-async def test_segmentation_returns_envelope():
+async def test_segmentation_returns_envelope(admin_headers):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.post("/api/v1/segmentation/", json=_ACTIVE_BUYER)
+        r = await ac.post(
+            "/api/v1/segmentation/", json=_ACTIVE_BUYER, headers=admin_headers
+        )
     assert r.status_code == 200
     body = r.json()
     assert body["success"] is True
@@ -69,37 +71,43 @@ async def test_segmentation_returns_envelope():
 
 
 @pytest.mark.asyncio
-async def test_active_buyer_is_predicted_active():
+async def test_active_buyer_is_predicted_active(admin_headers):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.post("/api/v1/segmentation/", json=_ACTIVE_BUYER)
+        r = await ac.post(
+            "/api/v1/segmentation/", json=_ACTIVE_BUYER, headers=admin_headers
+        )
     assert r.json()["data"]["persona"] == "Active Buyers"
 
 
 @pytest.mark.asyncio
-async def test_dormant_user_is_predicted_dormant():
+async def test_dormant_user_is_predicted_dormant(admin_headers):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.post("/api/v1/segmentation/", json=_DORMANT)
+        r = await ac.post(
+            "/api/v1/segmentation/", json=_DORMANT, headers=admin_headers
+        )
     assert r.json()["data"]["persona"] == "Dormant / Ghost Users"
 
 
 @pytest.mark.asyncio
-async def test_invalid_input_rejected():
+async def test_invalid_input_rejected(admin_headers):
     """buy_ratio must be in [0, 1] — an out-of-range value fails validation."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         r = await ac.post(
-            "/api/v1/segmentation/", json={**_ACTIVE_BUYER, "buy_ratio": 5.0}
+            "/api/v1/segmentation/",
+            json={**_ACTIVE_BUYER, "buy_ratio": 5.0},
+            headers=admin_headers,
         )
     assert r.status_code == 422
     assert r.json()["success"] is False
 
 
 @pytest.mark.asyncio
-async def test_missing_field_rejected():
+async def test_missing_field_rejected(admin_headers):
     payload = {k: v for k, v in _ACTIVE_BUYER.items() if k != "log_recency"}
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.post("/api/v1/segmentation/", json=payload)
+        r = await ac.post("/api/v1/segmentation/", json=payload, headers=admin_headers)
     assert r.status_code == 422

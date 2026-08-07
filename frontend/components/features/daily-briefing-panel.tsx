@@ -79,7 +79,7 @@ export function DailyBriefingPanel() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="max-w-2xl text-sm leading-relaxed text-text">{result.summary}</p>
               <div className="shrink-0 rounded-md border border-accent/40 bg-accent/10 px-3 py-2 text-right">
-                <div className="mono text-2xs uppercase tracking-wider text-text-dim">Tổng tác động ước tính</div>
+                <div className="text-xs font-medium text-text-dim">Tổng tác động ước tính</div>
                 <div className="mono mt-1 text-xl font-semibold text-accent">{vnd(result.total_impact_vnd)}</div>
               </div>
             </div>
@@ -112,7 +112,7 @@ export function DailyBriefingPanel() {
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={pri?.variant ?? "muted"}>{pri?.label ?? a.priority}</Badge>
-                        <span className="mono text-2xs uppercase tracking-wider text-text-dim">
+                        <span className="text-xs font-medium text-text-dim">
                           {kind?.label ?? a.kind}
                         </span>
                       </div>
@@ -121,7 +121,7 @@ export function DailyBriefingPanel() {
                       <p className="mt-2 text-xs leading-relaxed text-text-muted">{a.detail}</p>
                     </div>
                     <div className="shrink-0 text-right">
-                      <div className="mono text-2xs uppercase tracking-wider text-text-dim">Tác động</div>
+                      <div className="text-xs font-medium text-text-dim">Tác động</div>
                       <div className="mono mt-1 text-lg font-semibold text-accent">{vnd(a.impact_vnd)}</div>
                     </div>
                   </div>

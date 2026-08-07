@@ -32,9 +32,9 @@ export function KpiCard({ kpi }: { kpi: Kpi }) {
   const isGood = goodWhenDown ? !positive : positive;
 
   return (
-    <div className="rounded-[10px] border border-border bg-surface p-5 transition-colors hover:border-border-strong">
+    <div className="card-surface group rounded-lg border p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-border-strong hover:shadow-lg">
       <div className="flex items-center justify-between">
-        <span className="text-2xs uppercase tracking-wider text-text-muted">
+        <span className="text-xs font-medium text-text-muted">
           {kpi.label}
         </span>
         <span
@@ -53,7 +53,7 @@ export function KpiCard({ kpi }: { kpi: Kpi }) {
       </div>
 
       <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="mono text-4xl font-medium text-text" data-tnum>
+        <span className="mono text-4xl font-bold text-text" data-tnum>
           {formatValue(kpi)}
         </span>
         {kpi.unit && (

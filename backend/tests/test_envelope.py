@@ -88,10 +88,10 @@ async def test_unknown_route_returns_envelope():
 
 
 @pytest.mark.asyncio
-async def test_ideas_list_uses_pagination_meta():
+async def test_ideas_list_uses_pagination_meta(admin_headers):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.get("/api/v1/ideas/?page=1&page_size=5")
+        r = await ac.get("/api/v1/ideas/?page=1&page_size=5", headers=admin_headers)
     assert r.status_code == 200
     body = r.json()
     assert body["success"] is True
@@ -102,10 +102,10 @@ async def test_ideas_list_uses_pagination_meta():
 
 
 @pytest.mark.asyncio
-async def test_ideas_get_missing_raises_envelope():
+async def test_ideas_get_missing_raises_envelope(admin_headers):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.get("/api/v1/ideas/9999")
+        r = await ac.get("/api/v1/ideas/9999", headers=admin_headers)
     assert r.status_code == 404
     body = r.json()
     assert body["success"] is False
@@ -113,10 +113,10 @@ async def test_ideas_get_missing_raises_envelope():
 
 
 @pytest.mark.asyncio
-async def test_kpis_summary_shape():
+async def test_kpis_summary_shape(admin_headers):
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.get("/api/v1/kpis/summary")
+        r = await ac.get("/api/v1/kpis/summary", headers=admin_headers)
     assert r.status_code == 200
     body = r.json()
     assert body["success"] is True

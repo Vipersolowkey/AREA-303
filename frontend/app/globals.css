@@ -3,47 +3,54 @@
 @tailwind utilities;
 
 /*
- * AREA-303 design tokens
- * Source of truth: frontend/terminal/area-303.md
- * Single dark theme — light mode intentionally omitted.
+ * AREA-303 design tokens — one system for the whole product.
+ *
+ * Modern SaaS look: near-white canvas, solid white cards on real shadows,
+ * huge tight-tracked black headlines, a vivid violet→blue accent pair used for
+ * gradients and highlights, generous 16px radii and pill buttons.
+ *
+ * There is intentionally a SINGLE theme: /shop and /seller share these tokens
+ * so the two apps read as one product.
  */
 @layer base {
   :root {
     /* canvas */
-    --bg: 230 25% 5%;            /* #0a0a0f */
-    --bg-alt: 230 22% 9%;        /* #11121a */
-    --surface: 230 18% 12%;      /* #161823 */
-    --surface-2: 230 17% 16%;    /* #1d2030 */
-    --surface-3: 230 18% 19%;    /* #252839 */
+    --bg: 250 30% 98%;           /* #f8f8fd */
+    --bg-alt: 250 26% 96%;       /* #f2f2f9 */
+    --surface: 0 0% 100%;        /* white cards */
+    --surface-2: 250 24% 96%;
+    --surface-3: 250 18% 92%;
 
-    /* type */
-    --text: 230 14% 92%;         /* #e8e9ef */
-    --text-muted: 230 12% 69%;   /* #9ea1b3 */
-    --text-dim: 230 12% 48%;     /* #5f6378 */
+    /* type — near-black, high contrast for big bold headlines */
+    --text: 250 22% 10%;         /* #14131f */
+    --text-muted: 250 8% 42%;    /* #666a73 */
+    --text-dim: 250 8% 60%;      /* #94969f */
 
     /* lines */
-    --border: 230 18% 18%;       /* #232636 */
-    --border-strong: 230 19% 24%;/* #2f3349 */
+    --border: 250 16% 91%;       /* #e6e6ee */
+    --border-strong: 250 14% 80%;
 
-    /* chromatic accent — teal */
-    --accent: 170 80% 64%;       /* #5eead4 */
-    --accent-hover: 170 80% 72%; /* #7df0dd */
-    --accent-deep: 170 65% 44%;  /* #2cb5a0 */
+    /* accent — violet primary, electric blue secondary (gradient pair) */
+    --accent: 258 88% 58%;       /* #6d3ff0 */
+    --accent-hover: 258 88% 50%;
+    --accent-deep: 258 80% 40%;
+    --accent-2: 210 95% 55%;     /* #1b8ff5 */
+    --accent-2-hover: 210 95% 48%;
 
-    /* semantic */
-    --success: 142 70% 58%;      /* #4ade80 */
-    --warning: 38 95% 60%;       /* #fbbf24 */
-    --danger: 0 91% 71%;         /* #f87171 */
-    --info: 213 94% 68%;         /* #60a5fa */
+    /* semantic — darkened for contrast on a light canvas */
+    --success: 150 60% 36%;
+    --warning: 35 90% 44%;
+    --danger: 356 70% 50%;
+    --info: 210 90% 50%;
 
     /* data viz series */
-    --series-1: 170 80% 64%;     /* teal */
-    --series-2: 263 75% 75%;     /* purple */
-    --series-3: 38 95% 60%;      /* amber */
-    --series-4: 330 81% 73%;     /* pink */
-    --series-5: 213 94% 68%;     /* blue */
+    --series-1: 258 88% 58%;     /* violet */
+    --series-2: 210 95% 55%;     /* blue */
+    --series-3: 35 90% 52%;      /* amber */
+    --series-4: 330 75% 56%;     /* pink */
+    --series-5: 165 70% 40%;     /* teal */
 
-    --radius: 10px;
+    --radius: 16px;
   }
 
   * {
@@ -73,7 +80,7 @@
   }
 
   ::selection {
-    background: hsl(var(--accent) / 0.25);
+    background: hsl(var(--accent) / 0.18);
     color: hsl(var(--text));
   }
 
@@ -86,19 +93,19 @@
     background: hsl(var(--bg));
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--surface-2));
+    background: hsl(var(--surface-3));
     border-radius: 6px;
     border: 2px solid hsl(var(--bg));
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--surface-3));
+    background: hsl(var(--border-strong));
   }
 }
 
 @layer components {
-  /* status pill — uppercase 11px Inter, +4% tracking */
+  /* status pill */
   .pill {
-    @apply inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-2xs font-medium uppercase;
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-2xs font-semibold uppercase;
     letter-spacing: 0.04em;
   }
   .pill-live {
@@ -121,45 +128,61 @@
     @apply h-1.5 w-1.5 rounded-full bg-accent;
     animation: caret-blink 1.2s ease-in-out infinite;
   }
-}
 
-/*
- * Shop (buyer) theme — flat line-art, friendly & minimal.
- * Light warm-paper canvas, soft ink, a single gentle coral accent, rounded shapes.
- * Scoped to /shop via <div class="theme-shop"> so the Seller dashboard stays dark.
- */
-.theme-shop {
-  --bg: 32 40% 98%;            /* warm paper */
-  --bg-alt: 32 34% 96%;
-  --surface: 0 0% 100%;        /* white cards */
-  --surface-2: 32 30% 96%;
-  --surface-3: 32 24% 92%;
+  /* Card surface — solid white lifted on a soft shadow, the SaaS default.
+     Kept as a class (rather than inlined) so every Card, panel and shell
+     chrome element changes together. */
+  .card-surface {
+    background-color: hsl(var(--surface));
+    border-color: hsl(var(--border));
+    box-shadow:
+      0 1px 2px hsl(250 22% 10% / 0.04),
+      0 8px 24px -8px hsl(250 22% 10% / 0.08);
+  }
 
-  --text: 222 28% 22%;         /* soft ink */
-  --text-muted: 222 12% 46%;
-  --text-dim: 222 10% 62%;
+  /* Generic soft elevation for one-off blocks that aren't Cards. */
+  .shadow-soft {
+    box-shadow:
+      0 1px 2px hsl(250 22% 10% / 0.04),
+      0 10px 30px -10px hsl(250 22% 10% / 0.10);
+  }
 
-  --border: 28 30% 88%;        /* soft hairlines (line-art) */
-  --border-strong: 28 26% 80%;
+  /* Ambient colour field behind hero sections — the violet/blue atmosphere
+     that reads as "modern SaaS" without an illustration. */
+  .glow-field {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 46rem;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .glow-blob {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(90px);
+    opacity: 0.22;
+  }
 
-  --accent: 8 78% 66%;         /* gentle coral */
-  --accent-hover: 8 82% 60%;
-  --accent-deep: 8 62% 52%;
+  /* Faint dot grid — texture under hero/landing sections. */
+  .dot-grid {
+    background-image: radial-gradient(hsl(var(--text) / 0.07) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
 
-  --success: 152 52% 46%;
-  --warning: 34 88% 55%;
-  --danger: 2 72% 62%;
-  --info: 205 70% 58%;
+  /* Gradient text for one emphasised word in a headline, or a hero metric. */
+  .text-gradient {
+    background: linear-gradient(100deg, hsl(var(--accent)), hsl(var(--accent-2)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 
-  --radius: 16px;              /* rounded, cute */
-
-  font-family: var(--font-shop, var(--font-sans)), ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
-}
-
-/* Soft, flat elevation for the shop (no harsh shadows). */
-.theme-shop .shadow-soft {
-  box-shadow: 0 1px 2px hsl(222 28% 22% / 0.04), 0 6px 20px hsl(222 28% 22% / 0.06);
-}
-.theme-shop .live-dot {
-  animation: none; /* calmer for buyers */
+  /* Floating micro-card — the little "+128% engagement" chips scattered
+     around a SaaS hero mockup. */
+  .float-chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-2 text-xs font-medium;
+    box-shadow: 0 8px 24px -8px hsl(250 22% 10% / 0.16);
+  }
 }

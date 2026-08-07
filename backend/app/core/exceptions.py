@@ -11,6 +11,7 @@ import uuid
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -133,6 +134,18 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     )
 
 
+def _json_safe_errors(exc: RequestValidationError) -> Any:
+    """Strip pydantic's non-serialisable bits out of a validation error.
+
+    Pydantic v2 puts the original exception *object* in ``ctx["error"]`` when a
+    ``field_validator`` raises ``ValueError``. Passing that straight into a
+    ``JSONResponse`` raises ``TypeError`` mid-render, which turns a clean 422
+    into a 500 — so drop ``ctx`` and encode the rest defensively.
+    """
+    cleaned = [{k: v for k, v in err.items() if k != "ctx"} for err in exc.errors()]
+    return jsonable_encoder(cleaned)
+
+
 async def validation_error_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
@@ -142,7 +155,7 @@ async def validation_error_handler(
         error=ErrorPayload(
             code=ErrorCode.VALIDATION_ERROR,
             message="Request validation failed.",
-            details={"errors": exc.errors()},
+            details={"errors": _json_safe_errors(exc)},
         ),
         status_code=422,
     )

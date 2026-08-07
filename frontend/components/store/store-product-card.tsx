@@ -27,28 +27,25 @@ export function StoreProductCard({
     <Link
       href={`/shop/store/${product.id}`}
       onClick={onClick}
-      className="group flex flex-col gap-2 rounded-2xl border border-border bg-surface p-3 transition-all hover:-translate-y-0.5 hover:shadow-soft"
+      className="group flex flex-col gap-3"
     >
-      <StoreImage name={product.name} category={product.category} src={product.image_url} />
+      <StoreImage name={product.name} category={product.category} src={product.image_url} className="rounded-xl" />
 
       <div className="min-w-0">
-        <div className="truncate text-sm font-semibold text-text group-hover:text-accent" title={product.name}>
+        <div className="truncate text-2xs uppercase tracking-wider text-text-dim">{product.brand}</div>
+        <div className="mt-0.5 truncate text-sm text-text" title={product.name}>
           {product.name}
         </div>
-        <div className="truncate text-2xs uppercase tracking-wider text-text-dim">{product.brand}</div>
       </div>
 
-      <div className="flex items-baseline gap-1.5">
-        <span className="mono text-base font-semibold text-text" data-tnum>
-          {VND.format(product.price_vnd).replace(/\s*₫/g, "")}
+      <div className="flex items-center justify-between">
+        <span className="mono text-sm text-text" data-tnum>
+          {VND.format(product.price_vnd).replace(/\s*₫/g, "")}₫
         </span>
-        <span className="mono text-2xs text-text-dim">₫</span>
-      </div>
-
-      <div className="flex items-center gap-1 text-2xs text-text-muted">
-        <Star className="h-3 w-3 fill-warning stroke-warning" />
-        <span className="mono text-text">{product.rating.toFixed(1)}</span>
-        <span className="mono text-text-dim">({product.reviews.toLocaleString()})</span>
+        <div className="flex items-center gap-1 text-2xs text-text-muted">
+          <Star className="h-3 w-3 fill-warning stroke-warning" />
+          <span className="mono text-text">{product.rating.toFixed(1)}</span>
+        </div>
       </div>
 
       {onCart && (
@@ -59,7 +56,7 @@ export function StoreProductCard({
             e.stopPropagation();
             onCart();
           }}
-          className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-bold text-accent transition-colors hover:bg-accent hover:text-white"
+          className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-border-strong px-3 py-2 text-xs font-semibold text-text transition-colors hover:border-accent hover:bg-accent/5 hover:text-accent"
         >
           <ShoppingBag className="h-3.5 w-3.5" /> Thêm vào giỏ
         </button>

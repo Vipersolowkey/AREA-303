@@ -46,7 +46,7 @@ export function FlashSalePanel() {
         <CardContent className="space-y-4">
           <div>
             <div className="flex items-center justify-between">
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Thời gian dừng trên trang (giây)</label>
+              <label className="text-xs font-medium text-text-dim">Thời gian dừng trên trang (giây)</label>
               <span className="mono text-xs text-text">{dwell}s</span>
             </div>
             <input type="range" min={0} max={600} value={dwell}
@@ -54,7 +54,7 @@ export function FlashSalePanel() {
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Độ sâu scroll (%)</label>
+              <label className="text-xs font-medium text-text-dim">Độ sâu scroll (%)</label>
               <span className="mono text-xs text-text">{scroll}%</span>
             </div>
             <input type="range" min={0} max={100} value={scroll}
@@ -62,7 +62,7 @@ export function FlashSalePanel() {
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Số lần quay lại xem</label>
+              <label className="text-xs font-medium text-text-dim">Số lần quay lại xem</label>
               <span className="mono text-xs text-text">{revisits}</span>
             </div>
             <input type="range" min={0} max={10} value={revisits}

@@ -31,10 +31,10 @@ export function StoreImage({
   return (
     <div
       className={cn(
-        "relative grid aspect-square w-full place-items-center overflow-hidden rounded-xl border border-border",
+        "relative grid aspect-[4/5] w-full place-items-center overflow-hidden rounded-xl border border-border",
         className,
       )}
-      style={{ background: "linear-gradient(135deg, hsl(215 62% 92%), hsl(247 66% 84%))" }}
+      style={{ background: "linear-gradient(135deg, hsl(250 40% 95%), hsl(258 45% 88%))" }}
     >
       {!broken ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -43,10 +43,10 @@ export function StoreImage({
           alt={name}
           loading="lazy"
           onError={() => setBroken(true)}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
       ) : (
-        <Icon className={iconClassName} strokeWidth={1.5} style={{ color: "hsl(215 45% 38%)" }} />
+        <Icon className={iconClassName} strokeWidth={1.5} style={{ color: "hsl(258 40% 55%)" }} />
       )}
     </div>
   );

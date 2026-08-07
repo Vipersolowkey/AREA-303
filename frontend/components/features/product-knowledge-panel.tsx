@@ -72,11 +72,11 @@ export function ProductKnowledgePanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tên sản phẩm</label>
+            <label className="text-xs font-medium text-text-dim">Tên sản phẩm</label>
             <Input value={product} onChange={(e) => setProduct(e.target.value)} className="mt-1.5 h-10" />
           </div>
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Danh mục</label>
+            <label className="text-xs font-medium text-text-dim">Danh mục</label>
             <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
               {CATEGORIES.map((c) => (
                 <button key={c} type="button" onClick={() => setCategory(c)}
@@ -89,26 +89,26 @@ export function ProductKnowledgePanel() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Doanh số kỳ trước</label>
+              <label className="text-xs font-medium text-text-dim">Doanh số kỳ trước</label>
               <Input type="number" min={0} value={salesPrev} onChange={(e) => setSalesPrev(Math.max(0, Number(e.target.value)))} className="mt-1.5 h-10" />
             </div>
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Doanh số kỳ này</label>
+              <label className="text-xs font-medium text-text-dim">Doanh số kỳ này</label>
               <Input type="number" min={0} value={salesCurr} onChange={(e) => setSalesCurr(Math.max(0, Number(e.target.value)))} className="mt-1.5 h-10" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Thay đổi giá (%)</label>
+              <label className="text-xs font-medium text-text-dim">Thay đổi giá (%)</label>
               <Input type="number" value={priceChange} onChange={(e) => setPriceChange(Number(e.target.value))} className="mt-1.5 h-10" />
             </div>
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Thay đổi traffic (%)</label>
+              <label className="text-xs font-medium text-text-dim">Thay đổi traffic (%)</label>
               <Input type="number" value={trafficChange} onChange={(e) => setTrafficChange(Number(e.target.value))} className="mt-1.5 h-10" />
             </div>
           </div>
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tồn kho</label>
+            <label className="text-xs font-medium text-text-dim">Tồn kho</label>
             <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
               {STOCKS.map((s) => (
                 <button key={s.v} type="button" onClick={() => setStockStatus(s.v)}
@@ -152,7 +152,7 @@ export function ProductKnowledgePanel() {
                 {dir?.label} {result.sales_change_pct > 0 ? "+" : ""}{result.sales_change_pct}%
               </div>
               <div>
-                <div className="mono text-2xs uppercase tracking-wider text-text-dim">Yếu tố tác động</div>
+                <div className="text-xs font-medium text-text-dim">Yếu tố tác động</div>
                 <div className="mt-2 space-y-2">
                   {result.drivers.map((d, i) => {
                     const dd = DIRECTION[d.direction];
@@ -171,7 +171,7 @@ export function ProductKnowledgePanel() {
                 </div>
               </div>
               <div className="rounded-md border border-border bg-bg-alt px-3 py-2 text-xs text-text-muted">
-                <span className="mono text-2xs uppercase tracking-wider text-text-dim">Hiệu quả khuyến mãi: </span>
+                <span className="text-xs font-medium text-text-dim">Hiệu quả khuyến mãi: </span>
                 {result.promotion_effectiveness}
               </div>
               <p className="text-sm text-text-muted">{result.explanation}</p>

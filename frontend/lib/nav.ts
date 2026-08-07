@@ -104,6 +104,24 @@ export function navForApp(app: AppKind): NavItem[] {
   return READY_NAV_ITEMS.filter((i) => i.app === app);
 }
 
+/**
+ * Which role an app requires, or null when it's open to everyone.
+ *
+ * Kept per-app rather than per-NavItem: all 19 seller features share one
+ * identical rule, so 19 copies of `role: "admin"` would just be something to
+ * drift out of sync. If per-feature permissions are ever needed, add an
+ * optional `requiresRole` to NavItem and filter inside navForApp().
+ */
+export const APP_REQUIRED_ROLE: Record<AppKind, "admin" | null> = {
+  shop: null,
+  seller: "admin",
+};
+
+export function canAccessApp(app: AppKind, role: string | null | undefined): boolean {
+  const required = APP_REQUIRED_ROLE[app];
+  return required === null || role === required;
+}
+
 export const SUBTITLE: Record<string, string> = {
   "copilot": "Trợ lý vận hành cửa hàng.",
   "daily-briefing": "Việc ưu tiên theo tác động doanh thu",

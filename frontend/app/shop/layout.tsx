@@ -1,17 +1,7 @@
-import { Nunito } from "next/font/google";
 import { ShopShell } from "@/components/shell/shop-shell";
 
-const nunito = Nunito({
-  subsets: ["latin", "vietnamese"],
-  variable: "--font-shop",
-  display: "swap",
-  weight: ["400", "600", "700", "800"],
-});
-
+// No theme override any more: /shop and /seller share the single token set in
+// globals.css so the two apps read as one product.
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={`${nunito.variable} theme-shop`}>
-      <ShopShell>{children}</ShopShell>
-    </div>
-  );
+  return <ShopShell>{children}</ShopShell>;
 }

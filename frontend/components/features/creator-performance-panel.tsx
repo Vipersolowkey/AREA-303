@@ -66,7 +66,7 @@ export function CreatorPerformancePanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Danh mục chiến dịch</label>
+            <label className="text-xs font-medium text-text-dim">Danh mục chiến dịch</label>
             <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
               {CATEGORIES.map((c) => (
                 <button key={c} type="button" onClick={() => setCategory(c)}
@@ -99,15 +99,15 @@ export function CreatorPerformancePanel() {
                 </div>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <div>
-                    <label className="mono text-2xs uppercase tracking-wider text-text-dim">Views</label>
+                    <label className="text-xs font-medium text-text-dim">Views</label>
                     <Input type="number" min={0} value={it.views} onChange={(e) => update(i, { views: Math.max(0, Number(e.target.value)) })} className="mt-1 h-9" />
                   </div>
                   <div>
-                    <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tương tác</label>
+                    <label className="text-xs font-medium text-text-dim">Tương tác</label>
                     <Input type="number" min={0} value={it.engagements} onChange={(e) => update(i, { engagements: Math.max(0, Number(e.target.value)) })} className="mt-1 h-9" />
                   </div>
                   <div>
-                    <label className="mono text-2xs uppercase tracking-wider text-text-dim">Doanh số (₫)</label>
+                    <label className="text-xs font-medium text-text-dim">Doanh số (₫)</label>
                     <Input type="number" min={0} value={it.attributed_sales_vnd} onChange={(e) => update(i, { attributed_sales_vnd: Math.max(0, Number(e.target.value)) })} className="mt-1 h-9" />
                   </div>
                 </div>

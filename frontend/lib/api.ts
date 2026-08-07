@@ -8,6 +8,8 @@
  * argument. This is the contract D2 uses for `scripts/prepare_demo_data.py`.
  */
 
+import { clearTokenCookie, readTokenCookie } from "@/lib/auth-token";
+
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -42,11 +44,15 @@ async function request<T>(
   signal?: AbortSignal,
 ): Promise<ApiEnvelope<T>> {
   const url = `${BASE_URL}${path}`;
+  const token = readTokenCookie();
   const res = await fetch(url, {
     ...init,
     signal,
     headers: {
       "Content-Type": "application/json",
+      // Admin-gated endpoints need this; harmless when absent.
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Spread last so an explicit per-call header still wins.
       ...init?.headers,
     },
   });
@@ -67,6 +73,21 @@ async function request<T>(
   }
 
   if (!res.ok || body.success === false) {
+    // Handle 401 here rather than at the call sites: lib/features.ts wraps
+    // every call in try/catch and returns null, so a thrown 401 would be
+    // swallowed before any panel could react to it.
+    //
+    // Only 401 (bad/expired token) logs out. A 403 means "signed in, wrong
+    // role" — the middleware and nav gating already cover that, and kicking a
+    // valid buyer out over a stray 403 would be a bug.
+    if (res.status === 401 && typeof window !== "undefined") {
+      clearTokenCookie();
+      const here = window.location.pathname;
+      if (here !== "/login" && here !== "/register") {
+        const next = encodeURIComponent(here + window.location.search);
+        window.location.href = `/login?next=${next}`;
+      }
+    }
     throw new ApiClientError(
       body as unknown as ApiEnvelope<never>,
       res.status,

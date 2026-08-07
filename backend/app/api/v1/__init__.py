@@ -1,7 +1,24 @@
-"""All v1 routers aggregated."""
+"""All v1 routers aggregated.
 
-from fastapi import APIRouter
+Authorisation lives here rather than on individual endpoints: seller-only
+feature areas are gated wholesale with
+``include_router(..., dependencies=[Depends(require_admin)])``, so adding a
+new seller endpoint inherits the guard automatically.
 
+Deliberately left public:
+  * ``health``, ``auth`` — infrastructure / the way in.
+  * ``personal_shopper``, ``recsys`` — these back the buyer pages
+    ``/shop/personal-shopper`` and ``/shop/recsys``.
+
+Two routers serve both audiences and are therefore gated per-route inside
+their own modules (see ``endpoints/storefront.py`` and ``endpoints/journey.py``):
+buyers read the catalogue and submit reviews while only admins reach the
+moderation queue and the journey analytics.
+"""
+
+from fastapi import APIRouter, Depends
+
+from app.api.deps import require_admin
 from app.api.v1.endpoints import (
     auth,
     churn,
@@ -34,80 +51,150 @@ from app.api.v1.endpoints import (
 )
 
 api_router = APIRouter()
+
+# Reused on every seller-only router below.
+_ADMIN_ONLY = [Depends(require_admin)]
+
+# --- Public: infrastructure + the login flow itself ---
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
-api_router.include_router(users.router, prefix="/users", tags=["users"])
-api_router.include_router(ideas.router, prefix="/ideas", tags=["ideas"])
-api_router.include_router(datasets.router, prefix="/datasets", tags=["datasets"])
-api_router.include_router(kpis.router, prefix="/kpis", tags=["kpis"])
+
+# --- Public: buyer-facing GenAI features (/shop/personal-shopper, /shop/recsys) ---
 api_router.include_router(
     personal_shopper.router,
     prefix="/personal-shopper",
     tags=["03-personal-shopper"],
 )
+api_router.include_router(recsys.router, prefix="/recsys", tags=["11-recsys"])
+
+# --- Mixed audience: gated per-route inside the module, not here ---
+api_router.include_router(storefront.router, prefix="/storefront", tags=["storefront"])
+api_router.include_router(
+    # Track 1, Đề 2 — not one of the original 17 ideas.
+    journey.router, prefix="/journey", tags=["bonus-customer-journey"]
+)
+
+# --- Admin only: the whole seller portal ---
+api_router.include_router(
+    users.router, prefix="/users", tags=["users"], dependencies=_ADMIN_ONLY
+)
+api_router.include_router(
+    ideas.router, prefix="/ideas", tags=["ideas"], dependencies=_ADMIN_ONLY
+)
+api_router.include_router(
+    datasets.router, prefix="/datasets", tags=["datasets"], dependencies=_ADMIN_ONLY
+)
+api_router.include_router(
+    kpis.router, prefix="/kpis", tags=["kpis"], dependencies=_ADMIN_ONLY
+)
 api_router.include_router(
     content_generator.router,
     prefix="/content-generator",
     tags=["09-content-generator"],
+    dependencies=_ADMIN_ONLY,
 )
-api_router.include_router(recsys.router, prefix="/recsys", tags=["11-recsys"])
 api_router.include_router(
     # NOTE: "Customer Segmentation" is a bonus feature (from customer_segmentation/
     # offline modeling) and is NOT official idea #13 in the AREA303_17_Ideas brief
     # (#13 there is "Emotion-Aware Flash Sale Optimizer" — see frontend/lib/nav.ts
     # slug "emotion-sale"). Tagged without a number to avoid confusion.
-    segmentation.router, prefix="/segmentation", tags=["bonus-customer-segmentation"]
+    segmentation.router,
+    prefix="/segmentation",
+    tags=["bonus-customer-segmentation"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    seller_coach.router, prefix="/seller-coach", tags=["17-seller-coach"]
+    seller_coach.router,
+    prefix="/seller-coach",
+    tags=["17-seller-coach"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    review_sentiment.router, prefix="/review-sentiment", tags=["01-review-sentiment"]
+    review_sentiment.router,
+    prefix="/review-sentiment",
+    tags=["01-review-sentiment"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    fake_review.router, prefix="/fake-review", tags=["05-fake-review"]
+    fake_review.router,
+    prefix="/fake-review",
+    tags=["05-fake-review"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    dynamic_pricing.router, prefix="/dynamic-pricing", tags=["02-dynamic-pricing"]
-)
-api_router.include_router(churn.router, prefix="/churn", tags=["04-churn"])
-api_router.include_router(
-    # Track 1, Đề 2 — not one of the original 17 ideas.
-    journey.router, prefix="/journey", tags=["bonus-customer-journey"]
+    dynamic_pricing.router,
+    prefix="/dynamic-pricing",
+    tags=["02-dynamic-pricing"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    return_prediction.router, prefix="/return-prediction", tags=["10-return-prediction"]
+    churn.router, prefix="/churn", tags=["04-churn"], dependencies=_ADMIN_ONLY
 )
-api_router.include_router(regret.router, prefix="/regret", tags=["15-regret-predictor"])
+api_router.include_router(
+    return_prediction.router,
+    prefix="/return-prediction",
+    tags=["10-return-prediction"],
+    dependencies=_ADMIN_ONLY,
+)
+api_router.include_router(
+    regret.router,
+    prefix="/regret",
+    tags=["15-regret-predictor"],
+    dependencies=_ADMIN_ONLY,
+)
 api_router.include_router(
     # Combined view over churn/return/regret — same store.all_customers()
     # source, joined by id. See CONTEXT_HANDOVER discussion: gộp #04+#10+#15
     # into "Customer Risk Intelligence".
-    risk_portfolio.router, prefix="/risk-portfolio", tags=["risk-portfolio"]
+    risk_portfolio.router,
+    prefix="/risk-portfolio",
+    tags=["risk-portfolio"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    inventory_alert.router, prefix="/inventory-alert", tags=["08-inventory-alert"]
+    inventory_alert.router,
+    prefix="/inventory-alert",
+    tags=["08-inventory-alert"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    supply_chain.router, prefix="/supply-chain", tags=["16-supply-chain"]
+    supply_chain.router,
+    prefix="/supply-chain",
+    tags=["16-supply-chain"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    flash_sale.router, prefix="/flash-sale", tags=["13-flash-sale"]
+    flash_sale.router,
+    prefix="/flash-sale",
+    tags=["13-flash-sale"],
+    dependencies=_ADMIN_ONLY,
 )
 # --- Track 2 (Đề bài) intelligence features ---
 api_router.include_router(
-    knowledge.router, prefix="/product-knowledge", tags=["de1-product-knowledge"]
+    knowledge.router,
+    prefix="/product-knowledge",
+    tags=["de1-product-knowledge"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    market.router, prefix="/market-intelligence", tags=["de3-market-intelligence"]
+    market.router,
+    prefix="/market-intelligence",
+    tags=["de3-market-intelligence"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    creator.router, prefix="/creator-performance", tags=["de4-creator-performance"]
+    creator.router,
+    prefix="/creator-performance",
+    tags=["de4-creator-performance"],
+    dependencies=_ADMIN_ONLY,
 )
 api_router.include_router(
-    decision.router, prefix="/decision-intelligence", tags=["de5-decision-intelligence"]
+    decision.router,
+    prefix="/decision-intelligence",
+    tags=["de5-decision-intelligence"],
+    dependencies=_ADMIN_ONLY,
 )
 # --- Seller Copilot: conversational agent that routes to the features above ---
-api_router.include_router(copilot.router, prefix="/copilot", tags=["copilot-agent"])
-# --- Buyer storefront catalog ---
-api_router.include_router(storefront.router, prefix="/storefront", tags=["storefront"])
+api_router.include_router(
+    copilot.router, prefix="/copilot", tags=["copilot-agent"], dependencies=_ADMIN_ONLY
+)

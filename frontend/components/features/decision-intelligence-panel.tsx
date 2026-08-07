@@ -70,11 +70,11 @@ export function DecisionIntelligencePanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Bối cảnh</label>
+            <label className="text-xs font-medium text-text-dim">Bối cảnh</label>
             <Input value={situation} onChange={(e) => setSituation(e.target.value)} className="mt-1.5 h-10" />
           </div>
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Danh mục</label>
+            <label className="text-xs font-medium text-text-dim">Danh mục</label>
             <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
               {CATEGORIES.map((c) => (
                 <button key={c} type="button" onClick={() => setCategory(c)}
@@ -107,18 +107,18 @@ export function DecisionIntelligencePanel() {
                   placeholder="Mô tả quyết định" className="mt-2 h-9" />
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   <div>
-                    <label className="mono text-2xs uppercase tracking-wider text-text-dim">Chỉ số</label>
+                    <label className="text-xs font-medium text-text-dim">Chỉ số</label>
                     <select value={d.metric} onChange={(e) => update(i, { metric: e.target.value as DecisionInput["metric"] })}
                       className="mt-1 h-9 w-full rounded-md border border-border bg-surface px-2 text-xs text-text">
                       {METRICS.map((m) => <option key={m} value={m}>{METRIC_LABEL[m]}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mono text-2xs uppercase tracking-wider text-text-dim">Giá trị</label>
+                    <label className="text-xs font-medium text-text-dim">Giá trị</label>
                     <Input type="number" min={0} value={d.value} onChange={(e) => update(i, { value: Math.max(0, Number(e.target.value)) })} className="mt-1 h-9" />
                   </div>
                   <div>
-                    <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tháng (nếu ads)</label>
+                    <label className="text-xs font-medium text-text-dim">Tháng (nếu ads)</label>
                     <Input type="number" min={0} value={d.month ?? ""} placeholder="—"
                       onChange={(e) => update(i, { month: e.target.value === "" ? null : Math.max(0, Number(e.target.value)) })}
                       className="mt-1 h-9" />

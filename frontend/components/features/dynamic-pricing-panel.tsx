@@ -46,11 +46,11 @@ export function DynamicPricingPanel() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tên sản phẩm</label>
+            <label className="text-xs font-medium text-text-dim">Tên sản phẩm</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1.5 h-10" />
           </div>
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Danh mục</label>
+            <label className="text-xs font-medium text-text-dim">Danh mục</label>
             <div className="mt-1.5 inline-flex overflow-hidden rounded-md border border-border">
               {CATEGORIES.map((c) => (
                 <button
@@ -68,7 +68,7 @@ export function DynamicPricingPanel() {
             </div>
           </div>
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Giá hiện tại (₫, tuỳ chọn)</label>
+            <label className="text-xs font-medium text-text-dim">Giá hiện tại (₫, tuỳ chọn)</label>
             <Input
               value={price}
               onChange={(e) => setPrice(e.target.value)}

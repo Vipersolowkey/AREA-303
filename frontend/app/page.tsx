@@ -1,68 +1,209 @@
 import Link from "next/link";
-import { Store, ShoppingCart, ArrowRight } from "lucide-react";
-import { navForApp } from "@/lib/nav";
+import {
+  ArrowRight,
+  BarChart3,
+  Bot,
+  MessageSquareText,
+  Route,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  TrendingUp,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AppChooser } from "@/components/shell/app-chooser";
 
 export const dynamic = "force-dynamic";
 
-const APPS = [
+const FEATURES = [
   {
-    href: "/shop",
-    icon: ShoppingCart,
-    title: "Shop",
-    tagline: "Dành cho người mua",
-    desc: "Khám phá sản phẩm, xem đánh giá, nhận gợi ý phù hợp và quản lý giỏ hàng.",
-    app: "shop" as const,
+    icon: MessageSquareText,
+    title: "Phân tích đánh giá",
+    desc: "Phân loại cảm xúc và phát hiện đánh giá giả ngay khi khách gửi, trước khi nó lên trang sản phẩm.",
   },
   {
-    href: "/seller",
-    icon: Store,
-    title: "Cổng người bán",
-    tagline: "Dành cho người bán",
-    desc: "Công cụ cho người bán — phân tích review, chặn review giả, định giá động, dự báo, huấn luyện shop.",
-    app: "seller" as const,
+    icon: Route,
+    title: "Hành trình khách hàng",
+    desc: "Thời gian trên trang, bỏ giỏ hàng, thời điểm chốt đơn — dựng lại từ hành vi thật, không phải phỏng đoán.",
   },
+  {
+    icon: TrendingUp,
+    title: "Gợi ý giá bán",
+    desc: "So sánh với trung vị ngành hàng và giá đối thủ để đề xuất mức giá không phá lợi nhuận.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Rủi ro khách hàng",
+    desc: "Ai sắp rời đi, ai dễ hoàn hàng, ai sẽ hối tiếc sau mua — và ai đang rủi ro chồng cần xử lý gấp.",
+  },
+  {
+    icon: Bot,
+    title: "Trợ lý vận hành",
+    desc: "Hỏi bằng giọng nói hoặc chữ, nhận câu trả lời tổng hợp từ dữ liệu giá, doanh số, tồn kho và KOL.",
+  },
+  {
+    icon: BarChart3,
+    title: "Nhóm khách hàng",
+    desc: "Phân nhóm hành vi mua sắm bằng mô hình đã huấn luyện, không phải chia theo cảm tính.",
+  },
+];
+
+const STATS = [
+  { value: "19", label: "tính năng đang chạy" },
+  { value: "63", label: "tỉnh thành theo dõi" },
+  { value: "3", label: "sàn thương mại" },
 ];
 
 export default function LandingPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-6 py-16">
-      <div className="mono text-2xs uppercase tracking-[0.2em] text-accent">AREA-303 · thương mại điện tử</div>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-text sm:text-4xl">
-        Chọn ứng dụng bạn muốn mở
-      </h1>
-      <p className="mt-2 max-w-2xl text-text-muted">
-        Hai ứng dụng kết nối cùng một hệ thống: một cho <span className="text-text">người mua</span> và một cho{" "}
-        <span className="text-text">người bán</span>, tập trung vào thời trang &amp; mỹ phẩm.
-      </p>
-
-      <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {APPS.map((a) => {
-          const Icon = a.icon;
-          const items = navForApp(a.app);
-          return (
-            <Link
-              key={a.href}
-              href={a.href}
-              className="group flex flex-col rounded-xl border border-border bg-surface p-6 transition-colors hover:border-accent"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/15">
-                  <Icon className="h-5 w-5 text-accent" />
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-text">{a.title}</div>
-                  <div className="mono text-2xs uppercase tracking-wider text-text-dim">{a.tagline}</div>
-                </div>
-                <ArrowRight className="ml-auto h-4 w-4 text-text-dim transition-transform group-hover:translate-x-0.5 group-hover:text-accent" />
-              </div>
-              <p className="mt-4 flex-1 text-sm text-text-muted">{a.desc}</p>
-              <div className="mono mt-4 text-2xs text-text-dim">
-                {items.length} tính năng đang hoạt động
-              </div>
-            </Link>
-          );
-        })}
+    <div className="relative overflow-hidden">
+      {/* Ambient colour field + dot texture behind the hero. */}
+      <div className="glow-field">
+        <div className="glow-blob left-[-12%] top-[-18%] h-[42rem] w-[42rem] bg-accent" />
+        <div className="glow-blob right-[-8%] top-[-12%] h-[34rem] w-[34rem] bg-accent-2" />
       </div>
-    </main>
+      <div className="dot-grid pointer-events-none absolute inset-x-0 top-0 h-[46rem] opacity-60" />
+
+      {/* Nav */}
+      <header className="relative z-10 mx-auto flex h-20 max-w-6xl items-center px-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-white">
+            <Sparkles className="h-4 w-4" />
+          </span>
+          <span className="text-lg font-bold tracking-tight">Cellaxnet</span>
+        </Link>
+        <div className="ml-auto flex items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/login">Đăng nhập</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/register">Bắt đầu miễn phí</Link>
+          </Button>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-16 pt-12 text-center sm:px-6 sm:pb-24 sm:pt-20">
+        <span className="float-chip mx-auto">
+          <Sparkles className="h-3.5 w-3.5 text-accent" />
+          Nền tảng thương mại điện tử có AI
+        </span>
+
+        <h1 className="mx-auto mt-7 max-w-3xl text-5xl font-extrabold sm:text-6xl">
+          Bán hàng thông minh hơn,{" "}
+          <span className="text-gradient">không phải nhiều việc hơn.</span>
+        </h1>
+
+        <p className="mx-auto mt-6 max-w-xl text-base text-text-muted sm:text-lg">
+          Cellaxnet gom phân tích đánh giá, hành trình khách hàng, gợi ý giá và trợ lý
+          vận hành vào một nơi — cho cả người mua và người bán.
+        </p>
+
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+          <Button asChild size="lg">
+            <Link href="/register">
+              Bắt đầu miễn phí <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="secondary">
+            <Link href="/shop/store">Xem cửa hàng demo</Link>
+          </Button>
+        </div>
+
+        {/* Social proof + stats */}
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-5">
+          <div className="flex items-center gap-2 text-sm text-text-muted">
+            <span className="flex">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star key={i} className="h-4 w-4 fill-warning stroke-warning" />
+              ))}
+            </span>
+            Shopee · Tiki · TikTok Shop
+          </div>
+          {STATS.map((s) => (
+            <div key={s.label} className="text-sm text-text-muted">
+              <span className="mono text-xl font-bold text-text">{s.value}</span>{" "}
+              {s.label}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* App chooser */}
+      <section className="relative z-10 mx-auto max-w-4xl px-4 pb-20 sm:px-6">
+        <AppChooser />
+      </section>
+
+      {/* Features */}
+      <section className="relative z-10 border-t border-border bg-bg-alt/60">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-extrabold sm:text-4xl">
+              Mọi thứ người bán cần, trong một cổng
+            </h2>
+            <p className="mt-4 text-text-muted">
+              Không phải một tá dashboard rời rạc — các tính năng dùng chung dữ liệu nên
+              câu trả lời luôn khớp nhau.
+            </p>
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map((f) => {
+              const Icon = f.icon;
+              return (
+                <div
+                  key={f.title}
+                  className="card-surface rounded-lg border p-6 transition-all hover:-translate-y-0.5"
+                >
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent/10 text-accent">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-5 text-base font-bold">{f.title}</h3>
+                  <p className="mt-2 text-sm text-text-muted">{f.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Closing CTA */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 py-20 sm:px-6">
+        <div className="relative overflow-hidden rounded-lg bg-text px-8 py-14 text-center sm:px-14">
+          <h2 className="text-3xl font-extrabold text-bg sm:text-4xl">
+            Thử toàn bộ hệ thống ngay
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-bg/70">
+            Tạo tài khoản người mua trong vài giây, hoặc mở cửa hàng demo để xem sản
+            phẩm, đánh giá và giỏ hàng hoạt động thật.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              asChild
+              size="lg"
+              className="bg-bg text-text hover:bg-bg-alt hover:text-text"
+            >
+              <Link href="/register">
+                Tạo tài khoản <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="ghost"
+              className="text-bg/80 hover:bg-white/10 hover:text-bg"
+            >
+              <Link href="/shop/store">Xem cửa hàng</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <footer className="relative z-10 border-t border-border">
+        <div className="mx-auto max-w-6xl px-4 py-8 text-center text-xs text-text-dim sm:px-6">
+          Cellaxnet · thương mại điện tử thời trang &amp; mỹ phẩm
+        </div>
+      </footer>
+    </div>
   );
 }

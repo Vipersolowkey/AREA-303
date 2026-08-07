@@ -134,11 +134,11 @@ export function PersonalShopperPanel() {
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       {/* Chat thread */}
       <div className="lg:col-span-8">
-        <div className="flex h-[640px] flex-col rounded-[10px] border border-border bg-surface">
+        <div className="flex h-[640px] flex-col rounded-lg border border-border bg-surface">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <span className="live-dot" />
-              <span className="mono text-2xs uppercase tracking-wider text-text-dim">
+              <span className="text-xs font-medium text-text-dim">
                 Trợ lý mua sắm · sẵn sàng
               </span>
             </div>
@@ -221,8 +221,8 @@ export function PersonalShopperPanel() {
 
       {/* Sidebar — context + chips */}
       <aside className="lg:col-span-4 space-y-4">
-        <div className="rounded-[10px] border border-border bg-surface p-4">
-          <div className="mono text-2xs uppercase tracking-wider text-text-dim">
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <div className="text-xs font-medium text-text-dim">
             Nguồn gợi ý
           </div>
           <div className="mt-3 space-y-2 text-sm">
@@ -233,8 +233,8 @@ export function PersonalShopperPanel() {
           </div>
         </div>
 
-        <div className="rounded-[10px] border border-border bg-surface p-4">
-          <div className="mono text-2xs uppercase tracking-wider text-text-dim">
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <div className="text-xs font-medium text-text-dim">
             Gợi ý nhanh
           </div>
           <div className="mt-3">
@@ -242,8 +242,8 @@ export function PersonalShopperPanel() {
           </div>
         </div>
 
-        <div className="rounded-[10px] border border-border bg-surface p-4 text-xs text-text-muted">
-          <span className="mono text-2xs uppercase tracking-wider text-text-dim">
+        <div className="rounded-lg border border-border bg-surface p-4 text-xs text-text-muted">
+          <span className="text-xs font-medium text-text-dim">
             Lưu ý
           </span>
           <p className="mt-2">

@@ -30,6 +30,10 @@ const config: Config = {
           hover: "hsl(var(--accent-hover))",
           deep: "hsl(var(--accent-deep))",
         },
+        "accent-2": {
+          DEFAULT: "hsl(var(--accent-2))",
+          hover: "hsl(var(--accent-2-hover, var(--accent-2)))",
+        },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
         danger: "hsl(var(--danger))",
@@ -61,7 +65,10 @@ const config: Config = {
         "2xl": ["22px", { lineHeight: "1.3" }],
         "3xl": ["28px", { lineHeight: "1.2" }],
         "4xl": ["36px", { lineHeight: "1.2", letterSpacing: "-0.01em" }],
-        "5xl": ["48px", { lineHeight: "1.1", letterSpacing: "-0.01em" }],
+        "5xl": ["48px", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        // Landing-page display sizes.
+        "6xl": ["60px", { lineHeight: "1.05", letterSpacing: "-0.03em" }],
+        "7xl": ["72px", { lineHeight: "1.0", letterSpacing: "-0.03em" }],
       },
       keyframes: {
         "accordion-down": {

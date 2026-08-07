@@ -1,12 +1,17 @@
 """Buyer storefront catalog — list + detail from the commerce store, plus the
-real review write path (submit / moderation queue / approve / reject)."""
+real review write path (submit / moderation queue / approve / reject).
+
+Mixed audience, so this router is NOT gated wholesale in :mod:`app.api.v1`:
+browsing the catalogue and submitting a review stay open to anonymous
+shoppers, while the moderation queue is admin-only per-route.
+"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db_dep
+from app.api.deps import get_db_dep, require_admin
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.core.responses import ApiResponse, PageMeta
@@ -58,7 +63,11 @@ async def submit_review(
     return ApiResponse[dict](success=True, data=resp.model_dump(), meta=PageMeta(), error=None)
 
 
-@router.get("/reviews/queue", response_model=ApiResponse[list[dict]])
+@router.get(
+    "/reviews/queue",
+    response_model=ApiResponse[list[dict]],
+    dependencies=[Depends(require_admin)],
+)
 async def review_queue(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[list[dict]]:
     try:
         rows = await review_service.list_queue(db)
@@ -78,13 +87,21 @@ async def review_queue(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[li
     return ApiResponse[list[dict]](success=True, data=items, meta=PageMeta(total=len(items)), error=None)
 
 
-@router.post("/reviews/{review_id}/approve", response_model=ApiResponse[dict])
+@router.post(
+    "/reviews/{review_id}/approve",
+    response_model=ApiResponse[dict],
+    dependencies=[Depends(require_admin)],
+)
 async def approve_review(review_id: int, db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[dict]:
     row = await review_service.set_status(db, review_id, "published")
     return ApiResponse[dict](success=True, data={"id": row.id, "status": row.status}, meta=PageMeta(), error=None)
 
 
-@router.post("/reviews/{review_id}/reject", response_model=ApiResponse[dict])
+@router.post(
+    "/reviews/{review_id}/reject",
+    response_model=ApiResponse[dict],
+    dependencies=[Depends(require_admin)],
+)
 async def reject_review(review_id: int, db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[dict]:
     row = await review_service.set_status(db, review_id, "rejected")
     return ApiResponse[dict](success=True, data={"id": row.id, "status": row.status}, meta=PageMeta(), error=None)

@@ -1,31 +1,69 @@
-"""Auth: login (issue token) + me (verify token). Skeleton only."""
+"""Auth: register, login, and current-user lookup.
+
+There is no ``/logout`` endpoint on purpose — the token is stateless, so
+logging out is the client dropping its cookie. No refresh-token rotation,
+email verification or password reset either; see the project scope.
+"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_db_dep
 from app.core.responses import ApiResponse, PageMeta
+from app.core.security import create_access_token
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenResponse, UserOut
+from app.services import user_service
 
 router = APIRouter()
 
 
-@router.post("/login", response_model=ApiResponse[dict])
-async def login() -> ApiResponse[dict]:
-    # TODO: validate credentials, call create_access_token()
+def _token_response(user) -> dict:  # noqa: ANN001 — app.models.user.User
+    """Issue a JWT carrying the role, so authorisation needs no DB lookup."""
+    token = create_access_token(
+        user.id,
+        extra={"role": user.role, "email": user.email, "name": user.name},
+    )
+    return TokenResponse(
+        access_token=token,
+        user=UserOut.model_validate(user, from_attributes=True),
+    ).model_dump()
+
+
+@router.post("/register", response_model=ApiResponse[dict])
+async def register(
+    req: RegisterRequest, db: AsyncSession = Depends(get_db_dep)
+) -> ApiResponse[dict]:
+    # `role` is never read from the request — self-signup is always a buyer.
+    # Admin accounts come only from scripts/create_admin.py.
+    user = await user_service.create_user(
+        db, email=req.email, password=req.password, name=req.name
+    )
     return ApiResponse[dict](
-        success=True,
-        data={"access_token": "REPLACE_ME", "token_type": "bearer"},
-        meta=PageMeta(),
-        error=None,
+        success=True, data=_token_response(user), meta=PageMeta(), error=None
+    )
+
+
+@router.post("/login", response_model=ApiResponse[dict])
+async def login(
+    req: LoginRequest, db: AsyncSession = Depends(get_db_dep)
+) -> ApiResponse[dict]:
+    user = await user_service.authenticate(db, email=req.email, password=req.password)
+    return ApiResponse[dict](
+        success=True, data=_token_response(user), meta=PageMeta(), error=None
     )
 
 
 @router.get("/me", response_model=ApiResponse[dict])
-async def me(user=Depends(get_current_user)) -> ApiResponse[dict]:
+async def me(user: dict = Depends(get_current_user)) -> ApiResponse[dict]:
+    """Echo the caller's identity straight from the token claims."""
+    data = UserOut(
+        id=int(user["sub"]),
+        email=user.get("email", ""),
+        name=user.get("name"),
+        role=user.get("role", "buyer"),
+    )
     return ApiResponse[dict](
-        success=True,
-        data={"user": user},
-        meta=PageMeta(),
-        error=None,
+        success=True, data=data.model_dump(), meta=PageMeta(), error=None
     )

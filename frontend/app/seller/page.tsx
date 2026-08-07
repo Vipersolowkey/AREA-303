@@ -16,11 +16,13 @@ export default function SellerHome() {
 
   return (
     <DashboardShell breadcrumb={[{ label: "Người bán", href: "/seller" }, { label: "Tổng quan" }]}>
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="mono text-2xs uppercase tracking-wider text-text-dim">Cổng người bán · hôm nay</div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-text">Tình hình cửa hàng</h1>
-          <p className="mt-1 text-sm text-text-muted">
+          <div className="text-sm font-medium text-text-dim">Cổng người bán · hôm nay</div>
+          <h1 className="mt-2 text-5xl font-extrabold leading-[1.05] tracking-tight text-text sm:text-6xl">
+            Tình hình <span className="text-gradient">cửa hàng</span>
+          </h1>
+          <p className="mt-3 max-w-lg text-base text-text-muted">
             Theo dõi sức khỏe cửa hàng và các việc cần ưu tiên trên Shopee · Tiki · TikTok Shop.
           </p>
         </div>

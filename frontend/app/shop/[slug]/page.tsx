@@ -15,9 +15,9 @@ export default async function ShopFeaturePage({
 
   if (!item || item.app !== "shop") {
     return (
-      <div className="rounded-3xl border border-border bg-surface p-10 text-center">
-        <p className="text-lg font-extrabold">Không tìm thấy trang này</p>
-        <Link href="/shop" className="mt-3 inline-block font-bold text-accent">← Về trang chủ</Link>
+      <div className="card-surface rounded-lg border p-10 text-center">
+        <p className="text-lg font-bold">Không tìm thấy trang này</p>
+        <Link href="/shop" className="mt-3 inline-block font-semibold text-accent">← Về trang chủ</Link>
       </div>
     );
   }
@@ -27,8 +27,8 @@ export default async function ShopFeaturePage({
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-4">
-        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border-2 border-text/80 text-text">
-          <Icon className="h-5 w-5" strokeWidth={2} />
+        <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-accent/10 text-accent">
+          <Icon className="h-5 w-5" />
         </span>
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">{item.label}</h1>
@@ -39,11 +39,11 @@ export default async function ShopFeaturePage({
       {IMPLEMENTED.has(slug) ? (
         <FeaturePanel slug={slug} />
       ) : (
-        <div className="rounded-3xl border border-border bg-surface p-10 text-center shadow-soft">
+        <div className="card-surface rounded-lg border p-10 text-center">
           <div className="text-4xl">🛠️</div>
-          <p className="mt-3 text-lg font-extrabold">Sắp ra mắt</p>
+          <p className="mt-3 text-lg font-bold">Sắp ra mắt</p>
           <p className="mt-1 text-text-muted">Tính năng này đang được hoàn thiện. Quay lại sau nhé!</p>
-          <Link href="/shop" className="mt-4 inline-flex items-center gap-1.5 font-bold text-accent">
+          <Link href="/shop" className="mt-4 inline-flex items-center gap-1.5 font-semibold text-accent">
             <ArrowLeft className="h-4 w-4" /> Khám phá tính năng khác
           </Link>
         </div>

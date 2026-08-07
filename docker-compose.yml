@@ -45,6 +45,9 @@ services:
       - ./backend/.env
     environment:
       POSTGRES_HOST: postgres
+      # Inside the compose network Postgres still listens on 5432 — override the
+      # host-side POSTGRES_PORT (5433) that backend/.env carries for local runs.
+      POSTGRES_PORT: 5432
       REDIS_HOST: redis
     ports:
       - "${BACKEND_PORT:-8000}:8000"

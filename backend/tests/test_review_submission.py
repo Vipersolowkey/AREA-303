@@ -129,7 +129,9 @@ async def test_generic_short_review_is_flagged_not_published(fake_store, monkeyp
 
 
 @pytest.mark.asyncio
-async def test_flagged_review_appears_in_queue_and_approve_publishes_it(fake_store, monkeypatch):
+async def test_flagged_review_appears_in_queue_and_approve_publishes_it(
+    fake_store, monkeypatch, admin_headers
+):
     _patch_insights(monkeypatch, is_fake=False, fake_confidence=0.6, sentiment="positive")
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -142,12 +144,16 @@ async def test_flagged_review_appears_in_queue_and_approve_publishes_it(fake_sto
         )
         assert submit.json()["data"]["status"] == "flagged"
 
-        queue = await ac.get("/api/v1/storefront/reviews/queue")
+        # The moderation queue and approve/reject are admin-only; submitting a
+        # review above stays anonymous on purpose.
+        queue = await ac.get("/api/v1/storefront/reviews/queue", headers=admin_headers)
         queue_items = queue.json()["data"]
         assert any(r["author_name"] == "Kiet" for r in queue_items)
         review_id = next(r["id"] for r in queue_items if r["author_name"] == "Kiet")
 
-        approve = await ac.post(f"/api/v1/storefront/reviews/{review_id}/approve")
+        approve = await ac.post(
+            f"/api/v1/storefront/reviews/{review_id}/approve", headers=admin_headers
+        )
         assert approve.json()["data"]["status"] == "published"
 
         detail = await ac.get(f"/api/v1/storefront/products/{pid}")

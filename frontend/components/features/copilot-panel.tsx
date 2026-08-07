@@ -59,11 +59,11 @@ export function CopilotPanel() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <div className="lg:col-span-8">
-        <div className="flex h-[640px] flex-col rounded-[10px] border border-border bg-surface">
+        <div className="flex h-[640px] flex-col rounded-lg border border-border bg-surface">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <div className="flex items-center gap-2">
               <span className="live-dot" />
-              <span className="mono text-2xs uppercase tracking-wider text-text-dim">
+              <span className="text-xs font-medium text-text-dim">
                 Trợ lý vận hành · sẵn sàng
               </span>
             </div>
@@ -83,7 +83,7 @@ export function CopilotPanel() {
             {messages.map((m) =>
               m.role === "user" ? (
                 <div key={m.id} className="flex items-start justify-end gap-2.5">
-                  <div className="max-w-[80%] rounded-[10px] rounded-tr-sm bg-accent/15 px-3.5 py-2.5 text-sm text-text">
+                  <div className="max-w-[80%] rounded-lg rounded-tr-sm bg-accent/15 px-3.5 py-2.5 text-sm text-text">
                     {m.text}
                   </div>
                   <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-bg-alt text-text-muted">
@@ -96,7 +96,7 @@ export function CopilotPanel() {
                     <Bot className="h-3.5 w-3.5" />
                   </span>
                   <div className="min-w-0 max-w-[85%] space-y-2.5">
-                    <div className="rounded-[10px] rounded-tl-sm border border-border bg-bg-alt px-3.5 py-2.5">
+                    <div className="rounded-lg rounded-tl-sm border border-border bg-bg-alt px-3.5 py-2.5">
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-text">{m.result.answer}</p>
                     </div>
                   </div>
@@ -141,8 +141,8 @@ export function CopilotPanel() {
       </div>
 
       <aside className="lg:col-span-4 space-y-4">
-        <div className="rounded-[10px] border border-border bg-surface p-4">
-          <div className="mono text-2xs uppercase tracking-wider text-text-dim">Câu hỏi mẫu</div>
+        <div className="rounded-lg border border-border bg-surface p-4">
+          <div className="text-xs font-medium text-text-dim">Câu hỏi mẫu</div>
           <div className="mt-3 flex flex-col gap-2">
             {EXAMPLES.map((q) => (
               <button
@@ -161,8 +161,8 @@ export function CopilotPanel() {
           </div>
         </div>
 
-        <div className="rounded-[10px] border border-border bg-surface p-4 text-xs text-text-muted">
-          <span className="mono text-2xs uppercase tracking-wider text-text-dim">Cách hoạt động</span>
+        <div className="rounded-lg border border-border bg-surface p-4 text-xs text-text-muted">
+          <span className="text-xs font-medium text-text-dim">Cách hoạt động</span>
           <p className="mt-2">
             Trợ lý kết hợp dữ liệu giá, doanh số, nhà sáng tạo và tồn kho để đưa ra câu trả lời ngắn gọn cùng việc nên làm tiếp theo. Có thể hỏi bằng giọng nói — bấm mic và nói.
           </p>

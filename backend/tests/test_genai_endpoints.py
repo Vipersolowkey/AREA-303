@@ -78,7 +78,7 @@ async def test_shopper_chat_streams_sse():
 
 
 @pytest.mark.asyncio
-async def test_content_generator_returns_three_variants():
+async def test_content_generator_returns_three_variants(admin_headers):
     _setup()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -88,6 +88,7 @@ async def test_content_generator_returns_three_variants():
                 "product_name": "Áo khoác denim unisex",
                 "features": "Denim 12oz, wash nhẹ, free ship",
             },
+            headers=admin_headers,
         )
     assert r.status_code == 200
     body = r.json()
@@ -140,13 +141,14 @@ async def test_recsys_traditional_mode():
 
 
 @pytest.mark.asyncio
-async def test_seller_coach_returns_audit_and_roadmap():
+async def test_seller_coach_returns_audit_and_roadmap(admin_headers):
     _setup()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         r = await ac.post(
             "/api/v1/seller-coach/",
             json={"seller_id": "shop-001"},
+            headers=admin_headers,
         )
     assert r.status_code == 200
     body = r.json()

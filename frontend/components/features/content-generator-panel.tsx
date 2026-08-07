@@ -143,7 +143,7 @@ export function ContentGeneratorPanel() {
       <div className="lg:col-span-8 space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="mono text-2xs uppercase tracking-wider text-text-dim">
+            <div className="text-xs font-medium text-text-dim">
               Nội dung đã tạo
             </div>
             <div className="text-sm text-text-muted">
@@ -184,7 +184,7 @@ function Field({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="mono text-2xs uppercase tracking-wider text-text-dim">
+      <span className="text-xs font-medium text-text-dim">
         {label}
       </span>
       {children}

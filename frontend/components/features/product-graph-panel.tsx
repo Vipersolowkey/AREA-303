@@ -51,7 +51,7 @@ export function ProductGraphPanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tên sản phẩm hoặc SKU</label>
+            <label className="text-xs font-medium text-text-dim">Tên sản phẩm hoặc SKU</label>
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -98,7 +98,7 @@ export function ProductGraphPanel() {
               {/* Sales block */}
               {result.sales && (
                 <div>
-                  <div className="mono text-2xs uppercase tracking-wider text-text-dim">Doanh số</div>
+                  <div className="text-xs font-medium text-text-dim">Doanh số</div>
                   <div className="mt-2 flex items-center gap-3">
                     <span className="mono text-sm text-text-muted">{result.sales.sales_prev.toLocaleString("vi-VN")}</span>
                     <span className="text-text-dim">→</span>
@@ -132,7 +132,7 @@ export function ProductGraphPanel() {
               {/* Similar products */}
               {result.similar_products.length > 0 && (
                 <div>
-                  <div className="mono text-2xs uppercase tracking-wider text-text-dim">Sản phẩm tương tự SKU này</div>
+                  <div className="text-xs font-medium text-text-dim">Sản phẩm tương tự SKU này</div>
                   <div className="mt-2 space-y-2">
                     {result.similar_products.map((p) => (
                       <div key={p.id} className="rounded-md border border-border bg-bg-alt px-3 py-2">
@@ -154,7 +154,7 @@ export function ProductGraphPanel() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {result.brand_siblings.length > 0 && (
                   <div className="rounded-md border border-border bg-bg-alt px-3 py-2">
-                    <div className="mono text-2xs uppercase tracking-wider text-text-dim">Cùng thương hiệu</div>
+                    <div className="text-xs font-medium text-text-dim">Cùng thương hiệu</div>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {result.brand_siblings.map((b) => (
                         <span key={b} className="rounded-md border border-border bg-surface px-2 py-0.5 text-xs text-text-muted">{b}</span>
@@ -163,7 +163,7 @@ export function ProductGraphPanel() {
                   </div>
                 )}
                 <div className="rounded-md border border-border bg-bg-alt px-3 py-2">
-                  <div className="mono text-2xs uppercase tracking-wider text-text-dim">Sản phẩm cùng danh mục</div>
+                  <div className="text-xs font-medium text-text-dim">Sản phẩm cùng danh mục</div>
                   <div className="mono mt-2 text-lg font-semibold text-text">{result.category_peers}</div>
                 </div>
               </div>
@@ -171,7 +171,7 @@ export function ProductGraphPanel() {
               {/* Promotions */}
               {result.promotions.length > 0 && (
                 <div>
-                  <div className="mono text-2xs uppercase tracking-wider text-text-dim">Khuyến mãi</div>
+                  <div className="text-xs font-medium text-text-dim">Khuyến mãi</div>
                   <div className="mt-2 space-y-2">
                     {result.promotions.map((p, i) => (
                       <div key={i} className="flex items-center justify-between gap-2 rounded-md border border-border bg-bg-alt px-3 py-2 text-xs">
@@ -188,7 +188,7 @@ export function ProductGraphPanel() {
 
               {/* LLM summary */}
               <div className="rounded-md border border-accent/40 bg-accent/10 px-4 py-3">
-                <div className="mono text-2xs uppercase tracking-wider text-text-dim">Tổng hợp</div>
+                <div className="text-xs font-medium text-text-dim">Tổng hợp</div>
                 <p className="mt-1.5 text-sm leading-relaxed text-text">{result.summary}</p>
               </div>
             </div>

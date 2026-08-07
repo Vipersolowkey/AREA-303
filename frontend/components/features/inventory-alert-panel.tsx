@@ -52,12 +52,12 @@ export function InventoryAlertPanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tên sản phẩm</label>
+            <label className="text-xs font-medium text-text-dim">Tên sản phẩm</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} className="mt-1.5 h-10" />
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Lượt nhắc đến MXH (7 ngày)</label>
+              <label className="text-xs font-medium text-text-dim">Lượt nhắc đến MXH (7 ngày)</label>
               <span className="mono text-xs text-text">{mentions.toLocaleString("vi-VN")}</span>
             </div>
             <input type="range" min={0} max={50000} step={100} value={mentions}
@@ -65,7 +65,7 @@ export function InventoryAlertPanel() {
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Sentiment trung bình</label>
+              <label className="text-xs font-medium text-text-dim">Sentiment trung bình</label>
               <span className="mono text-xs text-text">{sentiment}%</span>
             </div>
             <input type="range" min={-100} max={100} value={sentiment}
@@ -73,11 +73,11 @@ export function InventoryAlertPanel() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Tồn kho hiện tại</label>
+              <label className="text-xs font-medium text-text-dim">Tồn kho hiện tại</label>
               <Input type="number" min={0} value={stock} onChange={(e) => setStock(Math.max(0, Number(e.target.value)))} className="mt-1.5 h-10" />
             </div>
             <div>
-              <label className="mono text-2xs uppercase tracking-wider text-text-dim">Bán TB / ngày</label>
+              <label className="text-xs font-medium text-text-dim">Bán TB / ngày</label>
               <Input type="number" min={0} value={dailySales} onChange={(e) => setDailySales(Math.max(0, Number(e.target.value)))} className="mt-1.5 h-10" />
             </div>
           </div>
@@ -103,11 +103,11 @@ export function InventoryAlertPanel() {
               </div>
               <div className="grid grid-cols-2 gap-3 text-xs">
                 <div className="rounded-md border border-border bg-bg-alt px-3 py-2">
-                  <div className="mono text-2xs uppercase tracking-wider text-text-dim">Mức độ quan tâm</div>
+                  <div className="text-xs font-medium text-text-dim">Mức độ quan tâm</div>
                   <div className="mono mt-1 text-text">{result.trend_score}</div>
                 </div>
                 <div className="rounded-md border border-border bg-bg-alt px-3 py-2">
-                  <div className="mono text-2xs uppercase tracking-wider text-text-dim">Còn đủ hàng</div>
+                  <div className="text-xs font-medium text-text-dim">Còn đủ hàng</div>
                   <div className="mono mt-1 text-text">{result.days_of_stock_left} ngày</div>
                 </div>
               </div>

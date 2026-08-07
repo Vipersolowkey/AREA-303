@@ -75,7 +75,7 @@ export function ScoreGauge({
           / {max}
         </text>
       </svg>
-      <span className="mono text-2xs uppercase tracking-wider text-text-dim">
+      <span className="text-2xs font-medium text-text-dim">
         {label}
       </span>
     </div>

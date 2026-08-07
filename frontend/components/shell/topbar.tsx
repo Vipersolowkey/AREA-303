@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Search, User } from "lucide-react";
+import { LogOut, Search, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { READY_NAV_ITEMS } from "@/lib/nav";
+import { useAuth } from "@/lib/auth-context";
 import {
   CommandDialog,
   CommandInput,
@@ -22,6 +23,7 @@ export function TopBar({ breadcrumb }: { breadcrumb: Crumb[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const mounted = useMounted();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -43,7 +45,7 @@ export function TopBar({ breadcrumb }: { breadcrumb: Crumb[] }) {
   );
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-border bg-bg/80 px-4 backdrop-blur lg:px-6">
+    <header className="card-surface sticky top-0 z-30 flex h-16 items-center gap-4 border-b px-4 lg:px-6">
       {/* Breadcrumb */}
       <nav className="flex min-w-0 items-center gap-1.5 text-sm">
         {breadcrumb.map((c, i) => (
@@ -65,17 +67,37 @@ export function TopBar({ breadcrumb }: { breadcrumb: Crumb[] }) {
         variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
-        className="ml-auto h-8 w-72 justify-start gap-2 px-3 text-text-muted"
+        className="ml-auto h-9 w-72 justify-start gap-2 rounded-xl px-3 text-text-muted"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="text-xs">Tìm tính năng…</span>
         <CommandShortcut>Ctrl K</CommandShortcut>
       </Button>
 
-      {/* User menu placeholder */}
-      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-surface">
-        <User className="h-3.5 w-3.5 text-text-muted" />
-      </div>
+      {/* Signed-in identity + logout. Rendered after mount so the markup
+          matches the server render, which can't know the cookie. */}
+      {mounted && user ? (
+        <div className="flex items-center gap-2">
+          <div className="hidden text-right leading-tight sm:block">
+            <div className="text-xs font-semibold">{user.name || user.email}</div>
+            <div className="text-2xs font-medium text-text-dim">
+              {user.role === "admin" ? "Quản trị viên" : "Người mua"}
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            title="Đăng xuất"
+            aria-label="Đăng xuất"
+            className="grid h-9 w-9 place-items-center rounded-full border border-border bg-surface-2 text-text-muted transition-colors hover:border-danger/40 hover:text-danger"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-2">
+          <User className="h-3.5 w-3.5 text-text-muted" />
+        </div>
+      )}
 
       {mounted ? (
         <CommandDialog open={open} onOpenChange={setOpen}>

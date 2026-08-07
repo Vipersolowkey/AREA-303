@@ -1,11 +1,16 @@
-"""Customer Journey Intelligence — Track 1, Đề 2 (not one of the original 17 ideas)."""
+"""Customer Journey Intelligence — Track 1, Đề 2 (not one of the original 17 ideas).
+
+Mixed audience, so this router is NOT gated wholesale in :mod:`app.api.v1`:
+reading the analysis is admin-only, but ``POST /events`` is an anonymous
+behaviour-ingest endpoint that the buyer storefront must be able to call.
+"""
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db_dep
+from app.api.deps import get_db_dep, require_admin
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.core.responses import ApiResponse, PageMeta
@@ -18,7 +23,9 @@ log = get_logger("app.api.journey")
 router = APIRouter()
 
 
-@router.post("/", response_model=ApiResponse[dict])
+@router.post(
+    "/", response_model=ApiResponse[dict], dependencies=[Depends(require_admin)]
+)
 async def analyze(req: JourneyRequest) -> ApiResponse[dict]:
     data = await service.analyze_journey(req)
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)
@@ -29,7 +36,11 @@ async def track_events(
     req: JourneyRequest, db: AsyncSession = Depends(get_db_dep)
 ) -> ApiResponse[dict]:
     """Persist real tracked events for later analytics. Best-effort: a DB
-    hiccup must never break the live journey UX, so failures fail open."""
+    hiccup must never break the live journey UX, so failures fail open.
+
+    Intentionally unauthenticated — shoppers are anonymous, and this only
+    writes behaviour rows (it reads nothing back).
+    """
     if not req.session_id:
         raise ValidationError("session_id is required.")
     try:
@@ -42,7 +53,9 @@ async def track_events(
     return ApiResponse[dict](success=True, data={"persisted": n}, meta=PageMeta(), error=None)
 
 
-@router.get("/sessions", response_model=ApiResponse[dict])
+@router.get(
+    "/sessions", response_model=ApiResponse[dict], dependencies=[Depends(require_admin)]
+)
 async def sessions() -> ApiResponse[dict]:
     """Pre-built demo shopping sessions with replay videos, ready to test."""
     data = await portfolio.journey_sessions()
