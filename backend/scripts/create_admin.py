@@ -4,7 +4,7 @@ Self-registration through the API is hard-wired to "buyer", so the first
 admin has to be made here. Idempotent: re-running against an existing email
 promotes that account instead of failing.
 
-Run from the backend directory (that puts `app` on sys.path):
+Run from the backend directory:
 
     cd backend
     python scripts/create_admin.py --email admin@area303.dev --password 'secret123'
@@ -19,9 +19,14 @@ import argparse
 import asyncio
 import os
 import sys
+from pathlib import Path
 
-from app.db.session import SessionLocal
-from app.services import user_service
+# Python puts the *script's* directory on sys.path, not the working directory, so
+# `python scripts/create_admin.py` from backend/ cannot see `app` without this.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app.db.session import SessionLocal  # noqa: E402
+from app.services import user_service  # noqa: E402
 
 
 async def main() -> int:
