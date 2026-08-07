@@ -189,15 +189,28 @@ def trend_pct(snapshots: list[CompetitorSnapshot], field: str) -> float | None:
     return round((last - first) / first * 100, 1)
 
 
-def market_share(latest: dict[int, CompetitorSnapshot | None]) -> dict[int, float]:
-    """Share of estimated revenue across the tracked set.
+def trend_abs(snapshots: list[CompetitorSnapshot], field: str) -> float | None:
+    """Absolute change first→last. Used for rating, where a percentage of a
+    4.9-out-of-5 average is meaningless but a −0.12 drop is not."""
+    values = [
+        getattr(s, field) for s in snapshots if s.ok and getattr(s, field) is not None
+    ]
+    if len(values) < 2:
+        return None
+    return round(values[-1] - values[0], 2)
 
-    This is share *of the shops being watched*, not of the market — there's no
-    way to know total category revenue from shop pages, and presenting it as
-    market share would overclaim.
+
+def follower_share(latest: dict[int, CompetitorSnapshot | None]) -> dict[int, float]:
+    """Share of follower count across the tracked set.
+
+    Follower count, not revenue: the marketplaces block their product-listing
+    endpoints, so units sold and GMV aren't obtainable and any revenue share
+    would be invented. This is also explicitly share *of the shops being
+    watched* — total category size isn't knowable from shop pages, so calling it
+    "market share" would overclaim.
     """
     totals = {
-        cid: (snap.revenue_est_vnd or 0)
+        cid: (snap.follower_count or 0)
         for cid, snap in latest.items()
         if snap is not None
     }

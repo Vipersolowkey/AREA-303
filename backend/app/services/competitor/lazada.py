@@ -55,7 +55,9 @@ class LazadaCollector:
         mods = payload.get("mods")
         if not isinstance(mods, dict):
             return CollectorResult.failed(
-                "Lazada không trả về danh sách sản phẩm (endpoint có thể đã đổi)."
+                "Lazada không trả về dữ liệu dùng được. Kiểm thử tháng 8/2026 cho thấy "
+                "Lazada đang trả trang xác minh chống bot cho mọi yêu cầu tự động, nên "
+                "hiện chưa theo dõi được cửa hàng Lazada — hãy dùng link Shopee."
             )
 
         raw_items = mods.get("listItems")

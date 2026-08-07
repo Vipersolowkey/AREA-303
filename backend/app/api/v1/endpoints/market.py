@@ -84,8 +84,9 @@ async def _build_rows(db: AsyncSession):
                 "snaps": snaps,
                 "latest_ok": ok_snaps[-1] if ok_snaps else None,
                 "last_attempt": snaps[-1] if snaps else None,
-                "revenue_trend": competitor_service.trend_pct(snaps, "revenue_est_vnd"),
-                "sold_trend": competitor_service.trend_pct(snaps, "items_sold_total"),
+                "follower_trend": competitor_service.trend_pct(snaps, "follower_count"),
+                "product_trend": competitor_service.trend_pct(snaps, "product_count"),
+                "rating_delta": competitor_service.trend_abs(snaps, "rating"),
             }
         )
     return out
@@ -94,7 +95,7 @@ async def _build_rows(db: AsyncSession):
 @router.get("/competitors", response_model=ApiResponse[list[dict]])
 async def list_tracked(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[list[dict]]:
     rows = await _build_rows(db)
-    share = competitor_service.market_share(
+    share = competitor_service.follower_share(
         {r["row"].id: r["latest_ok"] for r in rows}
     )
     items = [
@@ -106,9 +107,10 @@ async def list_tracked(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[li
             created_at=r["row"].created_at.isoformat(),
             latest=_snapshot_out(r["latest_ok"]),
             last_attempt=_snapshot_out(r["last_attempt"]),
-            revenue_trend_pct=r["revenue_trend"],
-            sold_trend_pct=r["sold_trend"],
-            share_pct=share.get(r["row"].id),
+            follower_trend_pct=r["follower_trend"],
+            product_trend_pct=r["product_trend"],
+            rating_delta=r["rating_delta"],
+            follower_share_pct=share.get(r["row"].id),
             snapshot_count=len(r["snaps"]),
         ).model_dump()
         for r in rows
@@ -145,9 +147,10 @@ async def add_tracked(
             created_at=row.created_at.isoformat(),
             latest=_snapshot_out(snap) if snap.ok else None,
             last_attempt=_snapshot_out(snap),
-            revenue_trend_pct=None,
-            sold_trend_pct=None,
-            share_pct=None,
+            follower_trend_pct=None,
+            product_trend_pct=None,
+            rating_delta=None,
+            follower_share_pct=None,
             snapshot_count=1,
         ).model_dump(),
         meta=PageMeta(),
@@ -173,11 +176,20 @@ async def competitor_insight_endpoint(
     db: AsyncSession = Depends(get_db_dep),
 ) -> ApiResponse[dict]:
     rows = await _build_rows(db)
-    share = competitor_service.market_share(
+    share = competitor_service.follower_share(
         {r["row"].id: r["latest_ok"] for r in rows}
     )
     headline, findings, actions, ai = await competitor_insight.build_insight(
-        [(r["row"], r["latest_ok"], r["revenue_trend"], r["sold_trend"]) for r in rows],
+        [
+            competitor_insight.CompetitorReading(
+                competitor=r["row"],
+                latest=r["latest_ok"],
+                follower_trend_pct=r["follower_trend"],
+                product_trend_pct=r["product_trend"],
+                rating_delta=r["rating_delta"],
+            )
+            for r in rows
+        ],
         share,
     )
     return ApiResponse[dict](
@@ -206,9 +218,10 @@ async def tracked_detail(
             created_at=row.created_at.isoformat(),
             latest=_snapshot_out(ok_snaps[-1] if ok_snaps else None),
             last_attempt=_snapshot_out(snaps[-1] if snaps else None),
-            revenue_trend_pct=competitor_service.trend_pct(snaps, "revenue_est_vnd"),
-            sold_trend_pct=competitor_service.trend_pct(snaps, "items_sold_total"),
-            share_pct=None,
+            follower_trend_pct=competitor_service.trend_pct(snaps, "follower_count"),
+            product_trend_pct=competitor_service.trend_pct(snaps, "product_count"),
+            rating_delta=competitor_service.trend_abs(snaps, "rating"),
+            follower_share_pct=None,
             snapshot_count=len(snaps),
         ),
         snapshots=[s for s in (_snapshot_out(x) for x in snaps) if s is not None],

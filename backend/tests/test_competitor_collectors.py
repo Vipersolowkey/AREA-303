@@ -217,12 +217,21 @@ def test_lazada_discount_parsing(raw, expected):
 # --- Trend + share maths ----------------------------------------------------
 
 
-def _snap(revenue: int | None, *, ok: bool = True, minutes: int = 0) -> CompetitorSnapshot:
+def _snap(
+    revenue: int | None = None,
+    *,
+    followers: int | None = None,
+    rating: float | None = None,
+    ok: bool = True,
+    minutes: int = 0,
+) -> CompetitorSnapshot:
     return CompetitorSnapshot(
         competitor_id=1,
         captured_at=datetime.now(UTC) + timedelta(minutes=minutes),
         ok=ok,
         revenue_est_vnd=revenue,
+        follower_count=followers,
+        rating=rating,
     )
 
 
@@ -249,11 +258,25 @@ def test_trend_pct_ignores_failed_and_empty_readings():
     assert competitor_service.trend_pct(snaps, "revenue_est_vnd") == 20.0
 
 
-def test_market_share_is_share_of_the_tracked_set():
-    share = competitor_service.market_share({1: _snap(600), 2: _snap(400)})
+def test_follower_share_is_share_of_the_tracked_set():
+    # Follower count, not revenue: the listing endpoints that would carry sales
+    # are blocked, so a revenue share would be invented.
+    share = competitor_service.follower_share(
+        {1: _snap(followers=600), 2: _snap(followers=400)}
+    )
     assert share == {1: 60.0, 2: 40.0}
 
 
-def test_market_share_is_empty_when_nothing_measured():
-    assert competitor_service.market_share({1: None, 2: _snap(None)}) == {}
-    assert competitor_service.market_share({}) == {}
+def test_follower_share_is_empty_when_nothing_measured():
+    assert competitor_service.follower_share({1: None, 2: _snap()}) == {}
+    assert competitor_service.follower_share({}) == {}
+
+
+def test_trend_abs_reports_rating_movement_not_percent():
+    snaps = [_snap(rating=4.9, minutes=0), _snap(rating=4.78, minutes=1)]
+    # A percentage of a 4.9 average would be meaningless; the drop is the signal.
+    assert competitor_service.trend_abs(snaps, "rating") == -0.12
+
+
+def test_trend_abs_needs_two_readings():
+    assert competitor_service.trend_abs([_snap(rating=4.9)], "rating") is None

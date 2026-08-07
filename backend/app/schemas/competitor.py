@@ -13,6 +13,15 @@ class AddCompetitorRequest(BaseModel):
 
 
 class SnapshotOut(BaseModel):
+    """One reading.
+
+    `items_sold_total`, `revenue_est_vnd`, `voucher_count`, `top_products` and
+    `promotions` are kept in the shape because the collector still parses them
+    if a marketplace ever answers — but both Shopee and Lazada currently block
+    the endpoints that carry them, so expect None. The UI must not present them
+    as pending data.
+    """
+
     captured_at: str
     ok: bool
     error: str | None
@@ -37,10 +46,14 @@ class CompetitorOut(BaseModel):
     #: Most recent attempt regardless of outcome — surfaces a broken collector.
     last_attempt: SnapshotOut | None
     #: Percent change between first and last successful reading.
-    revenue_trend_pct: float | None
-    sold_trend_pct: float | None
-    #: Share of estimated revenue *across the tracked set* (not the whole market).
-    share_pct: float | None
+    follower_trend_pct: float | None
+    product_trend_pct: float | None
+    #: Absolute rating change (a % of a 4.9 average would be meaningless).
+    rating_delta: float | None
+    #: Share of FOLLOWERS across the tracked set. Not revenue share — the
+    #: marketplaces block their listing endpoints, so sales are unobtainable —
+    #: and not market share either, since total category size is unknowable.
+    follower_share_pct: float | None
     #: Number of readings collected so far.
     snapshot_count: int
 

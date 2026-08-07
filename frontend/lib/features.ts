@@ -548,6 +548,10 @@ export type CompetitorProduct = {
 export type CompetitorSnapshot = {
   captured_at: string;
   ok: boolean;
+  // NOTE: items_sold_total / revenue_est_vnd / voucher_count / top_products /
+  // promotions are parsed by the collector but both Shopee and Lazada block the
+  // endpoints that carry them, so they are effectively always null. Don't render
+  // them as if data were pending.
   /** Why a capture failed — shown as-is; marketplace endpoints are unofficial. */
   error: string | null;
   follower_count: number | null;
@@ -569,10 +573,15 @@ export type TrackedCompetitor = {
   created_at: string;
   latest: CompetitorSnapshot | null;
   last_attempt: CompetitorSnapshot | null;
-  revenue_trend_pct: number | null;
-  sold_trend_pct: number | null;
-  /** Share of estimated revenue across the tracked set — not total market. */
-  share_pct: number | null;
+  follower_trend_pct: number | null;
+  product_trend_pct: number | null;
+  /** Absolute rating change (a % of a 4.9 average would say nothing). */
+  rating_delta: number | null;
+  /**
+   * Share of FOLLOWERS across the tracked set. Not revenue share: both
+   * marketplaces block the listing endpoints that carry sales figures.
+   */
+  follower_share_pct: number | null;
   snapshot_count: number;
 };
 

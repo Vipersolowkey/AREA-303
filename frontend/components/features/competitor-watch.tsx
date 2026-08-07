@@ -29,16 +29,20 @@ import {
 import { ApiClientError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-function fmtVnd(v: number | null): string {
-  if (!v) return "—";
-  if (v >= 1_000_000_000) return `${(v / 1_000_000_000).toFixed(1)} tỷ₫`;
-  if (v >= 1_000_000) return `${Math.round(v / 1_000_000)} triệu₫`;
-  return `${v.toLocaleString("vi-VN")}₫`;
+function fmtNum(v: number | null): string {
+  return v === null || v === undefined ? "—" : v.toLocaleString("vi-VN");
 }
 
-function Trend({ pct }: { pct: number | null }) {
-  if (pct === null) return <span className="text-2xs text-text-dim">chưa đủ dữ liệu</span>;
-  const up = pct >= 0;
+/**
+ * `suffix` is "%" for percent changes and "" for an absolute delta (rating,
+ * where a percentage of a 4.9 average would say nothing).
+ */
+function Trend({ value, suffix = "%" }: { value: number | null; suffix?: string }) {
+  if (value === null) {
+    return <span className="text-2xs text-text-dim">chưa đủ dữ liệu</span>;
+  }
+  if (value === 0) return <span className="text-2xs text-text-dim">đi ngang</span>;
+  const up = value > 0;
   return (
     <span
       className={cn(
@@ -47,25 +51,9 @@ function Trend({ pct }: { pct: number | null }) {
       )}
     >
       {up ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-      {Math.abs(pct)}%
+      {Math.abs(value)}
+      {suffix}
     </span>
-  );
-}
-
-/** Tiny inline bar — enough to read a series at a glance without a chart lib. */
-function Spark({ values }: { values: number[] }) {
-  if (values.length < 2) return null;
-  const max = Math.max(...values) || 1;
-  return (
-    <div className="flex h-6 items-end gap-0.5">
-      {values.map((v, i) => (
-        <div
-          key={i}
-          className="w-1.5 rounded-sm bg-accent/60"
-          style={{ height: `${Math.max(8, (v / max) * 100)}%` }}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -149,8 +137,8 @@ export function CompetitorWatch() {
           <div>
             <CardTitle>Theo dõi đối thủ</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
-              Dán link cửa hàng Shopee hoặc Lazada. Hệ thống chụp lại số liệu theo
-              từng lần thu thập để dựng xu hướng.
+              Dán link cửa hàng Shopee. Mỗi lần thu thập lưu lại một mốc số liệu —
+              xu hướng chỉ xuất hiện từ lần thu thập thứ hai.
             </p>
           </div>
           <Button variant="secondary" size="sm" onClick={collect} disabled={collecting}>
@@ -167,7 +155,7 @@ export function CompetitorWatch() {
             <Input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://shopee.vn/shop/123456789 hoặc https://lazada.vn/shop/ten-shop"
+              placeholder="https://shopee.vn/yody.official hoặc https://shopee.vn/shop/123456789"
             />
             <Button type="submit" disabled={adding || !url.trim()}>
               {adding ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
@@ -186,13 +174,22 @@ export function CompetitorWatch() {
             </p>
           )}
 
-          <p className="flex items-start gap-1.5 text-2xs text-text-dim">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Shopee và Lazada không có API công khai cho shop của người khác, nên dữ
-            liệu được đọc từ endpoint nội bộ của họ — có thể bị chặn hoặc đổi bất kỳ
-            lúc nào. Doanh thu là <span className="font-semibold">ước tính</span> từ
-            giá × số đã bán, không phải số do sàn công bố.
-          </p>
+          <div className="space-y-1.5 rounded-xl border border-border bg-bg-alt p-3">
+            <p className="flex items-start gap-1.5 text-2xs text-text-muted">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
+              <span>
+                <span className="font-semibold">Thu thập được:</span> tên shop, số
+                follower, điểm đánh giá, số sản phẩm — và thay đổi của chúng theo thời gian.
+              </span>
+            </p>
+            <p className="pl-5 text-2xs text-text-dim">
+              <span className="font-semibold">Không thu thập được:</span> doanh thu, số
+              đã bán, sản phẩm bán chạy, voucher. Shopee chặn (HTTP 403) mọi endpoint
+              danh sách sản phẩm, và Lazada trả trang chống bot cho mọi yêu cầu tự động
+              — nên hiện chỉ theo dõi được cửa hàng Shopee. Đây là giới hạn của sàn,
+              không phải lỗi cấu hình.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -260,8 +257,10 @@ export function CompetitorWatch() {
                         {c.display_name ?? c.url}
                       </span>
                       <Badge variant="muted">{c.platform}</Badge>
-                      {c.share_pct !== null && (
-                        <Badge variant="live">{c.share_pct}% trong nhóm</Badge>
+                      {c.follower_share_pct !== null && (
+                        <Badge variant="live">
+                          {c.follower_share_pct}% follower trong nhóm
+                        </Badge>
                       )}
                       <a
                         href={c.url}
@@ -289,75 +288,24 @@ export function CompetitorWatch() {
                     )}
 
                     {snap ? (
-                      <>
-                        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                          <Metric
-                            label="GMV ước tính"
-                            value={fmtVnd(snap.revenue_est_vnd)}
-                            trend={c.revenue_trend_pct}
-                          />
-                          <Metric
-                            label="Đã bán"
-                            value={snap.items_sold_total?.toLocaleString("vi-VN") ?? "—"}
-                            trend={c.sold_trend_pct}
-                          />
-                          <Metric
-                            label="Follower"
-                            value={snap.follower_count?.toLocaleString("vi-VN") ?? "—"}
-                          />
-                          <Metric
-                            label="Đánh giá"
-                            value={snap.rating ? snap.rating.toFixed(1) : "—"}
-                          />
-                        </div>
-
-                        {snap.promotions && snap.promotions.length > 0 && (
-                          <div className="mt-3">
-                            <div className="text-2xs font-medium text-text-dim">
-                              Đang giảm giá ({snap.promotions.length})
-                            </div>
-                            <div className="mt-1.5 flex flex-wrap gap-1.5">
-                              {snap.promotions.slice(0, 6).map((p, i) => (
-                                <span
-                                  key={i}
-                                  className="rounded-full bg-warning/10 px-2 py-0.5 text-2xs text-warning"
-                                  title={p.name}
-                                >
-                                  −{p.discount_pct}% {p.name.slice(0, 24)}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {snap.top_products && snap.top_products.length > 0 && (
-                          <div className="mt-3">
-                            <div className="text-2xs font-medium text-text-dim">
-                              Bán chạy nhất
-                            </div>
-                            <div className="mt-1.5 space-y-1">
-                              {snap.top_products
-                                .slice()
-                                .sort((a, b) => (b.sold ?? 0) - (a.sold ?? 0))
-                                .slice(0, 3)
-                                .map((p, i) => (
-                                  <div
-                                    key={i}
-                                    className="flex items-center gap-2 text-xs text-text-muted"
-                                  >
-                                    <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                                    <span className="mono text-text">
-                                      {fmtVnd(p.price_vnd)}
-                                    </span>
-                                    <span className="mono w-20 text-right text-text-dim">
-                                      {p.sold?.toLocaleString("vi-VN") ?? "—"} bán
-                                    </span>
-                                  </div>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-                      </>
+                      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        <Metric
+                          label="Follower"
+                          value={fmtNum(snap.follower_count)}
+                          trend={c.follower_trend_pct}
+                        />
+                        <Metric
+                          label="Số sản phẩm"
+                          value={fmtNum(snap.product_count)}
+                          trend={c.product_trend_pct}
+                        />
+                        <Metric
+                          label="Đánh giá"
+                          value={snap.rating ? snap.rating.toFixed(2) : "—"}
+                          trend={c.rating_delta}
+                          trendSuffix=""
+                        />
+                      </div>
                     ) : (
                       !failed && (
                         <p className="mt-2 text-xs text-text-muted">
@@ -385,10 +333,12 @@ function Metric({
   label,
   value,
   trend,
+  trendSuffix = "%",
 }: {
   label: string;
   value: string;
   trend?: number | null;
+  trendSuffix?: string;
 }) {
   return (
     <div className="rounded-lg border border-border bg-bg-alt p-2.5">
@@ -396,7 +346,7 @@ function Metric({
       <div className="mono mt-0.5 text-sm font-semibold text-text">{value}</div>
       {trend !== undefined && (
         <div className="mt-0.5">
-          <Trend pct={trend} />
+          <Trend value={trend} suffix={trendSuffix} />
         </div>
       )}
     </div>
