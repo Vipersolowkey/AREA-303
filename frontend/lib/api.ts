@@ -103,6 +103,9 @@ export const api = {
   post<T>(path: string, body: unknown, signal?: AbortSignal) {
     return request<T>(path, { method: "POST", body: JSON.stringify(body) }, signal);
   },
+  delete<T>(path: string, signal?: AbortSignal) {
+    return request<T>(path, { method: "DELETE" }, signal);
+  },
 };
 
 /**

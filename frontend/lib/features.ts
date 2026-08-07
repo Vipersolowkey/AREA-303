@@ -537,6 +537,84 @@ export async function rejectReview(id: number): Promise<{ id: number; status: st
   return post(`/storefront/reviews/${id}/reject`, {});
 }
 
+// --- Competitor tracking (Market Intelligence watchlist) -------------------
+export type CompetitorPlatform = "shopee" | "lazada";
+
+export type CompetitorProduct = {
+  name: string; price_vnd: number | null; sold: number | null;
+  discount_pct: number | null;
+};
+
+export type CompetitorSnapshot = {
+  captured_at: string;
+  ok: boolean;
+  /** Why a capture failed — shown as-is; marketplace endpoints are unofficial. */
+  error: string | null;
+  follower_count: number | null;
+  rating: number | null;
+  product_count: number | null;
+  items_sold_total: number | null;
+  /** Estimated cumulative GMV (Σ price × units sold), not a reported figure. */
+  revenue_est_vnd: number | null;
+  voucher_count: number | null;
+  top_products: CompetitorProduct[] | null;
+  promotions: { name: string; discount_pct: number | null; price_vnd: number | null }[] | null;
+};
+
+export type TrackedCompetitor = {
+  id: number;
+  platform: CompetitorPlatform;
+  display_name: string | null;
+  url: string;
+  created_at: string;
+  latest: CompetitorSnapshot | null;
+  last_attempt: CompetitorSnapshot | null;
+  revenue_trend_pct: number | null;
+  sold_trend_pct: number | null;
+  /** Share of estimated revenue across the tracked set — not total market. */
+  share_pct: number | null;
+  snapshot_count: number;
+};
+
+export type CompetitorInsight = {
+  headline: string;
+  findings: string[];
+  actions: string[];
+  /** False when the headline came from the deterministic fallback, not an LLM. */
+  ai_generated: boolean;
+};
+
+export type CollectRun = {
+  attempted: number; succeeded: number; failed: number; errors: string[];
+};
+
+export async function getTrackedCompetitors(): Promise<TrackedCompetitor[] | null> {
+  return get<TrackedCompetitor[]>("/market-intelligence/competitors");
+}
+
+/** Throws ApiClientError so the form can show why a URL was rejected. */
+export async function addTrackedCompetitor(url: string): Promise<TrackedCompetitor> {
+  const env = await api.post<TrackedCompetitor>("/market-intelligence/competitors", { url });
+  return env.data as TrackedCompetitor;
+}
+
+export async function removeTrackedCompetitor(id: number): Promise<boolean> {
+  try {
+    await api.delete<unknown>(`/market-intelligence/competitors/${id}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function collectCompetitorsNow(): Promise<CollectRun | null> {
+  return post<CollectRun>("/market-intelligence/competitors/collect", {});
+}
+
+export async function getCompetitorInsight(): Promise<CompetitorInsight | null> {
+  return get<CompetitorInsight>("/market-intelligence/competitors/insight");
+}
+
 // --- Orders + checkout -----------------------------------------------------
 export type OrderStatus = "pending" | "paid" | "shipped" | "cancelled";
 export type OrderItemOut = {

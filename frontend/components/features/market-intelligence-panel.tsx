@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { analyzeMarketIntelligence, type MarketIntelligenceResult, type Category } from "@/lib/features";
+import { CompetitorWatch } from "@/components/features/competitor-watch";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES: Category[] = ["Thời trang", "Mỹ phẩm", "Phụ kiện"];
@@ -63,7 +64,12 @@ export function MarketIntelligencePanel() {
   const pos = result ? POSITION[result.position] : null;
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+    <div className="space-y-6">
+      {/* Ongoing competitor tracking from a pasted shop URL. */}
+      <CompetitorWatch />
+
+      {/* One-shot pricing response calculator (the original feature). */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
       <Card className="lg:col-span-7">
         <CardHeader>
           <div>
@@ -158,6 +164,7 @@ export function MarketIntelligencePanel() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

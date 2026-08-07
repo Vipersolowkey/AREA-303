@@ -13,11 +13,13 @@ from app.db.base import Base
 # Importing models registers them on Base.metadata.
 from app.models import (  # noqa: F401
     BehaviorEvent,
+    CompetitorSnapshot,
     Idea,
     Order,
     OrderItem,
     ProductStock,
     Review,
+    TrackedCompetitor,
     User,
 )
 
