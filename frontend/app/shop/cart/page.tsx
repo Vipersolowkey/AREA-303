@@ -2,19 +2,28 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Minus, Plus, Trash2, ShoppingCart, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Minus, Plus, Trash2, ShoppingCart, CheckCircle2, Loader2 } from "lucide-react";
 import {
   getCart, setQty, removeItem, clearCart, cartTotal, cartCount, CART_EVENT, type CartItem,
 } from "@/lib/cart";
 import { trackEvent } from "@/lib/journey-track";
 import { StoreImage } from "@/components/store/store-image";
+import { Input } from "@/components/ui/input";
+import { checkout as placeOrder, type Order } from "@/lib/features";
+import { ApiClientError } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 const VND = new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 });
 const fmt = (n: number) => VND.format(n).replace(/\s*₫/g, "") + "₫";
 
 export default function CartPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
-  const [ordered, setOrdered] = useState<{ count: number; total: number } | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = () => setItems(getCart());
@@ -27,25 +36,64 @@ export default function CartPage() {
     };
   }, []);
 
-  function checkout() {
-    if (items.length === 0) return;
-    // Multi-item purchase: one purchase event per item (feeds Journey), then clear.
-    items.forEach(() => trackEvent("purchase"));
-    setOrdered({ count: cartCount(), total: cartTotal() });
-    clearCart();
+  // Prefill from the signed-in account; guests type it in.
+  useEffect(() => {
+    if (user) {
+      setName((n) => n || user.name || user.email);
+      setEmail((e) => e || user.email);
+    }
+  }, [user]);
+
+  async function submit() {
+    if (items.length === 0 || busy || !name.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const placed = await placeOrder({
+        items: items.map((it) => ({ product_id: it.id, qty: it.qty })),
+        customerName: name.trim(),
+        email: email.trim() || undefined,
+      });
+      // Feed Journey: one purchase event per line.
+      items.forEach(() => trackEvent("purchase"));
+      setOrder(placed);
+      clearCart();
+    } catch (err) {
+      // 409 = a line went out of stock between adding and checking out.
+      setError(
+        err instanceof ApiClientError
+          ? (err.envelope.error?.message ?? "Không đặt được hàng.")
+          : "Không kết nối được máy chủ. Hãy thử lại.",
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
-  if (ordered) {
+  if (order) {
     return (
-      <div className="grid place-items-center rounded-lg border border-success/40 bg-success/5 py-20 text-center">
-        <CheckCircle2 className="h-10 w-10 text-success" strokeWidth={1.5} />
+      <div className="grid place-items-center rounded-lg border border-success/40 bg-success/5 py-16 text-center">
+        <CheckCircle2 className="h-10 w-10 text-success" />
         <p className="mt-4 text-2xl font-bold">Đặt hàng thành công!</p>
+        <p className="mono mt-2 text-lg text-text">{order.order_no}</p>
         <p className="mt-1 text-text-muted">
-          {ordered.count} sản phẩm · tổng <span className="mono font-medium text-text">{fmt(ordered.total)}</span>
+          {order.items.length} sản phẩm · tổng{" "}
+          <span className="mono font-semibold text-text">{fmt(order.total_vnd)}</span>
         </p>
-        <Link href="/shop/store" className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
-          Tiếp tục mua sắm
-        </Link>
+        <p className="mt-3 max-w-sm text-xs text-text-dim">
+          Đơn đang ở trạng thái <span className="font-semibold">chờ xử lý</span> — hệ thống
+          chưa tích hợp cổng thanh toán, người bán sẽ xác nhận thủ công.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link href="/shop/store" className="inline-flex items-center gap-1.5 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-accent-hover">
+            Tiếp tục mua sắm
+          </Link>
+          {user && (
+            <Link href="/shop/orders" className="inline-flex items-center gap-1.5 rounded-full border border-border-strong px-6 py-3 text-sm font-semibold text-text transition-colors hover:border-accent hover:text-accent">
+              Xem đơn của tôi
+            </Link>
+          )}
+        </div>
       </div>
     );
   }
@@ -119,12 +167,52 @@ export default function CartPage() {
               <span className="font-medium text-text">Tổng cộng</span>
               <span className="mono text-lg text-accent">{fmt(cartTotal())}</span>
             </div>
+
+            <div className="mt-5 space-y-2.5 border-t border-border pt-5">
+              <label htmlFor="cust-name" className="block text-xs font-medium text-text-muted">
+                Người nhận
+              </label>
+              <Input
+                id="cust-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Tên của bạn"
+              />
+              <label htmlFor="cust-email" className="block text-xs font-medium text-text-muted">
+                Email <span className="font-normal text-text-dim">(không bắt buộc)</span>
+              </label>
+              <Input
+                id="cust-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ban@email.com"
+              />
+            </div>
+
+            {error && (
+              <p className="mt-3 rounded-xl border border-danger/30 bg-danger/5 px-3 py-2 text-xs text-danger">
+                {error}
+              </p>
+            )}
+
             <button
-              onClick={checkout}
-              className="mt-5 w-full rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover"
+              onClick={submit}
+              disabled={busy || !name.trim()}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
-              Thanh toán ({cartCount()} món)
+              {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+              Đặt hàng ({cartCount()} món)
             </button>
+            {!user && (
+              <p className="mt-2.5 text-center text-2xs text-text-dim">
+                Mua không cần đăng nhập.{" "}
+                <Link href="/login" className="font-semibold text-accent">
+                  Đăng nhập
+                </Link>{" "}
+                để lưu lịch sử đơn.
+              </p>
+            )}
           </div>
         </div>
       )}

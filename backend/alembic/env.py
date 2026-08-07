@@ -11,7 +11,15 @@ from app.core.config import settings
 from app.db.base import Base
 
 # Importing models registers them on Base.metadata.
-from app.models import BehaviorEvent, Idea, Review, User  # noqa: F401
+from app.models import (  # noqa: F401
+    BehaviorEvent,
+    Idea,
+    Order,
+    OrderItem,
+    ProductStock,
+    Review,
+    User,
+)
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url.replace("+asyncpg", ""))

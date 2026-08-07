@@ -1,9 +1,11 @@
-"""Buyer storefront catalog — list + detail from the commerce store, plus the
-real review write path (submit / moderation queue / approve / reject).
+"""Buyer storefront — catalogue, reviews and the order/checkout path.
 
 Mixed audience, so this router is NOT gated wholesale in :mod:`app.api.v1`:
-browsing the catalogue and submitting a review stay open to anonymous
-shoppers, while the moderation queue is admin-only per-route.
+browsing, submitting a review and placing an order stay open to anonymous
+shoppers, while the moderation queue and the all-orders view are admin-only
+per-route. Reading *your own* orders needs a login (there'd be no way to scope
+the query otherwise), which is why it uses `get_current_user` rather than
+`require_admin`.
 """
 
 from __future__ import annotations
@@ -11,14 +13,25 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db_dep, require_admin
+from app.api.deps import (
+    get_current_user,
+    get_current_user_optional,
+    get_db_dep,
+    require_admin,
+)
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.core.responses import ApiResponse, PageMeta
+from app.schemas.orders import (
+    CheckoutRequest,
+    OrderItemOut,
+    OrderOut,
+    StatusUpdateRequest,
+)
 from app.schemas.reviews import ReviewCreateRequest, ReviewQueueItem, ReviewSubmitResponse
 from app.schemas.storefront import ReviewItem
 from app.services import commerce_store as store
-from app.services import review_service
+from app.services import order_service, review_service
 from app.services import storefront as service
 
 log = get_logger("app.api.storefront")
@@ -33,9 +46,35 @@ _STATUS_MESSAGE = {
 }
 
 
+def _order_out(order) -> dict:  # noqa: ANN001 — app.models.order.Order
+    return OrderOut(
+        order_no=order.order_no,
+        status=order.status,
+        customer_name=order.customer_name,
+        email=order.email,
+        total_vnd=order.total_vnd,
+        created_at=order.created_at.isoformat(),
+        items=[
+            OrderItemOut(
+                product_id=i.product_id,
+                product_name=i.product_name,
+                brand=i.brand,
+                unit_price_vnd=i.unit_price_vnd,
+                qty=i.qty,
+                line_total_vnd=i.unit_price_vnd * i.qty,
+            )
+            for i in order.items
+        ],
+    ).model_dump()
+
+
 @router.get("/products", response_model=ApiResponse[dict])
-async def products(q: str | None = None, category: str | None = None) -> ApiResponse[dict]:
-    data = service.list_products(q=q, category=category)
+async def products(
+    q: str | None = None,
+    category: str | None = None,
+    db: AsyncSession = Depends(get_db_dep),
+) -> ApiResponse[dict]:
+    data = await service.list_products_with_stock(db, q=q, category=category)
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)
 
 
@@ -61,6 +100,71 @@ async def submit_review(
         if row.status == "published" else None,
     )
     return ApiResponse[dict](success=True, data=resp.model_dump(), meta=PageMeta(), error=None)
+
+
+# --- Orders -----------------------------------------------------------------
+# Checkout is intentionally open to anonymous shoppers, matching the rest of the
+# buyer flow. There is NO payment gateway: an order is created as "pending" and
+# a seller moves it forward by hand.
+
+
+@router.post("/checkout", response_model=ApiResponse[dict])
+async def checkout(
+    req: CheckoutRequest,
+    user: dict | None = Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db_dep),
+) -> ApiResponse[dict]:
+    # Attach the order to an account when the caller happens to be signed in,
+    # but never require it — a guest must still be able to buy.
+    customer_id = str(user["sub"]) if user else None
+    order = await order_service.create_order(db, req, customer_id=customer_id)
+    return ApiResponse[dict](
+        success=True, data=_order_out(order), meta=PageMeta(), error=None
+    )
+
+
+@router.get("/orders", response_model=ApiResponse[list[dict]])
+async def my_orders(
+    user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db_dep)
+) -> ApiResponse[list[dict]]:
+    """The caller's own orders. Needs a login — there's nothing to scope by
+    otherwise (guest orders are only retrievable by their order number)."""
+    rows = await order_service.list_for_customer(db, str(user["sub"]))
+    items = [_order_out(o) for o in rows]
+    return ApiResponse[list[dict]](
+        success=True, data=items, meta=PageMeta(total=len(items)), error=None
+    )
+
+
+@router.get(
+    "/orders/all",
+    response_model=ApiResponse[list[dict]],
+    dependencies=[Depends(require_admin)],
+)
+async def all_orders(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[list[dict]]:
+    try:
+        rows = await order_service.list_all(db)
+    except Exception as exc:  # noqa: BLE001 — the seller dashboard must not crash on a DB hiccup
+        log.warning("storefront.orders_unavailable", error=str(exc))
+        rows = []
+    items = [_order_out(o) for o in rows]
+    return ApiResponse[list[dict]](
+        success=True, data=items, meta=PageMeta(total=len(items)), error=None
+    )
+
+
+@router.post(
+    "/orders/{order_no}/status",
+    response_model=ApiResponse[dict],
+    dependencies=[Depends(require_admin)],
+)
+async def update_order_status(
+    order_no: str, req: StatusUpdateRequest, db: AsyncSession = Depends(get_db_dep)
+) -> ApiResponse[dict]:
+    order = await order_service.set_status(db, order_no, req.status)
+    return ApiResponse[dict](
+        success=True, data=_order_out(order), meta=PageMeta(), error=None
+    )
 
 
 @router.get(

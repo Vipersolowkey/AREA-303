@@ -75,6 +75,14 @@ def _rationale(platform: str, title: str, body: str) -> str:
     return "Hook ngắn, gọn — TikTok Shop ưu tiên dưới 50 ký tự."
 
 
+def _demo_body(platform: str) -> str:
+    """The deterministic copy for a platform, used when the LLM returns nothing."""
+    for v in CONTENT_DEMO_VARIANTS:
+        if v["platform"] == platform:
+            return str(v["body"])
+    return ""
+
+
 @llm_cache(prefix="content_generator")
 async def generate(req: ContentGeneratorRequest) -> ContentGeneratorResponse:
     if settings.DEMO_MODE or not settings.GEMINI_API_KEY and not settings.OPENAI_API_KEY:
@@ -113,14 +121,28 @@ async def generate(req: ContentGeneratorRequest) -> ContentGeneratorResponse:
             LlmMessage(role="user", content=prompt),
         ]
         resp = await llm.chat(messages, temperature=0.7, max_tokens=400)
-        title, _, body = resp.content.partition("\n")
+        raw_title, _, raw_body = resp.content.partition("\n")
+
+        final_title = raw_title.strip()[:120] or req.product_name
+        final_body = raw_body.strip()[:600]
+        if not final_body:
+            # A successful call can still return nothing usable — an empty
+            # response, or a single line with no body after it. The old
+            # `or resp.content[:600]` fallback didn't help: for an empty
+            # response it's also empty (shipping a variant with no body), and
+            # for a one-liner it just duplicated the title. Fall back to the
+            # deterministic copy for this platform instead.
+            final_body = _demo_body(platform) or req.features
+
         out.append(
             ContentVariant(
                 platform=platform,  # type: ignore[arg-type]
-                title=title.strip()[:120] or req.product_name,
-                body=body.strip()[:600] or resp.content[:600],
-                predicted_ctr=_estimate_ctr(platform, title, body),
-                rationale=_rationale(platform, title, body),
+                title=final_title,
+                # Score the copy we're actually returning, not the raw parse —
+                # otherwise the predicted CTR describes text nobody sees.
+                body=final_body,
+                predicted_ctr=_estimate_ctr(platform, final_title, final_body),
+                rationale=_rationale(platform, final_title, final_body),
             )
         )
 

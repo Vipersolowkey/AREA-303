@@ -56,6 +56,15 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            {/* Order history needs an account — a guest order has no owner. */}
+            {mounted && user && (
+              <Link
+                href="/shop/orders"
+                className="hidden rounded-full px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-surface-2 hover:text-text md:inline-flex"
+              >
+                Đơn của tôi
+              </Link>
+            )}
             <CartButton />
             {/* Seller entry point — admins only, and never before hydration. */}
             {mounted && isAdmin && (

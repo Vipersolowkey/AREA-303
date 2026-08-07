@@ -20,11 +20,13 @@ import { DecisionIntelligencePanel } from "./decision-intelligence-panel";
 import { ProductGraphPanel } from "./product-graph-panel";
 import { CopilotPanel } from "./copilot-panel";
 import { DailyBriefingPanel } from "./daily-briefing-panel";
+import { OrdersPanel } from "./orders-panel";
 
 /** Maps a feature slug to its live panel. Keep in sync with IMPLEMENTED in lib/nav. */
 const PANELS: Record<string, ComponentType> = {
   copilot: CopilotPanel,
   "daily-briefing": DailyBriefingPanel,
+  orders: OrdersPanel,
   "personal-shopper": PersonalShopperPanel,
   recsys: RecsysPanel,
   "content-generator": ContentGeneratorPanel,

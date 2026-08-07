@@ -55,7 +55,12 @@ async def _explain_with_llm(item: dict, signals: dict[str, str]) -> str:
             temperature=0.5,
             max_tokens=80,
         )
-        return resp.content.strip().split("\n")[0][:200]
+        # A successful call can still come back empty (blank content, or content
+        # that starts with a newline). Falling through with "" would render a
+        # product card with no reason at all — worse than the deterministic
+        # line — so treat empty like a failure, same as insights.py does.
+        first_line = resp.content.strip().split("\n")[0][:200].strip()
+        return first_line or item["reason"]
     except Exception as exc:  # pragma: no cover — best-effort
         log.warning("recsys.llm_explain_failed", error=str(exc))
         return item["reason"]

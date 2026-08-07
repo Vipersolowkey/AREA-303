@@ -40,6 +40,24 @@ async def get_current_user(
     return decode_access_token(token)
 
 
+async def get_current_user_optional(
+    authorization: str | None = Header(default=None),
+) -> dict | None:
+    """Claims when a usable token is present, else None — never raises.
+
+    For endpoints that work for guests but should attach the account when the
+    caller happens to be signed in (checkout is the case in point).
+    """
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    try:
+        return decode_access_token(authorization.split(" ", 1)[1])
+    except UnauthorizedError:
+        # An expired or forged token is treated as "no token" rather than an
+        # error: the request is valid as a guest.
+        return None
+
+
 def require_role(*roles: str) -> Callable[..., Awaitable[dict]]:
     """Build a dependency that rejects any token whose role isn't listed.
 
@@ -61,6 +79,7 @@ require_admin = require_role("admin")
 
 __all__ = [
     "get_current_user",
+    "get_current_user_optional",
     "get_db",
     "get_db_dep",
     "get_redis",

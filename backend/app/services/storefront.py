@@ -18,10 +18,24 @@ from app.schemas.storefront import (
     StoreProduct,
 )
 from app.services import commerce_store as store
-from app.services import review_service
+from app.services import inventory_service, review_service
 from app.services.genai.demo_data import image_urls_for_type
 
 log = get_logger("app.services.storefront")
+
+
+async def _attach_stock(products: list[StoreProduct], db: AsyncSession) -> None:
+    """Fill in live stock, in place. Fails open: on a DB error `stock` stays
+    None and the UI treats availability as unknown rather than sold out."""
+    if not products:
+        return
+    try:
+        levels = await inventory_service.stock_map(db, [p.id for p in products])
+    except Exception as exc:  # noqa: BLE001 — stock display is best-effort
+        log.warning("storefront.stock_unavailable", error=str(exc))
+        return
+    for p in products:
+        p.stock = levels.get(p.id)
 
 
 def _to_product(p: dict) -> StoreProduct:
@@ -65,14 +79,24 @@ def _real_review_to_item(row) -> ReviewItem:
     return ReviewItem(author=row.author_name, rating=row.rating, text=row.text, days_ago=days_ago)
 
 
+async def list_products_with_stock(
+    db: AsyncSession, q: str | None = None, category: str | None = None
+) -> StoreListResponse:
+    """Catalogue listing with live stock levels attached."""
+    data = list_products(q=q, category=category)
+    await _attach_stock(data.products, db)
+    return data
+
+
 async def get_product_with_reviews(pid: str, db: AsyncSession) -> StoreDetailResponse:
     """Same as :func:`get_product`, plus real published buyer reviews merged
-    in (newest first, ahead of the fabricated demo reviews). Fails open on a
-    DB hiccup — the demo catalog must never break because real reviews are
-    unavailable."""
+    in (newest first, ahead of the fabricated demo reviews) and live stock.
+    Fails open on a DB hiccup — the demo catalog must never break because
+    reviews or stock are unavailable."""
     data = get_product(pid)
     if data.product is None:
         return data
+    await _attach_stock([data.product, *data.similar], db)
     try:
         real_rows = await review_service.list_published_reviews(db, pid)
     except Exception as exc:  # noqa: BLE001 — real reviews are best-effort

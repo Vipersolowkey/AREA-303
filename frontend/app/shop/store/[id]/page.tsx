@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Star, ShoppingBag, CheckCircle2, Loader2, PackageOpen, Flame, MessageSquareText, ChevronLeft, ChevronRight, Images, Send } from "lucide-react";
-import { getStoreProduct, submitStoreReview, type StoreProduct, type StoreReview } from "@/lib/features";
+import { getStoreProduct, isOutOfStock, submitStoreReview, type StoreProduct, type StoreReview } from "@/lib/features";
 import { trackEvent } from "@/lib/journey-track";
 import { addToCart } from "@/lib/cart";
 import { StoreImage } from "@/components/store/store-image";
@@ -19,13 +19,13 @@ const VND = new Intl.NumberFormat("vi-VN", {
 
 export default function StoreDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const id = params?.id;
 
   const [product, setProduct] = useState<StoreProduct | null>(null);
   const [similar, setSimilar] = useState<StoreProduct[]>([]);
   const [reviews, setReviews] = useState<StoreReview[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ordered, setOrdered] = useState(false);
   const [added, setAdded] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   // behaviour signals: dwell time + max scroll depth
@@ -54,7 +54,7 @@ export default function StoreDetailPage() {
 
   // Emotion-aware flash-sale nudge driven by real dwell + scroll: lingering on
   // the page (and browsing it fully) without buying signals hesitation.
-  const hesitating = !ordered && !added && dwell >= 20 && scroll >= 40;
+  const hesitating = !added && dwell >= 20 && scroll >= 40;
   const nudgeDiscount = dwell >= 40 ? 10 : 5;
 
   function doAddToCart(p: StoreProduct) {
@@ -137,6 +137,7 @@ export default function StoreDetailPage() {
   }
 
   const attributes = Object.entries(product.attributes ?? {});
+  const soldOut = isOutOfStock(product);
   const gallery = product.image_urls?.length ? product.image_urls : [product.image_url];
   const activeImage = gallery[selectedImage] ?? gallery[0];
 
@@ -258,8 +259,25 @@ export default function StoreDetailPage() {
             </div>
           )}
 
-          <div className="text-2xs uppercase tracking-wider text-text-dim">
-            SKU <span className="mono text-text-muted">{product.sku}</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <div className="text-2xs uppercase tracking-wider text-text-dim">
+              SKU <span className="mono text-text-muted">{product.sku}</span>
+            </div>
+            {/* stock === null means "unknown", not "sold out" — say nothing then. */}
+            {soldOut ? (
+              <span className="rounded-full bg-text px-2.5 py-0.5 text-2xs font-semibold text-bg">
+                Hết hàng
+              </span>
+            ) : product.stock !== null ? (
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-2xs font-semibold",
+                  product.stock <= 5 ? "bg-warning/15 text-warning" : "bg-success/10 text-success",
+                )}
+              >
+                {product.stock <= 5 ? `Chỉ còn ${product.stock}` : `Còn ${product.stock} sản phẩm`}
+              </span>
+            ) : null}
           </div>
 
           {/* Emotion-aware flash-sale nudge, driven by real dwell/scroll */}
@@ -274,9 +292,9 @@ export default function StoreDetailPage() {
             </div>
           )}
 
-          {ordered ? (
-            <div className="inline-flex items-center gap-2 rounded-full border border-success/40 bg-success/5 px-4 py-3 text-sm font-medium text-success">
-              <CheckCircle2 className="h-5 w-5" /> Đã đặt hàng!
+          {soldOut ? (
+            <div className="inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface-2 px-5 py-3 text-sm font-semibold text-text-muted">
+              <PackageOpen className="h-4 w-4" /> Sản phẩm đã hết hàng
             </div>
           ) : (
             <div className="flex flex-wrap gap-3 pt-2">
@@ -296,8 +314,11 @@ export default function StoreDetailPage() {
               <button
                 type="button"
                 onClick={() => {
-                  trackEvent("purchase", { category: product.category });
-                  setOrdered(true);
+                  // Straight to checkout, like any real store. The `purchase`
+                  // event now fires when the order is actually placed in the
+                  // cart, not on this click — so Journey records a real sale.
+                  doAddToCart(product);
+                  router.push("/shop/cart");
                 }}
                 className="inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover"
               >

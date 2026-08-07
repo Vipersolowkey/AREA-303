@@ -22,6 +22,7 @@ import {
   Bot,
   ClipboardCheck,
   Network,
+  Receipt,
   Store,
   type LucideIcon,
 } from "lucide-react";
@@ -65,6 +66,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "AI", slug: "copilot",          label: "Trợ lý vận hành",    href: "/seller/copilot",          icon: Bot,             app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
   { id: "BR", slug: "daily-briefing",   label: "Hôm nay cần làm gì",  href: "/seller/daily-briefing",   icon: ClipboardCheck,  app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
   { id: "01", slug: "review-intelligence", label: "Đánh giá khách hàng", href: "/seller/review-intelligence", icon: Star, app: "seller", section: "intelligence", category: "NLP", owner: "DA" },
+  { id: "OD", slug: "orders",           label: "Đơn hàng",           href: "/seller/orders",           icon: Receipt,       app: "seller", section: "commerce",     category: "Behavioral AI",   owner: "TL" },
   { id: "02", slug: "dynamic-pricing",  label: "Gợi ý giá bán",    href: "/seller/dynamic-pricing",  icon: Tag,           app: "seller", section: "commerce",     category: "Time Series",     owner: "TL" },
   { id: "04", slug: "customer-risk",    label: "Rủi ro khách hàng",  href: "/seller/customer-risk",    icon: UserMinus,     app: "seller", section: "intelligence", category: "Behavioral AI",   owner: "TL" },
   { id: "06", slug: "demand-forecast",  label: "Demand Forecast",    href: "/seller/demand-forecast",  icon: TrendingUp,    app: "seller", section: "intelligence", category: "Time Series",     owner: "DA" },
@@ -87,6 +89,7 @@ export const NAV_ITEMS: NavItem[] = [
 /** Features that have a live, wired panel (vs. a placeholder). */
 export const IMPLEMENTED = new Set<string>([
   "personal-shopper", "recsys", "content-generator", "seller-coach",
+  "orders",
   "review-intelligence", "dynamic-pricing", "customer-risk", "customer-journey",
   "sentiment-alert", "supply-chain",
   "emotion-sale", "segmentation",
@@ -142,6 +145,7 @@ export const SUBTITLE: Record<string, string> = {
   "creator-performance": "Đo hiệu quả KOL/KOC theo doanh số quy đổi, doanh số/1k view và tỷ lệ tương tác.",
   "decision-intelligence": "Học từ quyết định quá khứ để rút ra hành động nên lặp lại và thời điểm chạy ads tốt nhất.",
   "product-graph": "Quan hệ SKU/brand + sản phẩm tương tự",
+  "orders": "Đơn hàng thật do khách đặt — xác nhận, giao hoặc hủy.",
 };
 
 export const NAV_SECTIONS: Array<{ id: NavItem["section"]; title: string }> = [

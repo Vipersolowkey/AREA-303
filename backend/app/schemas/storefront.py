@@ -18,6 +18,10 @@ class StoreProduct(BaseModel):
     image_url: str
     image_urls: list[str]
     attributes: dict[str, str]
+    # Live stock. `None` means "unknown" (the stock table wasn't reachable), which
+    # the UI must treat as buyable rather than out of stock — a DB blip should not
+    # make the whole catalogue look sold out.
+    stock: int | None = None
 
 
 class ReviewItem(BaseModel):

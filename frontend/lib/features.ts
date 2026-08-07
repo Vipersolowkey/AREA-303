@@ -481,7 +481,14 @@ export type StoreProduct = {
   id: string; sku: string; name: string; brand: string; category: string;
   price_vnd: number; rating: number; reviews: number; trend: string;
   image_url: string; image_urls: string[]; attributes: Record<string, string>;
+  /** Live stock. null = unknown (stock table unreachable) — treat as buyable. */
+  stock: number | null;
 };
+
+/** Out of stock only when we actually know it's zero. */
+export function isOutOfStock(p: { stock: number | null }): boolean {
+  return p.stock === 0;
+}
 export type StoreList = { products: StoreProduct[]; total: number };
 export type StoreReview = { author: string; rating: number; text: string; days_ago: number };
 export type StoreDetail = {
@@ -528,4 +535,49 @@ export async function approveReview(id: number): Promise<{ id: number; status: s
 
 export async function rejectReview(id: number): Promise<{ id: number; status: string } | null> {
   return post(`/storefront/reviews/${id}/reject`, {});
+}
+
+// --- Orders + checkout -----------------------------------------------------
+export type OrderStatus = "pending" | "paid" | "shipped" | "cancelled";
+export type OrderItemOut = {
+  product_id: string; product_name: string; brand: string;
+  unit_price_vnd: number; qty: number; line_total_vnd: number;
+};
+export type Order = {
+  order_no: string; status: OrderStatus; customer_name: string;
+  email: string | null; total_vnd: number; created_at: string;
+  items: OrderItemOut[];
+};
+
+/**
+ * Place an order. Prices are NOT sent — the server re-reads them from the
+ * catalogue, so only ids and quantities go over the wire. Throws
+ * `ApiClientError` on a stock conflict (409) so the caller can show why.
+ */
+export async function checkout(input: {
+  items: { product_id: string; qty: number }[];
+  customerName: string;
+  email?: string;
+}): Promise<Order> {
+  const env = await api.post<Order>("/storefront/checkout", {
+    items: input.items,
+    customer_name: input.customerName,
+    email: input.email || null,
+  });
+  return env.data as Order;
+}
+
+export async function getMyOrders(): Promise<Order[] | null> {
+  return get<Order[]>("/storefront/orders");
+}
+
+export async function getAllOrders(): Promise<Order[] | null> {
+  return get<Order[]>("/storefront/orders/all");
+}
+
+export async function setOrderStatus(
+  orderNo: string,
+  status: OrderStatus,
+): Promise<Order | null> {
+  return post<Order>(`/storefront/orders/${encodeURIComponent(orderNo)}/status`, { status });
 }
