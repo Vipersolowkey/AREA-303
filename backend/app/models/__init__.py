@@ -6,6 +6,7 @@ from app.models.idea import Idea
 from app.models.order import Order, OrderItem
 from app.models.product_stock import ProductStock
 from app.models.review import Review
+from app.models.shopee_session import ShopeeSession
 from app.models.user import User
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "OrderItem",
     "ProductStock",
     "Review",
+    "ShopeeSession",
     "TrackedCompetitor",
     "User",
 ]

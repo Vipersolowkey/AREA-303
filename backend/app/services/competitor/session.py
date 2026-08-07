@@ -88,13 +88,23 @@ class ShopeeSessionReader:
     Use as an async context manager. Constructing it does not launch anything —
     the browser starts on first use — so a run that ends up with nothing to read
     costs nothing.
+
+    `storage_state` is the decrypted Playwright state for the user whose session
+    this is. Passing it in rather than reading a path is what makes the reader
+    per-user: each connected account gets its own reader, and the operator-wide
+    file (`COMPETITOR_SESSION_PATH`) is only the single-tenant dev fallback.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, storage_state: dict[str, Any] | None = None) -> None:
+        self._storage_state = storage_state
         self._pw: Any = None
         self._browser: Any = None
         self._ctx: Any = None
         self._lock = asyncio.Lock()
+        #: Set when a read fails in a way that means the credential is dead, so
+        #: the caller can mark the connection expired instead of retrying it
+        #: every run forever.
+        self.session_expired = False
 
     async def __aenter__(self) -> ShopeeSessionReader:
         return self
@@ -115,7 +125,11 @@ class ShopeeSessionReader:
         self._pw = await async_playwright().start()
         self._browser = await self._pw.chromium.launch(headless=True)
         self._ctx = await self._browser.new_context(
-            storage_state=str(session_file()),
+            # A dict for a per-user session from the database; a path for the
+            # operator-wide dev file.
+            storage_state=self._storage_state
+            if self._storage_state is not None
+            else str(session_file()),
             locale="vi-VN",
             viewport={"width": 1366, "height": 900},
         )
@@ -165,9 +179,10 @@ class ShopeeSessionReader:
 
             body = await page.inner_text("body")
             if _looks_like_login_wall(body):
+                self.session_expired = True
                 return None, (
-                    "Session Shopee đã hết hạn (trang trả về yêu cầu đăng nhập). "
-                    "Chạy lại `python scripts/shopee_login.py`."
+                    "Kết nối Shopee đã hết hạn (trang trả về yêu cầu đăng nhập). "
+                    "Cần kết nối lại tài khoản Shopee."
                 )
 
             raw = await page.evaluate(_FETCH_JS, _listing_path(shop_id))
@@ -186,9 +201,12 @@ class ShopeeSessionReader:
         if not isinstance(payload, dict):
             return None, "Shopee trả về cấu trúc không mong đợi."
         if payload.get("error") == _BLOCKED_ERROR:
+            # Same treatment as a login wall: retrying this every run just burns
+            # requests against an account that's already being refused.
+            self.session_expired = True
             return None, (
-                "Shopee từ chối yêu cầu dù có session (error 90309999) — session "
-                "chưa hợp lệ, hoặc account đang bị giới hạn truy cập tự động."
+                "Shopee từ chối yêu cầu dù đã kết nối (error 90309999) — kết nối "
+                "không còn hợp lệ, hoặc tài khoản đang bị giới hạn truy cập tự động."
             )
 
         items = payload.get("items")
@@ -226,6 +244,42 @@ _LOGIN_WALL_MARKERS = ("vui lòng đăng nhập", "trang không khả dụng", "
 def _looks_like_login_wall(body: str) -> bool:
     low = body.lower()
     return any(m in low for m in _LOGIN_WALL_MARKERS)
+
+
+#: Shopee sets these on a successful login. Used to reject a jar captured before
+#: the user finished logging in — without this the upload "succeeds" and the
+#: first collection is what tells them it didn't.
+_AUTH_COOKIES = ("SPC_ST", "SPC_SI_TOKEN", "SPC_U", "SPC_EC")
+
+
+def narrow_storage_state(state: dict[str, Any]) -> dict[str, Any]:
+    """Strip an uploaded storage_state down to Shopee cookies only.
+
+    A jar captured from a browser the user already had open can contain cookies
+    for every site they were signed into. Storing those would mean holding
+    credentials for services this feature has nothing to do with, so they're
+    dropped here — at the boundary, before anything is encrypted or persisted,
+    rather than trusting every later caller to remember.
+
+    `origins` (localStorage) is dropped wholesale: Shopee's session lives in
+    cookies, so it buys nothing and can carry a surprising amount.
+    """
+    cookies = [
+        c
+        for c in state.get("cookies") or []
+        if isinstance(c, dict) and str(c.get("domain") or "").lower().lstrip(".").endswith("shopee.vn")
+    ]
+    return {"cookies": cookies, "origins": []}
+
+
+def state_looks_logged_in(state: dict[str, Any]) -> bool:
+    """Whether a jar carries a Shopee session cookie with a real value."""
+    names = {
+        str(c.get("name")): str(c.get("value") or "")
+        for c in state.get("cookies") or []
+        if isinstance(c, dict)
+    }
+    return any(names.get(n) for n in _AUTH_COOKIES)
 
 
 def _to_reading(items: list[Any]) -> SalesReading:

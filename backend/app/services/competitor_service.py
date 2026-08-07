@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import ConflictError, NotFoundError
 from app.core.logging import get_logger
 from app.models.competitor import CompetitorSnapshot, TrackedCompetitor
+from app.services import shopee_session_service
 from app.services.competitor import parse_competitor_url
 from app.services.competitor import session as session_mod
 from app.services.competitor.registry import collect as run_collector
@@ -116,29 +117,60 @@ def _to_parsed(row: TrackedCompetitor) -> ParsedCompetitor:
 
 
 @asynccontextmanager
-async def _sales_reader() -> AsyncIterator[ShopeeSessionReader | None]:
-    """Own one browser for a collection run, or none if session reads are off.
+async def _sales_reader(
+    db: AsyncSession, user_id: int | None
+) -> AsyncIterator[ShopeeSessionReader | None]:
+    """Own one browser for a collection run, or none if no session is available.
 
-    Yielding None rather than a disabled reader keeps the "not configured" check
-    in one place: the collector treats None as "no session available" and reports
-    it, so there is no second code path for the disabled case.
+    Two sources, in order:
+
+    1. The signed-in user's own connected Shopee account. This is the product
+       path — each user connects their own login, so no shared credential exists.
+    2. `COMPETITOR_SESSION_PATH`, an operator-wide file. Single-tenant dev only.
+
+    On exit, a credential-level failure during the run deactivates that user's
+    connection, so the UI can ask for a reconnect instead of launching a browser
+    every run to be refused again.
+
+    Yielding None rather than a disabled reader keeps the "not available" check in
+    one place: the collector treats None as "no session", so there is no second
+    code path for the disabled case.
     """
-    usable, reason = session_mod.is_configured()
-    if not usable:
-        if reason:
-            # Enabled but unusable is a misconfiguration, and silence here is
-            # what makes it look like the feature is merely empty.
-            log.warning("competitor.session.unavailable", reason=reason)
-        yield None
+    state = await shopee_session_service.storage_state_for(db, user_id) if user_id else None
+
+    if state is None:
+        usable, reason = session_mod.is_configured()
+        if not usable:
+            if reason:
+                # Enabled but unusable is a misconfiguration, and silence here is
+                # what makes it look like the feature is merely empty.
+                log.warning("competitor.session.unavailable", reason=reason)
+            yield None
+            return
+        async with ShopeeSessionReader() as reader:
+            yield reader
         return
-    async with ShopeeSessionReader() as reader:
-        yield reader
+
+    reader = ShopeeSessionReader(state)
+    try:
+        async with reader:
+            yield reader
+    finally:
+        if reader.session_expired and user_id is not None:
+            await shopee_session_service.mark_result(
+                db,
+                user_id,
+                ok=False,
+                expired=True,
+                error="Shopee từ chối phiên khi thu thập — cần kết nối lại.",
+            )
 
 
 async def collect_one(
     db: AsyncSession,
     row: TrackedCompetitor,
     *,
+    user_id: int | None = None,
     sales_reader: ShopeeSessionReader | None = None,
 ) -> CompetitorSnapshot:
     """Collect a shop and store the reading — including a failed one.
@@ -151,7 +183,7 @@ async def collect_one(
     whole run. Called on its own, it opens and closes its own.
     """
     if sales_reader is None:
-        async with _sales_reader() as reader:
+        async with _sales_reader(db, user_id) as reader:
             return await _collect_and_store(db, row, reader)
     return await _collect_and_store(db, row, sales_reader)
 
@@ -198,8 +230,15 @@ async def _collect_and_store(
     return snapshot
 
 
-async def collect_all(db: AsyncSession) -> list[CompetitorSnapshot]:
-    """Collect every active competitor. Failures are stored, not skipped."""
+async def collect_all(
+    db: AsyncSession, *, user_id: int | None = None
+) -> list[CompetitorSnapshot]:
+    """Collect every active competitor. Failures are stored, not skipped.
+
+    `user_id` selects whose Shopee connection to read sales with — the signed-in
+    user for an on-demand run. None means shop-level fields only (plus the
+    operator-wide dev file, if one is configured).
+    """
     rows = await list_competitors(db)
     if not rows:
         return []
@@ -208,7 +247,7 @@ async def collect_all(db: AsyncSession) -> list[CompetitorSnapshot]:
     # concurrently. The network wait dominates anyway, and both the per-host
     # throttle and the session reader's own lock would serialise same-marketplace
     # calls regardless.
-    async with _sales_reader() as reader:
+    async with _sales_reader(db, user_id) as reader:
         out: list[CompetitorSnapshot] = []
         for row in rows:
             out.append(await _collect_and_store(db, row, reader))

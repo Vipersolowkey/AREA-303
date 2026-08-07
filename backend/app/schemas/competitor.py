@@ -99,6 +99,33 @@ class CollectRunOut(BaseModel):
     notes: list[str]
 
 
+class ConnectShopeeRequest(BaseModel):
+    """A Playwright storage_state captured by `scripts/shopee_connect.py`.
+
+    Deliberately no password field, and none should be added — the user logs in
+    inside their own browser and only the resulting cookie jar arrives here,
+    which is what keeps 2FA/OTP working and keeps us out of credential handling.
+    """
+
+    storage_state: dict[str, Any]
+    #: Label shown in the UI so the user can see which Shopee account is
+    #: attached, without decrypting anything.
+    shopee_username: str | None = Field(default=None, max_length=120)
+
+
+class ShopeeConnectionOut(BaseModel):
+    connected: bool
+    #: True when connected but Shopee has since refused the session.
+    expired: bool
+    shopee_username: str | None
+    connected_at: str | None
+    last_ok_at: str | None
+    last_error: str | None
+    #: False when the server has no CREDENTIAL_ENCRYPTION_KEY, so connecting is
+    #: impossible. Surfaced so the UI explains that instead of failing on submit.
+    can_connect: bool
+
+
 class InsightOut(BaseModel):
     headline: str
     findings: list[str]

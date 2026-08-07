@@ -43,6 +43,13 @@ class Settings(BaseSettings):
 
     # --- Auth ---
     JWT_SECRET: str = "change-me-in-production"
+    # Fernet key for third-party credentials we hold for a user (their connected
+    # Shopee session). Separate from JWT_SECRET on purpose: rotating one
+    # shouldn't force rotating the other, and either leaking shouldn't expose
+    # both. Unset means the connect feature refuses to store anything rather
+    # than falling back to plaintext. Generate with:
+    #   python -c "from app.core.crypto import generate_key; print(generate_key())"
+    CREDENTIAL_ENCRYPTION_KEY: str | None = None
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60 * 24  # 24h
 
@@ -105,10 +112,15 @@ class Settings(BaseSettings):
     #    Preferred when available — tried first.
     COMPETITOR_VENDOR_BASE_URL: str | None = None
     COMPETITOR_VENDOR_API_KEY: str | None = None
-    # 2. A logged-in Shopee browser session, captured once by
-    #    `scripts/shopee_login.py`. Works, but it drives a real account through
-    #    automation, which Shopee's terms prohibit — the account can be limited
-    #    or banned, and the session expires. Off unless explicitly enabled.
+    # 2. A logged-in Shopee session. In the product, each user connects their
+    #    OWN account (`scripts/shopee_connect.py` → POST /market/shopee-connection,
+    #    stored per user and encrypted), so no shared credential exists and the
+    #    two settings below are not involved.
+    #
+    #    These two are the single-tenant DEV fallback only: one operator-wide
+    #    session file, captured with `shopee_connect.py --save-to`. Either way,
+    #    Shopee's terms prohibit automated access and the account can be limited
+    #    or banned, so this is off unless explicitly enabled.
     COMPETITOR_USE_SESSION: bool = False
     COMPETITOR_SESSION_PATH: str = "var/shopee_session.json"
     #: How many best sellers to read per capture. A trend reading, not a crawl.

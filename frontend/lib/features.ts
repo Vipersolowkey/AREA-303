@@ -656,6 +656,41 @@ export async function getCompetitorInsight(): Promise<CompetitorInsight | null> 
   return get<CompetitorInsight>("/market-intelligence/competitors/insight");
 }
 
+/**
+ * The signed-in user's own connected Shopee account.
+ *
+ * There is no "connect" call here on purpose. Establishing the connection needs
+ * a real browser the user logs into themselves — `scripts/shopee_connect.py`
+ * does that and POSTs the cookie jar directly. A web form would have to collect
+ * their Shopee password, which would break 2FA/OTP and be indistinguishable
+ * from phishing. So the UI shows status and can disconnect; it never asks for
+ * marketplace credentials.
+ */
+export type ShopeeConnection = {
+  connected: boolean;
+  /** Connected, but Shopee has since refused the session — needs reconnecting. */
+  expired: boolean;
+  shopee_username: string | null;
+  connected_at: string | null;
+  last_ok_at: string | null;
+  last_error: string | null;
+  /** False when the server has no encryption key, so connecting is impossible. */
+  can_connect: boolean;
+};
+
+export async function getShopeeConnection(): Promise<ShopeeConnection | null> {
+  return get<ShopeeConnection>("/market-intelligence/shopee-connection");
+}
+
+export async function disconnectShopee(): Promise<boolean> {
+  try {
+    await api.delete<unknown>("/market-intelligence/shopee-connection");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // --- Orders + checkout -----------------------------------------------------
 export type OrderStatus = "pending" | "paid" | "shipped" | "cancelled";
 export type OrderItemOut = {

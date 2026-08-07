@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_db_dep
+from app.core import crypto
 from app.core.exceptions import ValidationError
 from app.core.responses import ApiResponse, PageMeta
 from app.schemas.competitor import (
@@ -33,12 +34,14 @@ from app.schemas.competitor import (
     CollectRunOut,
     CompetitorDetail,
     CompetitorOut,
+    ConnectShopeeRequest,
     InsightOut,
     PeriodSalesOut,
+    ShopeeConnectionOut,
     SnapshotOut,
 )
 from app.schemas.market import MarketRequest, MarketScanRequest
-from app.services import competitor_insight, competitor_service
+from app.services import competitor_insight, competitor_service, shopee_session_service
 from app.services import market as service
 from app.services.competitor import InvalidCompetitorUrl, Platform
 
@@ -196,7 +199,7 @@ async def add_tracked(
 
     # Take a first reading immediately so the entry isn't blank until the next
     # scheduled run — and so a broken link shows up right away.
-    snap = await competitor_service.collect_one(db, row)
+    snap = await competitor_service.collect_one(db, row, user_id=int(user["sub"]))
     return ApiResponse[dict](
         success=True,
         data=_competitor_out(
@@ -289,15 +292,94 @@ async def tracked_detail(
     )
 
 
+# --- The signed-in user's own Shopee connection ------------------------------
+
+
+def _connection_out(row) -> ShopeeConnectionOut:  # noqa: ANN001
+    can_connect = crypto.is_available()
+    if row is None:
+        return ShopeeConnectionOut(
+            connected=False,
+            expired=False,
+            shopee_username=None,
+            connected_at=None,
+            last_ok_at=None,
+            last_error=None,
+            can_connect=can_connect,
+        )
+    return ShopeeConnectionOut(
+        # A row that Shopee has started refusing is still a connection the user
+        # made — reported as connected-but-expired so the UI says "kết nối lại"
+        # rather than pretending it never happened.
+        connected=True,
+        expired=not row.active,
+        shopee_username=row.shopee_username,
+        connected_at=row.created_at.isoformat(),
+        last_ok_at=row.last_ok_at.isoformat() if row.last_ok_at else None,
+        last_error=row.last_error,
+        can_connect=can_connect,
+    )
+
+
+@router.get("/shopee-connection", response_model=ApiResponse[dict])
+async def shopee_connection_status(
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_dep),
+) -> ApiResponse[dict]:
+    row = await shopee_session_service.get_session(db, int(user["sub"]))
+    return ApiResponse[dict](
+        success=True, data=_connection_out(row).model_dump(), meta=PageMeta(), error=None
+    )
+
+
+@router.post("/shopee-connection", response_model=ApiResponse[dict])
+async def connect_shopee(
+    req: ConnectShopeeRequest,
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_dep),
+) -> ApiResponse[dict]:
+    """Attach the caller's own Shopee login, after proving it works.
+
+    The jar is narrowed to Shopee cookies and encrypted before storage, and a
+    real shop read has to succeed first — see
+    :mod:`app.services.shopee_session_service` for why both matter.
+    """
+    row = await shopee_session_service.connect(
+        db,
+        int(user["sub"]),
+        storage_state=req.storage_state,
+        shopee_username=req.shopee_username,
+    )
+    return ApiResponse[dict](
+        success=True, data=_connection_out(row).model_dump(), meta=PageMeta(), error=None
+    )
+
+
+@router.delete("/shopee-connection", response_model=ApiResponse[dict])
+async def disconnect_shopee(
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_dep),
+) -> ApiResponse[dict]:
+    """Delete the stored credential outright — not a soft delete."""
+    await shopee_session_service.disconnect(db, int(user["sub"]))
+    return ApiResponse[dict](
+        success=True, data={"connected": False}, meta=PageMeta(), error=None
+    )
+
+
 @router.post("/competitors/collect", response_model=ApiResponse[dict])
-async def collect_now(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[dict]:
+async def collect_now(
+    user: dict = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db_dep),
+) -> ApiResponse[dict]:
     """Take a reading for every tracked shop right now.
 
-    Marketplace endpoints are unofficial and bot-protected, so failures are
-    normal — they're returned in `errors` rather than raised, and each one is
-    also persisted as a snapshot so the history shows the gap and its reason.
+    Sales figures are read with the caller's own Shopee connection when they have
+    one. Marketplace endpoints are unofficial, so failures are normal — they're
+    returned in `errors` rather than raised, and each is also persisted as a
+    snapshot so the history shows the gap and its reason.
     """
-    snaps = await competitor_service.collect_all(db)
+    snaps = await competitor_service.collect_all(db, user_id=int(user["sub"]))
     # A message on a successful reading is a note (partial capture, or no sales
     # source configured), not a failure — keeping them apart stops the UI from
     # saying "0 thất bại" and then listing reasons.

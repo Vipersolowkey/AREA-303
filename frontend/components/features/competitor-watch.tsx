@@ -9,9 +9,11 @@ import {
   Loader2,
   Plus,
   RefreshCw,
+  ShieldAlert,
   Sparkles,
   Trash2,
   TrendingUp,
+  Unplug,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,11 +22,14 @@ import { Input } from "@/components/ui/input";
 import {
   addTrackedCompetitor,
   collectCompetitorsNow,
+  disconnectShopee,
   getCompetitorInsight,
+  getShopeeConnection,
   getTrackedCompetitors,
   removeTrackedCompetitor,
   type CompetitorInsight,
   type SalesSource,
+  type ShopeeConnection,
   type TrackedCompetitor,
 } from "@/lib/features";
 import { ApiClientError } from "@/lib/api";
@@ -74,6 +79,7 @@ function Trend({ value, suffix = "%" }: { value: number | null; suffix?: string 
 export function CompetitorWatch() {
   const [rows, setRows] = useState<TrackedCompetitor[] | null>(null);
   const [insight, setInsight] = useState<CompetitorInsight | null>(null);
+  const [conn, setConn] = useState<ShopeeConnection | null>(null);
   const [url, setUrl] = useState("");
   const [adding, setAdding] = useState(false);
   const [collecting, setCollecting] = useState(false);
@@ -89,9 +95,16 @@ export function CompetitorWatch() {
     setInsight(ins);
   }, []);
 
+  // Separate from `load` so disconnecting refreshes the card without re-running
+  // the insight call, which is the slow one (it hits the LLM).
+  const loadConnection = useCallback(async () => {
+    setConn(await getShopeeConnection());
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    loadConnection();
+  }, [load, loadConnection]);
 
   async function add(e: React.FormEvent) {
     e.preventDefault();
@@ -136,7 +149,9 @@ export function CompetitorWatch() {
     } else {
       setError("Không chạy được thu thập.");
     }
-    await load();
+    // A collection is what discovers an expired session, so refresh the
+    // connection card too rather than leaving it claiming "Đã kết nối".
+    await Promise.all([load(), loadConnection()]);
     setCollecting(false);
   }
 
@@ -189,50 +204,15 @@ export function CompetitorWatch() {
             </p>
           )}
 
-          <div className="space-y-2 rounded-xl border border-border bg-bg-alt p-3">
-            <p className="text-2xs text-text-muted">
-              <span className="font-semibold">Lấy được ngay, không cần cấu hình:</span>{" "}
-              tên shop, follower, điểm đánh giá, số sản phẩm — và xu hướng của chúng.
-            </p>
-            <p className="flex items-start gap-1.5 text-2xs text-text-muted">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" />
-              <span>
-                <span className="font-semibold">
-                  Doanh thu / đã bán / bán chạy / khuyến mãi cần một nguồn riêng.
-                </span>{" "}
-                Shopee chỉ trả các số này cho phiên đã đăng nhập — mọi endpoint khác
-                trả <span className="mono">error 90309999</span>, kể cả khi gọi từ
-                browser thật. Hai cách bật:
-              </span>
-            </p>
-            <ul className="space-y-1 pl-5 text-2xs text-text-dim">
-              <li>
-                <span className="font-semibold text-text-muted">
-                  Nguồn dữ liệu thị trường
-                </span>{" "}
-                (Metric.vn, BeeCost…): đặt{" "}
-                <span className="mono">COMPETITOR_VENDOR_BASE_URL</span> +{" "}
-                <span className="mono">COMPETITOR_VENDOR_API_KEY</span>. Data có bản
-                quyền, không rủi ro tài khoản. Được ưu tiên khi có.
-              </li>
-              <li>
-                <span className="font-semibold text-text-muted">Session Shopee</span>:
-                chạy <span className="mono">python scripts/shopee_login.py</span> để
-                đăng nhập một lần, rồi bật{" "}
-                <span className="mono">COMPETITOR_USE_SESSION=true</span>.{" "}
-                <span className="text-warning">
-                  Shopee cấm truy cập tự động — dùng tài khoản phụ, tài khoản có thể bị
-                  giới hạn hoặc ban.
-                </span>
-              </li>
-            </ul>
-            <p className="pl-5 text-2xs text-text-dim">
-              Lazada hiện trả trang chống bot cho mọi yêu cầu tự động, nên chỉ theo dõi
-              được cửa hàng Shopee.
-            </p>
-          </div>
+          <p className="text-2xs text-text-dim">
+            Lấy được ngay, không cần kết nối gì: tên shop, follower, điểm đánh giá,
+            số sản phẩm. Lazada hiện chặn mọi yêu cầu tự động nên chỉ theo dõi được
+            cửa hàng Shopee.
+          </p>
         </CardContent>
       </Card>
+
+      <ShopeeConnectionCard conn={conn} onChange={loadConnection} />
 
       {/* AI insight */}
       {insight && (
@@ -475,6 +455,144 @@ export function CompetitorWatch() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/**
+ * Status + consent for the user's own Shopee connection.
+ *
+ * There is deliberately no login form. Connecting requires a real browser the
+ * user drives themselves, so the instructions point at the local script — asking
+ * for their Shopee password here would break 2FA/OTP and would be
+ * indistinguishable from a phishing page.
+ *
+ * The ban warning is shown before connecting, not after, because the risk lands
+ * on the user's account and not on ours.
+ */
+function ShopeeConnectionCard({
+  conn,
+  onChange,
+}: {
+  conn: ShopeeConnection | null;
+  onChange: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function disconnect() {
+    setBusy(true);
+    await disconnectShopee();
+    await onChange();
+    setBusy(false);
+  }
+
+  const state = !conn
+    ? "loading"
+    : !conn.can_connect
+      ? "unavailable"
+      : conn.expired
+        ? "expired"
+        : conn.connected
+          ? "connected"
+          : "none";
+
+  return (
+    <Card>
+      <CardHeader>
+        <div>
+          <CardTitle>Số liệu bán hàng của đối thủ</CardTitle>
+          <p className="mt-1 text-xs text-text-muted">
+            Shopee chỉ trả doanh thu / đã bán / bán chạy / khuyến mãi cho phiên đã
+            đăng nhập. Kết nối tài khoản Shopee của bạn để bật 4 chỉ số đó.
+          </p>
+        </div>
+        {state === "connected" && <Badge variant="live">Đã kết nối</Badge>}
+        {state === "expired" && <Badge variant="muted">Hết hạn</Badge>}
+        {state === "none" && <Badge variant="muted">Chưa kết nối</Badge>}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {state === "loading" && <p className="text-sm text-text-muted">Đang tải…</p>}
+
+        {state === "unavailable" && (
+          <p className="flex items-start gap-1.5 rounded-xl border border-danger/30 bg-danger/5 px-3 py-2 text-xs text-danger">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              Máy chủ chưa cấu hình <span className="mono">CREDENTIAL_ENCRYPTION_KEY</span>{" "}
+              nên không thể lưu kết nối. Hệ thống từ chối lưu thay vì lưu ở dạng không
+              mã hoá — liên hệ người quản trị.
+            </span>
+          </p>
+        )}
+
+        {(state === "connected" || state === "expired") && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-text-muted">
+              {conn?.shopee_username && (
+                <span>
+                  Tài khoản Shopee:{" "}
+                  <span className="font-semibold text-text">{conn.shopee_username}</span>
+                </span>
+              )}
+              {conn?.last_ok_at && (
+                <span>
+                  Đọc thành công gần nhất:{" "}
+                  {new Date(conn.last_ok_at).toLocaleString("vi-VN")}
+                </span>
+              )}
+            </div>
+            {state === "expired" && (
+              <p className="rounded-xl border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning">
+                Shopee đã từ chối phiên này{conn?.last_error ? `: ${conn.last_error}` : "."}{" "}
+                Chạy lại script kết nối để đăng nhập mới.
+              </p>
+            )}
+            <Button variant="secondary" size="sm" onClick={disconnect} disabled={busy}>
+              {busy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Unplug className="h-3.5 w-3.5" />
+              )}
+              Ngắt kết nối &amp; xoá dữ liệu đăng nhập
+            </Button>
+            <p className="text-2xs text-text-dim">
+              Ngắt kết nối sẽ <span className="font-semibold">xoá hẳn</span> cookie
+              phiên khỏi máy chủ, không phải chỉ ẩn đi.
+            </p>
+          </div>
+        )}
+
+        {(state === "none" || state === "expired") && (
+          <div className="space-y-2 rounded-xl border border-border bg-bg-alt p-3">
+            <p className="flex items-start gap-1.5 text-xs text-warning">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                <span className="font-semibold">Đọc trước khi kết nối.</span> Shopee cấm
+                truy cập tự động. Tài khoản bạn kết nối có thể bị giới hạn hoặc khoá.
+                Hãy dùng tài khoản phụ, không dùng tài khoản đang bán hàng.
+              </span>
+            </p>
+            <p className="text-2xs text-text-muted">
+              Cách kết nối — chạy trên máy của bạn:
+            </p>
+            <pre className="mono overflow-x-auto rounded-lg bg-bg px-3 py-2 text-2xs text-text-muted">
+              python scripts/shopee_connect.py --email &lt;email AREA-303 của bạn&gt;
+            </pre>
+            <p className="text-2xs text-text-dim">
+              Script mở browser, bạn tự đăng nhập Shopee trong đó (Google, mật khẩu hay
+              OTP đều được).{" "}
+              <span className="font-semibold text-text-muted">
+                Mật khẩu Shopee của bạn không bao giờ được gửi tới AREA-303
+              </span>{" "}
+              — chỉ cookie phiên, và nó được mã hoá trước khi lưu. Đó cũng là lý do
+              2FA/OTP vẫn hoạt động bình thường.
+            </p>
+            <p className="text-2xs text-text-dim">
+              Kết nối được kiểm tra bằng một lần đọc thật trước khi lưu, nên nếu Shopee
+              từ chối thì bạn biết ngay, không phải đợi tới lần thu thập sau.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
