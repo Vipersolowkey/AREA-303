@@ -93,6 +93,27 @@ class Settings(BaseSettings):
     # --- SSE ---
     SSE_HEARTBEAT_SECONDS: float = 15.0
 
+    # --- Competitor tracking: where sales figures come from ---
+    # Shopee's `get_shop_base` answers anonymously (followers, rating, product
+    # count). Everything carrying sales — search_items, pdp/get_pc, item/get —
+    # returns error 90309999 for an anonymous caller, and the shop page itself
+    # renders "vui lòng đăng nhập" even in a real browser. Verified Aug 2026
+    # against two live shops. So sales need one of the two sources below, and
+    # with neither configured the sales fields stay empty by design.
+    #
+    # 1. A data vendor (Metric.vn, BeeCost, …). Licensed data, no account risk.
+    #    Preferred when available — tried first.
+    COMPETITOR_VENDOR_BASE_URL: str | None = None
+    COMPETITOR_VENDOR_API_KEY: str | None = None
+    # 2. A logged-in Shopee browser session, captured once by
+    #    `scripts/shopee_login.py`. Works, but it drives a real account through
+    #    automation, which Shopee's terms prohibit — the account can be limited
+    #    or banned, and the session expires. Off unless explicitly enabled.
+    COMPETITOR_USE_SESSION: bool = False
+    COMPETITOR_SESSION_PATH: str = "var/shopee_session.json"
+    #: How many best sellers to read per capture. A trend reading, not a crawl.
+    COMPETITOR_TOP_N: int = 20
+
     @property
     def database_url(self) -> str:
         return (

@@ -545,24 +545,44 @@ export type CompetitorProduct = {
   discount_pct: number | null;
 };
 
+/**
+ * Where the sales figures in a snapshot came from. `null` means the reading is
+ * shop-level only — Shopee serves sales data exclusively to logged-in sessions,
+ * so an unconfigured install gets followers/rating/product count and nothing
+ * else. That is a complete reading, not a pending one.
+ */
+export type SalesSource = "vendor" | "session";
+
 export type CompetitorSnapshot = {
   captured_at: string;
   ok: boolean;
-  // NOTE: items_sold_total / revenue_est_vnd / voucher_count / top_products /
-  // promotions are parsed by the collector but both Shopee and Lazada block the
-  // endpoints that carry them, so they are effectively always null. Don't render
-  // them as if data were pending.
   /** Why a capture failed — shown as-is; marketplace endpoints are unofficial. */
   error: string | null;
+  // --- always available (anonymous read) ---
   follower_count: number | null;
   rating: number | null;
   product_count: number | null;
+  // --- only when sales_source is non-null ---
   items_sold_total: number | null;
   /** Estimated cumulative GMV (Σ price × units sold), not a reported figure. */
   revenue_est_vnd: number | null;
   voucher_count: number | null;
   top_products: CompetitorProduct[] | null;
   promotions: { name: string; discount_pct: number | null; price_vnd: number | null }[] | null;
+  sales_source: SalesSource | null;
+};
+
+/**
+ * Sales between the two most recent readings — actual current velocity.
+ * `items_sold_total` is cumulative since the shop opened, so it can't tell a
+ * shop selling hard now from one that sold hard in 2019.
+ */
+export type PeriodSales = {
+  units: number;
+  revenue_vnd: number;
+  days: number;
+  from_at: string;
+  to_at: string;
 };
 
 export type TrackedCompetitor = {
@@ -577,11 +597,17 @@ export type TrackedCompetitor = {
   product_trend_pct: number | null;
   /** Absolute rating change (a % of a 4.9 average would say nothing). */
   rating_delta: number | null;
+  /** Both null unless a sales source is configured. */
+  revenue_trend_pct: number | null;
+  sold_trend_pct: number | null;
   /**
-   * Share of FOLLOWERS across the tracked set. Not revenue share: both
-   * marketplaces block the listing endpoints that carry sales figures.
+   * Share within the TRACKED SET, not the market — total category size isn't
+   * knowable from shop pages. `share_basis` says whether it's split by revenue
+   * or by followers, so the label can be honest about which.
    */
-  follower_share_pct: number | null;
+  share_pct: number | null;
+  share_basis: "revenue" | "follower";
+  period_sales: PeriodSales | null;
   snapshot_count: number;
 };
 
@@ -594,7 +620,13 @@ export type CompetitorInsight = {
 };
 
 export type CollectRun = {
-  attempted: number; succeeded: number; failed: number; errors: string[];
+  attempted: number;
+  succeeded: number;
+  failed: number;
+  /** Reasons from readings that failed. */
+  errors: string[];
+  /** Messages from readings that succeeded — partial capture, or no sales source. */
+  notes: string[];
 };
 
 export async function getTrackedCompetitors(): Promise<TrackedCompetitor[] | null> {

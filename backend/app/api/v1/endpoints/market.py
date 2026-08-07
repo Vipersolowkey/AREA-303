@@ -4,16 +4,23 @@ Two related things live under this prefix:
 
 * ``/`` and ``/scan`` — the original one-shot pricing calculator: you supply a
   competitor's price and get a margin-safe response.
-* ``/competitors/*`` — a watchlist that tracks real Shopee/Lazada shops over
-  time. Paste a shop URL, the collector takes periodic readings, and the panel
-  shows trend, in-set revenue share, promotions and an insight.
+* ``/competitors/*`` — a watchlist that tracks real Shopee shops over time.
+  Paste a shop URL, the collector takes periodic readings, and the panel shows
+  trends, in-set share, promotions and an insight.
+
+  Readings come in two tiers: shop-level fields (followers, rating, product
+  count) always, and sales fields only when a vendor feed or a logged-in session
+  is configured — Shopee serves those exclusively to authenticated callers. Every
+  response carries `sales_source` and `share_basis` so the client can label what
+  it's showing rather than imply data it doesn't have. See
+  :mod:`app.services.competitor.base`.
 
 The whole router is admin-gated in :mod:`app.api.v1`.
 """
 
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,6 +34,7 @@ from app.schemas.competitor import (
     CompetitorDetail,
     CompetitorOut,
     InsightOut,
+    PeriodSalesOut,
     SnapshotOut,
 )
 from app.schemas.market import MarketRequest, MarketScanRequest
@@ -68,13 +76,26 @@ def _snapshot_out(snap) -> SnapshotOut | None:  # noqa: ANN001
         voucher_count=snap.voucher_count,
         top_products=snap.top_products,
         promotions=snap.promotions,
+        sales_source=snap.sales_source,
     )
 
 
-async def _build_rows(db: AsyncSession):
+def _period_out(period) -> PeriodSalesOut | None:  # noqa: ANN001
+    if period is None:
+        return None
+    return PeriodSalesOut(
+        units=period.units,
+        revenue_vnd=period.revenue_vnd,
+        days=max(1, (period.to_at - period.from_at).days),
+        from_at=period.from_at.isoformat(),
+        to_at=period.to_at.isoformat(),
+    )
+
+
+async def _build_rows(db: AsyncSession) -> list[dict]:
     """Gather (competitor, latest ok snapshot, trends, all snapshots) once."""
     competitors = await competitor_service.list_competitors(db)
-    out = []
+    out: list[dict] = []
     for row in competitors:
         snaps = await competitor_service.snapshots_for(db, row.id)
         ok_snaps = [s for s in snaps if s.ok]
@@ -87,31 +108,70 @@ async def _build_rows(db: AsyncSession):
                 "follower_trend": competitor_service.trend_pct(snaps, "follower_count"),
                 "product_trend": competitor_service.trend_pct(snaps, "product_count"),
                 "rating_delta": competitor_service.trend_abs(snaps, "rating"),
+                "revenue_trend": competitor_service.trend_pct(snaps, "revenue_est_vnd"),
+                "sold_trend": competitor_service.trend_pct(snaps, "items_sold_total"),
+                "period": competitor_service.period_sales(snaps),
             }
         )
     return out
 
 
+def _shares(rows: list[dict]) -> tuple[dict[int, float], str]:
+    """In-set share, by revenue when a sales source supplied it.
+
+    Falls back to followers rather than returning nothing, so the badge still
+    means something before a sales source is configured — but the basis is
+    returned alongside so the label can say which it is. Presenting a follower
+    share as a revenue share would be the one genuinely misleading option.
+    """
+    latest = {r["row"].id: r["latest_ok"] for r in rows}
+    by_revenue = competitor_service.revenue_share(latest)
+    if by_revenue:
+        return by_revenue, "revenue"
+    return competitor_service.follower_share(latest), "follower"
+
+
+def _competitor_out(
+    row, *, snaps, latest_ok, last_attempt, share_pct, share_basis, **trends
+) -> CompetitorOut:  # noqa: ANN001
+    return CompetitorOut(
+        id=row.id,
+        platform=cast(Platform, row.platform),
+        display_name=row.display_name,
+        url=row.url,
+        created_at=row.created_at.isoformat(),
+        latest=_snapshot_out(latest_ok),
+        last_attempt=_snapshot_out(last_attempt),
+        follower_trend_pct=trends.get("follower_trend"),
+        product_trend_pct=trends.get("product_trend"),
+        rating_delta=trends.get("rating_delta"),
+        revenue_trend_pct=trends.get("revenue_trend"),
+        sold_trend_pct=trends.get("sold_trend"),
+        share_pct=share_pct,
+        share_basis=cast(Any, share_basis),
+        period_sales=_period_out(trends.get("period")),
+        snapshot_count=len(snaps),
+    )
+
+
 @router.get("/competitors", response_model=ApiResponse[list[dict]])
 async def list_tracked(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[list[dict]]:
     rows = await _build_rows(db)
-    share = competitor_service.follower_share(
-        {r["row"].id: r["latest_ok"] for r in rows}
-    )
+    share, basis = _shares(rows)
     items = [
-        CompetitorOut(
-            id=r["row"].id,
-            platform=r["row"].platform,
-            display_name=r["row"].display_name,
-            url=r["row"].url,
-            created_at=r["row"].created_at.isoformat(),
-            latest=_snapshot_out(r["latest_ok"]),
-            last_attempt=_snapshot_out(r["last_attempt"]),
-            follower_trend_pct=r["follower_trend"],
-            product_trend_pct=r["product_trend"],
+        _competitor_out(
+            r["row"],
+            snaps=r["snaps"],
+            latest_ok=r["latest_ok"],
+            last_attempt=r["last_attempt"],
+            share_pct=share.get(r["row"].id),
+            share_basis=basis,
+            follower_trend=r["follower_trend"],
+            product_trend=r["product_trend"],
             rating_delta=r["rating_delta"],
-            follower_share_pct=share.get(r["row"].id),
-            snapshot_count=len(r["snaps"]),
+            revenue_trend=r["revenue_trend"],
+            sold_trend=r["sold_trend"],
+            period=r["period"],
         ).model_dump()
         for r in rows
     ]
@@ -139,19 +199,14 @@ async def add_tracked(
     snap = await competitor_service.collect_one(db, row)
     return ApiResponse[dict](
         success=True,
-        data=CompetitorOut(
-            id=row.id,
-            platform=cast(Platform, row.platform),
-            display_name=row.display_name,
-            url=row.url,
-            created_at=row.created_at.isoformat(),
-            latest=_snapshot_out(snap) if snap.ok else None,
-            last_attempt=_snapshot_out(snap),
-            follower_trend_pct=None,
-            product_trend_pct=None,
-            rating_delta=None,
-            follower_share_pct=None,
-            snapshot_count=1,
+        data=_competitor_out(
+            row,
+            snaps=[snap],
+            latest_ok=snap if snap.ok else None,
+            last_attempt=snap,
+            # A single reading supports no trend and no share of anything.
+            share_pct=None,
+            share_basis="follower",
         ).model_dump(),
         meta=PageMeta(),
         error=None,
@@ -176,9 +231,7 @@ async def competitor_insight_endpoint(
     db: AsyncSession = Depends(get_db_dep),
 ) -> ApiResponse[dict]:
     rows = await _build_rows(db)
-    share = competitor_service.follower_share(
-        {r["row"].id: r["latest_ok"] for r in rows}
-    )
+    share, _basis = _shares(rows)
     headline, findings, actions, ai = await competitor_insight.build_insight(
         [
             competitor_insight.CompetitorReading(
@@ -187,6 +240,9 @@ async def competitor_insight_endpoint(
                 follower_trend_pct=r["follower_trend"],
                 product_trend_pct=r["product_trend"],
                 rating_delta=r["rating_delta"],
+                revenue_trend_pct=r["revenue_trend"],
+                sold_trend_pct=r["sold_trend"],
+                period=r["period"],
             )
             for r in rows
         ],
@@ -210,19 +266,21 @@ async def tracked_detail(
     snaps = await competitor_service.snapshots_for(db, competitor_id)
     ok_snaps = [s for s in snaps if s.ok]
     detail = CompetitorDetail(
-        competitor=CompetitorOut(
-            id=row.id,
-            platform=cast(Platform, row.platform),
-            display_name=row.display_name,
-            url=row.url,
-            created_at=row.created_at.isoformat(),
-            latest=_snapshot_out(ok_snaps[-1] if ok_snaps else None),
-            last_attempt=_snapshot_out(snaps[-1] if snaps else None),
-            follower_trend_pct=competitor_service.trend_pct(snaps, "follower_count"),
-            product_trend_pct=competitor_service.trend_pct(snaps, "product_count"),
+        competitor=_competitor_out(
+            row,
+            snaps=snaps,
+            latest_ok=ok_snaps[-1] if ok_snaps else None,
+            last_attempt=snaps[-1] if snaps else None,
+            # Share is relative to the watchlist, which a single-shop view has
+            # no visibility of.
+            share_pct=None,
+            share_basis="follower",
+            follower_trend=competitor_service.trend_pct(snaps, "follower_count"),
+            product_trend=competitor_service.trend_pct(snaps, "product_count"),
             rating_delta=competitor_service.trend_abs(snaps, "rating"),
-            follower_share_pct=None,
-            snapshot_count=len(snaps),
+            revenue_trend=competitor_service.trend_pct(snaps, "revenue_est_vnd"),
+            sold_trend=competitor_service.trend_pct(snaps, "items_sold_total"),
+            period=competitor_service.period_sales(snaps),
         ),
         snapshots=[s for s in (_snapshot_out(x) for x in snaps) if s is not None],
     )
@@ -240,12 +298,17 @@ async def collect_now(db: AsyncSession = Depends(get_db_dep)) -> ApiResponse[dic
     also persisted as a snapshot so the history shows the gap and its reason.
     """
     snaps = await competitor_service.collect_all(db)
-    errors = [s.error for s in snaps if s.error]
+    # A message on a successful reading is a note (partial capture, or no sales
+    # source configured), not a failure — keeping them apart stops the UI from
+    # saying "0 thất bại" and then listing reasons.
     run = CollectRunOut(
         attempted=len(snaps),
         succeeded=sum(1 for s in snaps if s.ok),
         failed=sum(1 for s in snaps if not s.ok),
-        errors=[e for e in errors if e][:10],
+        errors=[s.error for s in snaps if s.error and not s.ok][:10],
+        # Deduplicated: "chưa cấu hình nguồn" is identical for every shop, and
+        # repeating it once per row buries anything shop-specific.
+        notes=list(dict.fromkeys(s.error for s in snaps if s.error and s.ok))[:5],
     )
     return ApiResponse[dict](
         success=True, data=run.model_dump(), meta=PageMeta(), error=None

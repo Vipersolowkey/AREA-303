@@ -29,3 +29,11 @@ xgboost>=2.0,<4.0
 scikit-learn==1.7.2
 pandas>=2.0
 numpy>=1.24
+
+# --- Competitor tracking: optional browser-session reader ---
+# Only needed with COMPETITOR_USE_SESSION=true. The collector imports playwright
+# lazily and reports a clear message when it's absent, so a deploy that doesn't
+# use session reads can skip this (~300MB of browser) entirely:
+#   pip install playwright && playwright install chromium
+# Left commented so CI and normal deploys don't pull a browser they never launch.
+# playwright>=1.48.0

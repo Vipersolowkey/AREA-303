@@ -15,11 +15,12 @@ class AddCompetitorRequest(BaseModel):
 class SnapshotOut(BaseModel):
     """One reading.
 
-    `items_sold_total`, `revenue_est_vnd`, `voucher_count`, `top_products` and
-    `promotions` are kept in the shape because the collector still parses them
-    if a marketplace ever answers — but both Shopee and Lazada currently block
-    the endpoints that carry them, so expect None. The UI must not present them
-    as pending data.
+    The sales fields — `items_sold_total`, `revenue_est_vnd`, `voucher_count`,
+    `top_products`, `promotions` — are only populated when a sales source was
+    configured, because Shopee serves them exclusively to authenticated
+    sessions. `sales_source` says which source produced them ("vendor" or
+    "session"); None means this reading is shop-level only, and the UI should say
+    so rather than show a pending-looking blank.
     """
 
     captured_at: str
@@ -33,6 +34,21 @@ class SnapshotOut(BaseModel):
     voucher_count: int | None
     top_products: Any | None
     promotions: Any | None
+    sales_source: Literal["vendor", "session"] | None
+
+
+class PeriodSalesOut(BaseModel):
+    """Sales between the two most recent readings — current velocity.
+
+    Distinct from `items_sold_total`, which is cumulative since the shop opened
+    and therefore says nothing about whether they're selling *now*.
+    """
+
+    units: int
+    revenue_vnd: int
+    days: int
+    from_at: str
+    to_at: str
 
 
 class CompetitorOut(BaseModel):
@@ -50,10 +66,17 @@ class CompetitorOut(BaseModel):
     product_trend_pct: float | None
     #: Absolute rating change (a % of a 4.9 average would be meaningless).
     rating_delta: float | None
-    #: Share of FOLLOWERS across the tracked set. Not revenue share — the
-    #: marketplaces block their listing endpoints, so sales are unobtainable —
-    #: and not market share either, since total category size is unknowable.
-    follower_share_pct: float | None
+    #: Both None unless a sales source is configured.
+    revenue_trend_pct: float | None
+    sold_trend_pct: float | None
+    #: Share within the TRACKED SET, not the market — total category size isn't
+    #: knowable from shop pages. By revenue when sales data exists, else by
+    #: followers; `share_basis` says which, so the UI can label it honestly.
+    share_pct: float | None
+    share_basis: Literal["revenue", "follower"]
+    #: Sales velocity between the last two readings. None without a sales source
+    #: or with fewer than two readings that have one.
+    period_sales: PeriodSalesOut | None
     #: Number of readings collected so far.
     snapshot_count: int
 
@@ -67,8 +90,13 @@ class CollectRunOut(BaseModel):
     attempted: int
     succeeded: int
     failed: int
-    #: Failure reasons, so a broken endpoint is visible rather than silent.
+    #: Reasons from readings that actually failed, so a broken endpoint is
+    #: visible rather than silent.
     errors: list[str]
+    #: Messages attached to *successful* readings — a partial capture, or "no
+    #: sales source configured". Separate from `errors` because reporting
+    #: "0 thất bại. Lý do: …" reads as a contradiction.
+    notes: list[str]
 
 
 class InsightOut(BaseModel):

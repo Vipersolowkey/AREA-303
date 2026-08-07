@@ -1,10 +1,23 @@
 """Shopee collector.
 
-Endpoints are Shopee's own internal web API (`/api/v4/...`) — undocumented and
-unversioned. See :mod:`.base` for why that's expected to break and why we don't
-fight the bot protection.
+Two tiers, because Shopee treats them completely differently:
 
-Shape notes (as of writing, Aug 2026):
+**Shop-level** — `get_shop_base` answers an anonymous request with the shop's
+name, follower count, rating and product count. Free, reliable, no session.
+
+**Sales-level** — items sold, prices, best sellers, vouchers. Every endpoint
+carrying these returns `error 90309999` to an anonymous caller, including from
+inside a real headless browser, and the shop page renders a login wall. So they
+come from whichever privileged source the operator configured:
+
+1. :mod:`.vendor` — a licensed market-data feed. No account risk, tried first.
+2. :mod:`.session` — a logged-in Shopee session in a real browser. Works, but
+   risks the account; opt-in.
+
+With neither configured the reading is shop-level only and `sales_source` stays
+None. That's a complete, honest snapshot — not a failure — so `ok` is True.
+
+Shape notes (verified Aug 2026):
 * ``get_shop_base`` accepts either ``username`` or ``shopid`` and returns
   ``{"data": {"name", "follower_count", "rating_star", "item_count", ...}}``.
 * ``search_items`` with ``page_type=shop`` and ``by=sales`` returns the shop's
@@ -14,17 +27,12 @@ Shape notes (as of writing, Aug 2026):
 
 from __future__ import annotations
 
-from app.services.competitor.base import (
-    CollectorResult,
-    ProductObservation,
-    polite_get_json,
-)
+from app.services.competitor import session as session_mod
+from app.services.competitor import vendor as vendor_mod
+from app.services.competitor.base import CollectorResult, polite_get_json
 from app.services.competitor.urls import ParsedCompetitor
 
 _BASE = "https://shopee.vn"
-#: How many best sellers to read per capture. Deliberately small — this is a
-#: daily trend reading, not a catalogue crawl.
-_TOP_N = 20
 
 #: Shopee returns VND multiplied by 100_000.
 _PRICE_SCALE = 100_000
@@ -36,14 +44,6 @@ def _shop_base_url(target: ParsedCompetitor) -> str:
     return f"{_BASE}/api/v4/shop/get_shop_base?username={target.shop_slug}"
 
 
-def _search_url(shop_id: str) -> str:
-    return (
-        f"{_BASE}/api/v4/search/search_items"
-        f"?by=sales&limit={_TOP_N}&match_id={shop_id}"
-        "&newest=0&order=desc&page_type=shop&version=2"
-    )
-
-
 def _price(raw: object) -> int | None:
     try:
         value = int(str(raw))
@@ -53,6 +53,16 @@ def _price(raw: object) -> int | None:
 
 
 class ShopeeCollector:
+    """Collect one Shopee shop.
+
+    `sales_reader` is an optional :class:`~.session.ShopeeSessionReader` owned by
+    the caller, so one browser is shared across a whole collection run instead of
+    launched per shop. None means "no session available", which is the default.
+    """
+
+    def __init__(self, sales_reader: session_mod.ShopeeSessionReader | None = None) -> None:
+        self._sales_reader = sales_reader
+
     async def collect(self, target: ParsedCompetitor) -> CollectorResult:
         base, err = await polite_get_json(
             _shop_base_url(target),
@@ -77,47 +87,47 @@ class ShopeeCollector:
             follower_count=_as_int(data.get("follower_count")),
             rating=_as_rating(data),
             product_count=_as_int(data.get("item_count")),
+            voucher_count=_count_vouchers(data),
         )
 
         if not shop_id:
-            # Shop identity resolved but no id to query products with — still a
+            # Shop identity resolved but no id to query sales with — still a
             # usable partial reading.
             return result
 
-        items, items_err = await polite_get_json(
-            _search_url(shop_id), headers={"Referer": target.url}
-        )
-        if items_err or items is None:
-            result.error = f"Đã lấy được thông tin shop nhưng không lấy được sản phẩm: {items_err}"
-            return result
-
-        observed: list[ProductObservation] = []
-        sold_total = 0
-        revenue_est = 0
-        for entry in items.get("items") or []:
-            basic = (entry or {}).get("item_basic") or {}
-            price = _price(basic.get("price"))
-            sold = _as_int(basic.get("historical_sold")) or 0
-            observed.append(
-                ProductObservation(
-                    name=str(basic.get("name") or "")[:200],
-                    price_vnd=price,
-                    sold=sold,
-                    discount_pct=_as_float(basic.get("raw_discount")),
-                )
-            )
-            sold_total += sold
-            if price:
-                revenue_est += price * sold
-
-        result.top_products = observed
-        result.items_sold_total = sold_total or None
-        # Cumulative GMV over the products we sampled — an estimate from
-        # `price × historical_sold`, never a figure Shopee reports.
-        result.revenue_est_vnd = revenue_est or None
-        result.voucher_count = _count_vouchers(data)
-        result.promotions = _promotions(observed)
+        await self._add_sales(result, target, shop_id)
         return result
+
+    async def _add_sales(
+        self, result: CollectorResult, target: ParsedCompetitor, shop_id: str
+    ) -> None:
+        """Try each configured sales source in order of increasing risk."""
+        reasons: list[str] = []
+
+        reading, err = await vendor_mod.fetch_sales("shopee", shop_id)
+        if reading is not None:
+            result.apply(reading)
+            return
+        if err:
+            reasons.append(err)
+
+        if self._sales_reader is not None:
+            reading, err = await self._sales_reader.fetch_sales(shop_id, target.url)
+            if reading is not None:
+                result.apply(reading)
+                return
+            if err:
+                reasons.append(err)
+
+        # Nothing configured is not an error — say so plainly, once, rather than
+        # leaving the operator to guess why the sales cards are empty.
+        if not reasons:
+            reasons.append(
+                "Chưa cấu hình nguồn số liệu bán hàng: Shopee chỉ trả số đã bán / "
+                "giá / voucher cho phiên đã đăng nhập. Cấu hình "
+                "COMPETITOR_VENDOR_* hoặc chạy scripts/shopee_login.py."
+            )
+        result.error = " | ".join(reasons)
 
 
 def _as_int(raw: object) -> int | None:
@@ -145,12 +155,3 @@ def _as_rating(data: dict) -> float | None:
 def _count_vouchers(data: dict) -> int | None:
     vouchers = data.get("vouchers") or data.get("shop_vouchers")
     return len(vouchers) if isinstance(vouchers, list) else None
-
-
-def _promotions(products: list[ProductObservation]) -> list[dict]:
-    """Discounted products, as the visible promotion signal for this capture."""
-    return [
-        {"name": p.name, "discount_pct": p.discount_pct, "price_vnd": p.price_vnd}
-        for p in products
-        if p.discount_pct
-    ]

@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     DateTime,
     Float,
@@ -77,9 +78,16 @@ class CompetitorSnapshot(Base, TimestampMixin):
     product_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     items_sold_total: Mapped[int | None] = mapped_column(Integer, nullable=True)
     #: Derived: sum(price × historical units sold) over the products we saw.
-    #: An estimate of cumulative GMV, not a reported figure.
-    revenue_est_vnd: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: An estimate of cumulative GMV, not a reported figure. BigInteger because
+    #: a mid-size shop clears 2.1 billion VND — the int4 ceiling — easily.
+    revenue_est_vnd: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     voucher_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    #: Which source produced the sales fields above: "vendor" (licensed data
+    #: feed) or "session" (logged-in browser). None means shop-level fields only,
+    #: which is what an anonymous read can get. Stored per snapshot because the
+    #: available source changes over a series, and a chart that silently mixes a
+    #: vendor's figures with a scraper's is a chart that lies.
+    sales_source: Mapped[str | None] = mapped_column(String(16), nullable=True)
 
     #: [{name, price_vnd, sold, discount_pct}] for the best sellers we saw.
     top_products: Mapped[Any | None] = mapped_column(JSONB, nullable=True)

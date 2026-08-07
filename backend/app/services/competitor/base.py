@@ -10,12 +10,41 @@ apps call. That means:
 * **They will break.** Those endpoints are internal, unversioned, and change
   without notice. Treat a failure as normal operation, not an incident — the
   snapshot records `ok=False` with the reason and the UI shows it.
-* **They may be blocked.** Both sites run bot protection. A 403 or an HTML
-  challenge page instead of JSON is an expected outcome.
-* **This code does not try to defeat that.** No proxy rotation, no CAPTCHA
-  solving, no fingerprint spoofing. Beyond being the part that turns scraping
-  into abuse, evasion is also what gets an IP banned fastest. If a marketplace
-  says no, we record no and move on.
+* **This code does not try to defeat bot protection.** No proxy rotation, no
+  CAPTCHA solving, no fingerprint spoofing, no impersonating a search-engine
+  crawler. Beyond being the part that turns scraping into abuse, evasion is also
+  what gets an IP banned fastest.
+
+## What an anonymous caller can actually get (measured Aug 2026)
+
+Probed against two live Shopee shops, over plain httpx *and* a real headless
+Chromium:
+
+| Surface                                          | Result             |
+|--------------------------------------------------|--------------------|
+| `shop/get_shop_base`                             | 200, real data     |
+| `search_items`, `item/get`, `pdp/get_pc`, +6 more| `error 90309999`   |
+| Shop page in a real browser                      | "vui lòng đăng nhập" |
+| `sitemap.xml`                                    | SPA shell, no URLs |
+| Shop page HTML                                   | 181 KB shell, no content |
+
+So followers / rating / product count are freely readable, and **everything
+carrying sales is gated behind a logged-in session**. `robots.txt` permits
+product pages; the wall is authentication, not robots policy.
+
+That leaves two honest ways to obtain sales figures, both opt-in and both
+implemented as separate modules that fill the same `CollectorResult`:
+
+* :mod:`.vendor` — a licensed market-data feed (Metric.vn, BeeCost, …).
+  No account risk. Tried first when configured.
+* :mod:`.session` — a Shopee session the operator logged in once, replayed by
+  a real browser. It works, and it drives a real account through automation,
+  which Shopee's terms prohibit. Off by default; the risk is documented at the
+  point of use.
+
+With neither configured the sales fields stay None, and `sales_source` records
+which one produced them so the UI never presents a vendor's numbers and a
+scraper's as the same series.
 
 What we *do* do is behave: one request at a time per host, a minimum gap
 between requests, short timeouts, a single retry at most, and an honest
@@ -27,7 +56,7 @@ from __future__ import annotations
 import asyncio
 import time
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 import httpx
 
@@ -56,6 +85,28 @@ class ProductObservation:
     discount_pct: float | None = None
 
 
+#: Where sales figures came from. None = shop-level fields only.
+SalesSource = Literal["vendor", "session"]
+
+
+@dataclass
+class SalesReading:
+    """The sales half of a capture, which needs a privileged source.
+
+    Split out from :class:`CollectorResult` so the vendor feed and the browser
+    session can return the same thing without either knowing about the
+    shop-level fields, and so `sales_source` can never be set without the data
+    it describes.
+    """
+
+    source: SalesSource
+    items_sold_total: int | None = None
+    revenue_est_vnd: int | None = None
+    voucher_count: int | None = None
+    top_products: list[ProductObservation] = field(default_factory=list)
+    promotions: list[dict[str, Any]] = field(default_factory=list)
+
+
 @dataclass
 class CollectorResult:
     """One collection attempt — success or failure, both worth recording."""
@@ -71,10 +122,23 @@ class CollectorResult:
     voucher_count: int | None = None
     top_products: list[ProductObservation] = field(default_factory=list)
     promotions: list[dict[str, Any]] = field(default_factory=list)
+    sales_source: SalesSource | None = None
 
     @classmethod
     def failed(cls, reason: str) -> CollectorResult:
         return cls(ok=False, error=reason)
+
+    def apply(self, sales: SalesReading) -> None:
+        """Merge a sales reading in, recording where it came from."""
+        self.items_sold_total = sales.items_sold_total
+        self.revenue_est_vnd = sales.revenue_est_vnd
+        self.top_products = sales.top_products
+        self.promotions = sales.promotions
+        # Shop-level payloads sometimes carry a voucher count of their own; only
+        # let the sales source overwrite it when it actually has one.
+        if sales.voucher_count is not None:
+            self.voucher_count = sales.voucher_count
+        self.sales_source = sales.source
 
 
 class Collector(Protocol):
