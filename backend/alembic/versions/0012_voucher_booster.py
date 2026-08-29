@@ -5,6 +5,7 @@ Revises: 0011_seller_autopilot
 """
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0012_voucher_booster"
