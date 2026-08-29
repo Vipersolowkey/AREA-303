@@ -24,6 +24,7 @@ import {
   Network,
   Receipt,
   Store,
+  BadgePercent,
   type LucideIcon,
 } from "lucide-react";
 
@@ -64,6 +65,8 @@ export const NAV_ITEMS: NavItem[] = [
 
   // --- SELLER (seller portal) ---
   { id: "AI", slug: "copilot",          label: "Trợ lý vận hành",    href: "/seller/copilot",          icon: Bot,             app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
+  { id: "AP", slug: "autopilot",        label: "Digital Twin",      href: "/seller/autopilot",        icon: Sparkles,        app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
+  { id: "VB", slug: "voucher-booster",  label: "Voucher Booster",   href: "/seller/voucher-booster",  icon: BadgePercent,    app: "seller", section: "commerce",     category: "Generative AI",   owner: "TL" },
   { id: "BR", slug: "daily-briefing",   label: "Hôm nay cần làm gì",  href: "/seller/daily-briefing",   icon: ClipboardCheck,  app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
   { id: "01", slug: "review-intelligence", label: "Đánh giá khách hàng", href: "/seller/review-intelligence", icon: Star, app: "seller", section: "intelligence", category: "NLP", owner: "DA" },
   { id: "OD", slug: "orders",           label: "Đơn hàng",           href: "/seller/orders",           icon: Receipt,       app: "seller", section: "commerce",     category: "Behavioral AI",   owner: "TL" },
@@ -88,6 +91,9 @@ export const NAV_ITEMS: NavItem[] = [
 
 /** Features that have a live, wired panel (vs. a placeholder). */
 export const IMPLEMENTED = new Set<string>([
+  "autopilot",
+  "voucher-booster",
+  "virtual-tryon",
   "personal-shopper", "recsys", "content-generator", "seller-coach",
   "orders",
   "review-intelligence", "dynamic-pricing", "customer-risk", "customer-journey",
@@ -103,29 +109,40 @@ export const READY_NAV_ITEMS = NAV_ITEMS.filter(
   (item) => item.slug === "store" || IMPLEMENTED.has(item.slug),
 );
 
+/** Tenant-safe tools available to a normal seller before legacy APIs are scoped. */
+export const SELLER_SELF_SERVICE_SLUGS = new Set(["autopilot", "voucher-booster", "orders", "copilot"]);
+
+/** Analytical modules feed Digital Twin; they are no longer equal-level destinations. */
+const SELLER_PRODUCT_SLUGS = new Set(["autopilot", "voucher-booster", "orders", "copilot"]);
+
 export function navForApp(app: AppKind): NavItem[] {
-  return READY_NAV_ITEMS.filter((i) => i.app === app);
+  return READY_NAV_ITEMS.filter(
+    (item) => item.app === app && (app !== "seller" || SELLER_PRODUCT_SLUGS.has(item.slug)),
+  );
 }
 
 /**
- * Which role an app requires, or null when it's open to everyone.
+ * Which base role an app requires, or null when it's open to everyone.
  *
- * Kept per-app rather than per-NavItem: all 19 seller features share one
- * identical rule, so 19 copies of `role: "admin"` would just be something to
+ * Kept per-app rather than per-NavItem: all seller features share one
+ * identical rule, so copies of `role: "seller"` would just be something to
  * drift out of sync. If per-feature permissions are ever needed, add an
  * optional `requiresRole` to NavItem and filter inside navForApp().
  */
-export const APP_REQUIRED_ROLE: Record<AppKind, "admin" | null> = {
+export const APP_REQUIRED_ROLE: Record<AppKind, "seller" | null> = {
   shop: null,
-  seller: "admin",
+  seller: "seller",
 };
 
 export function canAccessApp(app: AppKind, role: string | null | undefined): boolean {
   const required = APP_REQUIRED_ROLE[app];
-  return required === null || role === required;
+  return required === null || role === required || role === "admin";
 }
 
 export const SUBTITLE: Record<string, string> = {
+  "autopilot": "Digital Twin hợp nhất tín hiệu shop thành quyết định có thể mô phỏng, duyệt và theo dõi.",
+  "voucher-booster": "Mô phỏng, kiểm tra biên lợi nhuận và duyệt ưu đãi trước khi đưa lên Shopee hoặc TikTok Shop.",
+  "virtual-tryon": "Tải ảnh của bạn và thử trang phục bằng mô hình CatVTON.",
   "copilot": "Trợ lý vận hành cửa hàng.",
   "daily-briefing": "Việc ưu tiên theo tác động doanh thu",
   "personal-shopper": "Tìm sản phẩm theo nhu cầu và ngân sách.",

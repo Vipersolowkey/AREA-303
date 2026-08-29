@@ -18,6 +18,8 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { user, isAdmin, logout } = useAuth();
+  const sellerHref = isAdmin ? "/seller" : "/seller/onboarding";
+  const sellerLabel = user?.role === "buyer" ? "Bắt đầu bán hàng →" : "Không gian bán hàng →";
   // Gate on mount so the server-rendered markup (which knows no cookie) and
   // the first client render agree — otherwise React reports a hydration
   // mismatch on every shop page.
@@ -26,10 +28,10 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-bg text-text">
-      <header className="sticky top-0 z-30 border-b border-border bg-bg/80 backdrop-blur-xl">
+      <header className="sticky top-0 z-30 border-b-2 border-border-strong/35 bg-bg/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-xl bg-accent text-white">
+            <span className="doodle-sticker h-9 w-9 bg-accent text-white">
               <Sparkles className="h-4 w-4" />
             </span>
             <span className="text-lg font-bold tracking-tight">Cellaxnet</span>
@@ -43,10 +45,10 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
                   key={item.slug}
                   href={item.href}
                   className={cn(
-                    "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                    "rounded-md border-b-2 px-3.5 py-2 text-sm font-medium transition-colors",
                     active
-                      ? "bg-accent/10 text-accent"
-                      : "text-text-muted hover:bg-surface-2 hover:text-text",
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-transparent text-text-muted hover:bg-surface-2 hover:text-text",
                   )}
                 >
                   {item.label}
@@ -66,10 +68,9 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
               </Link>
             )}
             <CartButton />
-            {/* Seller entry point — admins only, and never before hydration. */}
-            {mounted && isAdmin && (
+            {mounted && user && (
               <Button asChild variant="secondary" size="sm" className="hidden md:inline-flex">
-                <Link href="/seller">Cổng người bán →</Link>
+                <Link href={sellerHref}>{sellerLabel}</Link>
               </Button>
             )}
             {mounted && !user && (
@@ -113,13 +114,13 @@ export function ShopShell({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-              {mounted && isAdmin && (
+              {mounted && user && (
                 <Link
-                  href="/seller"
+                  href={sellerHref}
                   onClick={() => setOpen(false)}
                   className="rounded-xl px-3 py-2.5 text-sm font-medium text-text-muted"
                 >
-                  Cổng người bán →
+                  {sellerLabel}
                 </Link>
               )}
               {mounted && !user ? (

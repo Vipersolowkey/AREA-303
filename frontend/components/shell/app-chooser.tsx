@@ -19,13 +19,13 @@ const APPS = [
     href: "/seller",
     icon: Store,
     title: "Cổng người bán",
-    tagline: "Cần quyền quản trị viên",
+    tagline: "Dành cho tài khoản người bán",
     desc: "Phân tích đánh giá, rủi ro khách hàng, gợi ý giá, hành trình khách và trợ lý vận hành.",
     app: "seller" as AppKind,
   },
 ];
 
-/** The seller card only exists for admins — everyone else never sees the door. */
+/** The seller card appears after a user activates a seller workspace. */
 export function AppChooser() {
   const { user } = useAuth();
   const mounted = useMounted();
@@ -44,10 +44,10 @@ export function AppChooser() {
           <Link
             key={a.href}
             href={a.href}
-            className="card-surface group flex flex-col rounded-lg border p-7 transition-all hover:-translate-y-0.5 hover:border-accent/40"
+            className="card-surface group flex flex-col rounded-lg border p-7 transition-all hover:rotate-[0.4deg] hover:-translate-y-1 hover:border-accent/50"
           >
             <div className="flex items-center gap-3">
-              <span className="grid h-11 w-11 place-items-center rounded-xl bg-accent/10 text-accent">
+              <span className="doodle-sticker h-11 w-11">
                 <Icon className="h-5 w-5" />
               </span>
               <div>

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { LogOut, Search, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { READY_NAV_ITEMS } from "@/lib/nav";
+import { READY_NAV_ITEMS, SELLER_SELF_SERVICE_SLUGS } from "@/lib/nav";
 import { useAuth } from "@/lib/auth-context";
 import {
   CommandDialog,
@@ -81,7 +81,11 @@ export function TopBar({ breadcrumb }: { breadcrumb: Crumb[] }) {
           <div className="hidden text-right leading-tight sm:block">
             <div className="text-xs font-semibold">{user.name || user.email}</div>
             <div className="text-2xs font-medium text-text-dim">
-              {user.role === "admin" ? "Quản trị viên" : "Người mua"}
+              {user.role === "admin"
+                ? "Quản trị viên"
+                : user.role === "seller"
+                  ? "Người bán"
+                  : "Người mua"}
             </div>
           </div>
           <button
@@ -105,7 +109,12 @@ export function TopBar({ breadcrumb }: { breadcrumb: Crumb[] }) {
           <CommandList>
             <CommandEmpty>Không tìm thấy.</CommandEmpty>
             <CommandGroup heading="Điều hướng">
-              {READY_NAV_ITEMS.map((item) => (
+              {READY_NAV_ITEMS.filter(
+                (item) =>
+                  item.app !== "seller" ||
+                  user?.role === "admin" ||
+                  SELLER_SELF_SERVICE_SLUGS.has(item.slug),
+              ).map((item) => (
                 <CommandItem
                   key={item.slug}
                   value={`${item.label} ${item.slug}`}

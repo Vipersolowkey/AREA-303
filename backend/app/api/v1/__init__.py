@@ -18,9 +18,10 @@ moderation queue and the journey analytics.
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import require_admin
+from app.api.deps import require_admin, require_seller_workspace_or_admin
 from app.api.v1.endpoints import (
     auth,
+    autopilot,
     churn,
     content_generator,
     copilot,
@@ -48,16 +49,22 @@ from app.api.v1.endpoints import (
     storefront,
     supply_chain,
     users,
+    voucher_booster,
+    workspaces,
 )
 
 api_router = APIRouter()
 
 # Reused on every seller-only router below.
 _ADMIN_ONLY = [Depends(require_admin)]
+_SELLER_OR_ADMIN = [Depends(require_seller_workspace_or_admin)]
 
 # --- Public: infrastructure + the login flow itself ---
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+api_router.include_router(workspaces.router, prefix="/workspaces", tags=["workspaces"])
+api_router.include_router(autopilot.router, prefix="/autopilot", tags=["seller-autopilot"])
+api_router.include_router(voucher_booster.router, prefix="/voucher-booster", tags=["voucher-booster"])
 
 # --- Public: buyer-facing GenAI features (/shop/personal-shopper, /shop/recsys) ---
 api_router.include_router(
@@ -91,7 +98,7 @@ api_router.include_router(
     content_generator.router,
     prefix="/content-generator",
     tags=["09-content-generator"],
-    dependencies=_ADMIN_ONLY,
+    dependencies=_SELLER_OR_ADMIN,
 )
 api_router.include_router(
     # NOTE: "Customer Segmentation" is a bonus feature (from customer_segmentation/
@@ -107,7 +114,7 @@ api_router.include_router(
     seller_coach.router,
     prefix="/seller-coach",
     tags=["17-seller-coach"],
-    dependencies=_ADMIN_ONLY,
+    dependencies=_SELLER_OR_ADMIN,
 )
 api_router.include_router(
     review_sentiment.router,
