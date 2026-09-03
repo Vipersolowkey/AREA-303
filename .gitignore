@@ -97,3 +97,6 @@ dashboard.html
 # A live browser session for a real account. Committing it would hand anyone
 # with repo access that account. Regenerate with scripts/shopee_login.py.
 backend/var/
+
+# Local source archive — too large for git
+AREA-303-source-*.zip

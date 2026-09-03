@@ -124,6 +124,7 @@ async def test_register_duplicate_email_conflicts(fake_users):  # noqa: ARG001
     "body",
     [
         {"email": "short@test.dev", "password": "1234567"},  # 7 chars
+        {"email": "unicode@test.dev", "password": "á" * 40},  # 80 UTF-8 bytes
         {"email": "not-an-email", "password": "buyer12345"},
         {"email": "spaced out@test.dev", "password": "buyer12345"},
     ],

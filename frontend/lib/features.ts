@@ -104,6 +104,31 @@ export async function analyzeSentiment(text: string, rating?: number): Promise<S
   return post<Sentiment>("/review-sentiment/", { text, rating: rating ?? null });
 }
 
+export type ScoredReview = {
+  author: string;
+  rating: number;
+  text: string;
+  days_ago: number | null;
+  sentiment: "positive" | "neutral" | "negative";
+  /** Submitted by a real buyer, as opposed to a seeded catalogue review. */
+  from_customers: boolean;
+};
+
+export type ProductReviews = {
+  product_id: string;
+  product_name: string;
+  total: number;
+  positive: number;
+  neutral: number;
+  negative: number;
+  avg_rating: number;
+  reviews: ScoredReview[];
+};
+
+export async function getProductReviews(productId: string): Promise<ProductReviews | null> {
+  return get<ProductReviews>(`/review-sentiment/products/${encodeURIComponent(productId)}`);
+}
+
 // --- #05 Fake Review ------------------------------------------------------
 export type FakeVerdict = { is_fake: boolean; confidence: number; signals: string[]; reason: string };
 
@@ -153,17 +178,107 @@ export async function predictSegmentation(
 }
 
 // --- #02 Dynamic Pricing ----------------------------------------------------
+/** Where the percentiles came from — the panel labels observed and simulated
+ *  figures differently, so a seller always knows which one they are acting on. */
+export type PriceSource = "demo" | "btc_live" | "btc_snapshot" | "shopee_seed";
+
+/** One way to price the product: a real position in its market, with what it
+ *  costs and buys. */
+export type PriceStrategy = {
+  key: "volume" | "balanced" | "margin";
+  label: string;
+  goal: string;
+  /** The statistic behind the figure, checkable against the data. */
+  source: string;
+  /** What picking this costs — the other half of every pricing choice. */
+  tradeoff: string;
+  price: number;
+  margin_pct: number | null;
+  percentile: number | null;
+  /** The seller's cost rules this price out. The figure still shows the
+   *  market's own level, so they can see how far below it they are. */
+  below_cost_floor: boolean;
+};
+
 export type PricingResult = {
   recommended_price: number; low: number; high: number;
   category_median: number; sample_size: number; rationale: string;
+  /** Localised name of the Shopee market behind the reference. */
+  market_label: string | null;
+  /** Observed quartiles — the spread a single median hides. */
+  market_p25: number | null;
+  market_p75: number | null;
+  /** Share of observed products at or below the seller's current price. */
+  price_percentile: number | null;
+  /** The steps behind the price, in the order they constrained it. */
+  reasons: string[];
+  /** Raise, lower or keep — the headline verdict. */
+  /** "new" = no current price to compare against; costing a product fresh. */
+  direction: "raise" | "lower" | "keep" | "new";
+  change_vnd: number | null;
+  change_pct: number | null;
+  /** A large move from the current price — worth taking in steps, since the
+   *  market says where the price could sit, not that buyers will follow. */
+  large_move: boolean;
+  /** No cost supplied, so nothing checked whether the price earns anything. */
+  margin_unverified: boolean;
+  /** Margin and per-unit profit at the current price, for the before/after. */
+  margin_pct_now: number | null;
+  profit_per_unit_now: number | null;
+  profit_per_unit_at_recommended: number | null;
+  /** Three market positions, cheapest first. */
+  strategies: PriceStrategy[];
+  /** Lowest price that still clears the margin after commission; null without a cost. */
+  price_floor: number | null;
+  margin_pct_at_recommended: number | null;
+  channel_name: string | null;
+  channel_commission_pct: number | null;
+  /** The market median sits below the floor — matching it would lose money. */
+  floor_above_market: boolean;
+  data_source: PriceSource;
+  /** Distinct shops behind an observed sample; null for the demo catalogue. */
+  shop_count: number | null;
+};
+
+export type PricingResponse =
+  | { ok: true; data: PricingResult }
+  | { ok: false; message: string; status?: number };
+
+/** Optional cost side of a pricing request; without it no floor is computed. */
+export type PricingCost = {
+  unitCost?: number;
+  minMarginPct?: number;
+  channel?: string;
 };
 
 export async function recommendPrice(
-  productName: string, category: string, currentPrice?: number,
-): Promise<PricingResult | null> {
-  return post<PricingResult>("/dynamic-pricing/", {
-    product_name: productName, category, current_price: currentPrice ?? null,
-  });
+  productName: string, category: string, currentPrice?: number, cost?: PricingCost,
+): Promise<PricingResponse> {
+  if (DEMO) {
+    return { ok: false, message: "Chế độ demo đang bật nên chưa thể gọi dịch vụ định giá." };
+  }
+  try {
+    const response = await api.post<PricingResult>("/dynamic-pricing/", {
+      product_name: productName, category, current_price: currentPrice ?? null,
+      unit_cost: cost?.unitCost ?? null,
+      // Only sent alongside a cost — the backend default applies otherwise.
+      ...(cost?.unitCost ? { min_margin_pct: cost.minMarginPct ?? 20 } : {}),
+      channel: cost?.channel ?? null,
+    });
+    return { ok: true, data: response.data as PricingResult };
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      return {
+        ok: false,
+        status: error.status,
+        message: error.envelope.error?.message ?? "Backend không thể xử lý yêu cầu định giá.",
+      };
+    }
+    return {
+      ok: false,
+      message: "Không thể kết nối đến backend. Hãy kiểm tra dịch vụ FastAPI và thử lại.",
+    };
+  }
 }
 
 // --- #04 Churn Prediction ---------------------------------------------------
@@ -258,18 +373,74 @@ export type RiskBand = "low" | "medium" | "high" | null;
 export type RiskRow = {
   id: string;
   customer: string;
+  last_order_no: string | null;
+  last_product: string | null;
+  lifetime_value_vnd: number;
+  preferred_channel: string | null;
   churn_risk: number | null;
   churn_band: RiskBand;
   return_risk: number | null;
   return_band: RiskBand;
   regret_risk: number | null;
   regret_band: RiskBand;
-  high_risk_count: number;
+  /** The risk worth acting on, with its reason and the action to take. Regret
+   *  never leads: it flags most of the base and so ranks nobody. */
+  lead_kind: "churn" | "return" | null;
+  lead_label: string | null;
+  lead_risk: number | null;
+  lead_band: RiskBand;
+  lead_reason: string | null;
+  lead_action: string | null;
+  /** Money exposed if this goes unhandled — lifetime value for churn, the
+   *  order for a return. This is what the queue is sorted by. */
+  value_at_stake_vnd: number;
+  /** Which action group this customer fell into. */
+  group_key: string;
 };
-export type RiskPortfolio = { customers: RiskRow[]; total: number; critical_count: number };
+/** A cohort defined by the work it implies, not by severity: one group, one
+ *  suggested action that is correct for everyone in it. */
+export type RiskGroup = {
+  key: string;
+  label: string;
+  tone: "danger" | "warning" | "success";
+  action: string;
+  count: number;
+  value_at_stake_vnd: number;
+};
 
-export async function getRiskPortfolio(): Promise<RiskPortfolio | null> {
-  return get<RiskPortfolio>("/risk-portfolio/");
+export type RiskPortfolio = {
+  customers: RiskRow[];
+  groups: RiskGroup[];
+  total: number;
+  needs_action_count: number;
+  total_at_stake_vnd: number;
+};
+
+export type RiskPortfolioResponse =
+  | { ok: true; data: RiskPortfolio }
+  | { ok: false; message: string; status?: number };
+
+export async function getRiskPortfolio(): Promise<RiskPortfolioResponse> {
+  if (DEMO) {
+    return { ok: false, message: "Chế độ demo đang bật nên chưa thể tải dữ liệu rủi ro khách hàng." };
+  }
+
+  try {
+    const response = await api.get<RiskPortfolio>("/risk-portfolio/");
+    return { ok: true, data: response.data as RiskPortfolio };
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      return {
+        ok: false,
+        status: error.status,
+        message: error.envelope.error?.message ?? `Backend trả về lỗi HTTP ${error.status}.`,
+      };
+    }
+    return {
+      ok: false,
+      message: "Không thể kết nối đến backend. Kiểm tra dịch vụ FastAPI và thử lại.",
+    };
+  }
 }
 
 // --- #08 Sentiment-driven Inventory Alert ----------------------------------

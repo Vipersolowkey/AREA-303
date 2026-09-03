@@ -15,6 +15,7 @@ import {
   CommandShortcut,
 } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
+import { LanguageToggle } from "@/components/shell/language-toggle";
 import { useMounted } from "@/lib/hooks/use-mounted";
 
 type Crumb = { label: string; href?: string };
@@ -44,8 +45,10 @@ export function TopBar({ breadcrumb }: { breadcrumb: Crumb[] }) {
     [router],
   );
 
+  // Nền mờ thay vì trắng đặc: để quầng sáng tím/xanh sau lưng ánh qua, nên
+  // thanh trên và nội dung bên dưới đọc ra cùng một mặt phẳng.
   return (
-    <header className="card-surface sticky top-0 z-30 flex h-16 items-center gap-4 border-b px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-surface/70 px-4 backdrop-blur-xl lg:px-6">
       {/* Breadcrumb */}
       <nav className="flex min-w-0 items-center gap-1.5 text-sm">
         {breadcrumb.map((c, i) => (
@@ -73,6 +76,10 @@ export function TopBar({ breadcrumb }: { breadcrumb: Crumb[] }) {
         <span className="text-xs">Tìm tính năng…</span>
         <CommandShortcut>Ctrl K</CommandShortcut>
       </Button>
+
+      {/* Ngôn ngữ. Chỉ hiện sau khi mount vì lựa chọn nằm trong localStorage,
+          server render không thấy được. */}
+      {mounted ? <LanguageToggle /> : <div className="shrink-0" style={{ width: 74, height: 32 }} />}
 
       {/* Signed-in identity + logout. Rendered after mount so the markup
           matches the server render, which can't know the cookie. */}

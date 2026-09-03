@@ -480,7 +480,9 @@ async def agent_ask(
         # has no product-graph skill and used to misclassify it as a briefing.
         low = question.lower()
         if any(key in low for key in ("tương tự", "giống", "thay thế", "similar")):
-            result, summary = await _dispatch("product_graph", {"product": question})
+            result, summary = await _dispatch(
+                "product_graph", {"product": question}, db
+            )
             if result.get("found") is False:
                 answer = summary
             else:
