@@ -64,6 +64,27 @@ def _season_profiles() -> dict[str, dict]:
     return out
 
 
+def channel_config() -> dict:
+    """Return the shared marketplace definitions used by pricing.
+
+    Restock allocation is intentionally store-wide now, but dynamic pricing
+    still needs the channel commission rates. Keeping those rates sourced from
+    the market snapshot avoids copying business rules into another service.
+    """
+    channels = _snapshot().get("channels") or {}
+    definitions = channels.get("definitions") or {}
+    cases = channels.get("cases") or {}
+    return {
+        "definitions": definitions,
+        "cases": cases,
+        "default_case": channels.get("default_case") or {},
+        "order": channels.get("order") or list(definitions),
+        "case_order": channels.get("case_order") or list(cases),
+        "market": channels.get("market") or {},
+        "market_fetched_at": channels.get("market_fetched_at"),
+    }
+
+
 def _brand_rows() -> list[dict]:
     rows: list[dict] = []
     for reading in _snapshot().get("competition", {}).values():

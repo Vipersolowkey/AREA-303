@@ -89,16 +89,27 @@ def llm_cache(
     cache_ttl = ttl if ttl is not None else settings.LLM_CACHE_TTL_SECONDS
 
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
-        return_type = get_type_hints(fn).get("return")
+        try:
+            return_type = get_type_hints(fn).get("return")
+        except (NameError, TypeError):
+            return_type = None
 
-        def restore(value: Any) -> Any | None:
+        def restore_cached(value: Any) -> tuple[bool, Any]:
+            """Rebuild typed Pydantic responses stored as JSON dictionaries.
+
+            Older versions cached models via ``default=str``. Those entries
+            are strings such as ``"variants=[...]"`` and cannot be restored;
+            treating them as a miss lets the function compute a valid value
+            and replace the stale Redis entry automatically.
+            """
             if isinstance(return_type, type) and issubclass(return_type, BaseModel):
-                # Older cache entries were serialized via ``default=str`` and
-                # therefore contain a model repr string. Treat those as misses.
                 if not isinstance(value, dict):
-                    return None
-                return return_type.model_validate(value)
-            return value
+                    return False, None
+                try:
+                    return True, return_type.model_validate(value)
+                except ValueError:
+                    return False, None
+            return True, value
 
         @functools.wraps(fn)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -106,8 +117,8 @@ def llm_cache(
 
             cached = await _redis_get(key)
             if cached is not None:
-                restored = restore(cached)
-                if restored is not None:
+                valid, restored = restore_cached(cached)
+                if valid:
                     return restored
 
             async with _LOCAL_LOCK:

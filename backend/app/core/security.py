@@ -5,23 +5,34 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import bcrypt
 from jose import ExpiredSignatureError, JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.core.exceptions import ErrorCode, UnauthorizedError
 
-_pwd = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(plain: str) -> str:
-    return _pwd.hash(plain)
+    """Hash a UTF-8 password with bcrypt without passlib's broken probe.
+
+    passlib 1.7.4 is incompatible with bcrypt 5.x: its backend self-test sends
+    a password longer than bcrypt's 72-byte limit, so hashing *any* password
+    raises before the real input is processed. Calling bcrypt directly keeps
+    the same ``$2b$`` hash format and remains compatible with existing rows.
+    """
+    encoded = plain.encode("utf-8")
+    if len(encoded) > 72:
+        raise ValueError("Password must not exceed 72 UTF-8 bytes.")
+    return bcrypt.hashpw(encoded, bcrypt.gensalt()).decode("ascii")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     try:
-        return _pwd.verify(plain, hashed)
-    except ValueError:
+        encoded = plain.encode("utf-8")
+        if len(encoded) > 72:
+            return False
+        return bcrypt.checkpw(encoded, hashed.encode("ascii"))
+    except (TypeError, ValueError):
         return False
 
 

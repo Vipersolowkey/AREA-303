@@ -4,6 +4,23 @@ import { TOKEN_COOKIE, claimsValid, decodeJwtPayload } from "@/lib/auth-token";
 /** UX routing only. API authorization remains the security boundary. */
 export function proxy(req: NextRequest) {
   const token = req.cookies.get(TOKEN_COOKIE)?.value;
+
+  // API requests may originate from a browser session whose auth cookie is
+  // visible to the server but not to client-side JavaScript (for example an
+  // older HttpOnly cookie). The seller page then passes the route guard while
+  // FastAPI receives no bearer token and returns 401. Bridge the session cookie
+  // to the upstream request here; FastAPI still verifies the JWT signature,
+  // expiry and role, so this is transport plumbing rather than authorization.
+  if (req.nextUrl.pathname.startsWith("/api/v1/")) {
+    if (!token || req.headers.has("authorization")) {
+      return NextResponse.next();
+    }
+
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("authorization", `Bearer ${token}`);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
   const claims = token ? decodeJwtPayload(token) : null;
 
   if (!claimsValid(claims)) {
@@ -39,4 +56,6 @@ export function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = { matcher: ["/seller", "/seller/:path*"] };
+export const config = {
+  matcher: ["/seller", "/seller/:path*", "/api/v1/:path*"],
+};
