@@ -198,6 +198,18 @@ async def _ollama_explain(candidates: list[dict]) -> tuple[dict[str, str], bool,
         ) from exc
 
 
+def _payload_int(value: object, default: int = 0) -> int:
+    """payload is JSON (dict[str, object]); coerce a field to int defensively."""
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float, str)):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+    return default
+
+
 def _concise(value: str, limit: int = 240) -> str:
     text = " ".join(value.split())
     if len(text) <= limit:
@@ -223,8 +235,8 @@ async def _workspace_candidates(db: AsyncSession, workspace_id: int) -> list[dic
     )
     products = [row.payload for row in result.scalars().all()]
     low = sorted(
-        (product for product in products if int(product.get("stock", 0)) <= 5),
-        key=lambda product: int(product.get("stock", 0)),
+        (product for product in products if _payload_int(product.get("stock")) <= 5),
+        key=lambda product: _payload_int(product.get("stock")),
     )
     if not low:
         return [
@@ -242,7 +254,7 @@ async def _workspace_candidates(db: AsyncSession, workspace_id: int) -> list[dic
     for product in low:
         sku = str(product.get("sku", ""))
         name = str(product.get("name", sku))
-        stock = int(product.get("stock", 0))
+        stock = _payload_int(product.get("stock"))
         candidates.append(
             {
                 "fingerprint": f"inventory:imported:{sku}:{stock}",
@@ -251,7 +263,7 @@ async def _workspace_candidates(db: AsyncSession, workspace_id: int) -> list[dic
                 "title": f"{name} còn {stock} sản phẩm trong kho",
                 "evidence": {
                     "source": "confirmed_import", "sku": sku, "product_name": name,
-                    "stock": stock, "current_price_vnd": int(product.get("price", 0)),
+                    "stock": stock, "current_price_vnd": _payload_int(product.get("price")),
                 },
                 "baseline_explanation": "Cảnh báo dựa trên tồn kho trong file đã xác nhận; chưa ước tính doanh thu hay tốc độ bán vì bạn chưa nạp lịch sử đơn hàng.",
                 "options": [

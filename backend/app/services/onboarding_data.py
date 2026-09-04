@@ -238,6 +238,18 @@ async def readiness(db: AsyncSession, workspace_id: int) -> dict[str, object]:
     return {"ready": total > 0, "total_records": total, "manual_records": int(imported), "marketplace_records": int(marketplace_records), "shops": shops}
 
 
+def _payload_int(value: object, default: int = 0) -> int:
+    """payload is JSON (dict[str, object]); coerce a field to int defensively."""
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, (int, float, str)):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+    return default
+
+
 async def list_workspace_products(db: AsyncSession, workspace_id: int) -> list[dict[str, object]]:
     """The confirmed import catalogue, never the public/demo storefront."""
     result = await db.execute(
@@ -253,8 +265,8 @@ async def list_workspace_products(db: AsyncSession, workspace_id: int) -> list[d
             "id": row.external_key,
             "sku": str(row.payload.get("sku", row.external_key)),
             "name": str(row.payload.get("name", "")),
-            "price_vnd": int(row.payload.get("price", 0)),
-            "stock": int(row.payload.get("stock", 0)),
+            "price_vnd": _payload_int(row.payload.get("price"), 0),
+            "stock": _payload_int(row.payload.get("stock"), 0),
             "category": str(row.payload.get("category", "Chưa phân loại")),
         }
         for row in result.scalars().all()
