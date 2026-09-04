@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 
 /**
- * Navigation contract — 17 e-commerce AI/ML features for AREA-303.
+ * Navigation contract — the complete capability catalogue for AREA-303.
  *
  * Slug suffix is the canonical id; appears on every nav row right-aligned in mono.
  * Section groups mirror the day-by-day build plan in the project README.
@@ -68,7 +68,7 @@ export const NAV_ITEMS: NavItem[] = [
 
   // --- SELLER (seller portal) ---
   { id: "AI", slug: "copilot",          label: "Trợ lý vận hành",    href: "/seller/copilot",          icon: Bot,             app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
-  { id: "AP", slug: "autopilot",        label: "Digital Twin",      href: "/seller/autopilot",        icon: Sparkles,        app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
+  { id: "AP", slug: "autopilot",        label: "Trung tâm quyết định", href: "/seller/autopilot",        icon: Sparkles,        app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
   { id: "VB", slug: "voucher-booster",  label: "Voucher Booster",   href: "/seller/voucher-booster",  icon: BadgePercent,    app: "seller", section: "commerce",     category: "Generative AI",   owner: "TL" },
   { id: "BR", slug: "daily-briefing",   label: "Hôm nay cần làm gì",  href: "/seller/daily-briefing",   icon: ClipboardCheck,  app: "seller", section: "intelligence", category: "Generative AI",   owner: "TL" },
   { id: "01", slug: "review-intelligence", label: "Trải nghiệm khách hàng", href: "/seller/review-intelligence", icon: Star, app: "seller", section: "intelligence", category: "NLP", owner: "DA" },
@@ -141,7 +141,7 @@ export function canAccessApp(app: AppKind, role: string | null | undefined): boo
 }
 
 export const SUBTITLE: Record<string, string> = {
-  "autopilot": "Digital Twin hợp nhất tín hiệu shop thành quyết định có thể mô phỏng, duyệt và theo dõi.",
+  "autopilot": "Hợp nhất tín hiệu shop thành quyết định có thể mô phỏng, duyệt và theo dõi kết quả.",
   "voucher-booster": "Mô phỏng, kiểm tra biên lợi nhuận và duyệt ưu đãi trước khi đưa lên Shopee hoặc TikTok Shop.",
   "virtual-tryon": "Tải ảnh của bạn và thử trang phục bằng mô hình CatVTON.",
   "copilot": "Trợ lý vận hành cửa hàng.",
@@ -168,20 +168,82 @@ export const SUBTITLE: Record<string, string> = {
   "marketplace": "Kết nối và theo dõi trạng thái đồng bộ dữ liệu từ các sàn bán hàng.",
 };
 
-export const NAV_SECTIONS: Array<{ id: NavItem["section"]; title: string }> = [
-  { id: "commerce",    title: "Bán hàng" },
-  { id: "intelligence",title: "Phân tích" },
-  { id: "creator",     title: "Nội dung" },
-  { id: "operations",  title: "Vận hành" },
+/** Product-facing information architecture.
+ *
+ * The original sections above remain as technical metadata for reporting and
+ * ownership. The sidebar uses these outcome-based areas so sellers navigate
+ * by the job they need to finish, not by the model or team that built it.
+ */
+export type ProductAreaId =
+  | "shopping"
+  | "decision"
+  | "growth"
+  | "customers"
+  | "operations"
+  | "content";
+
+export type ProductArea = {
+  id: ProductAreaId;
+  app: AppKind;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  primarySlug: string;
+  slugs: readonly string[];
+};
+
+export const PRODUCT_AREAS: ProductArea[] = [
+  {
+    id: "shopping", app: "shop", title: "Mua sắm thông minh",
+    description: "Tìm, khám phá và thử sản phẩm trong cùng một hành trình.",
+    icon: ShoppingBag, primarySlug: "store",
+    slugs: ["store", "personal-shopper", "recsys", "visual-search", "virtual-tryon"],
+  },
+  {
+    id: "decision", app: "seller", title: "Trung tâm quyết định",
+    description: "Phát hiện vấn đề, mô phỏng phương án và duyệt hành động.",
+    icon: Brain, primarySlug: "autopilot",
+    slugs: ["autopilot", "copilot", "daily-briefing", "decision-intelligence", "seller-coach", "product-knowledge", "product-graph"],
+  },
+  {
+    id: "growth", app: "seller", title: "Tăng trưởng & ưu đãi",
+    description: "Tăng doanh thu mà vẫn bảo vệ biên lợi nhuận.",
+    icon: BadgePercent, primarySlug: "voucher-booster",
+    slugs: ["voucher-booster", "dynamic-pricing", "market-intelligence", "emotion-sale"],
+  },
+  {
+    id: "customers", app: "seller", title: "Khách hàng",
+    description: "Hiểu phản hồi, hành vi và nhóm khách cần can thiệp.",
+    icon: Users2, primarySlug: "review-intelligence",
+    slugs: ["review-intelligence", "customer-risk", "segmentation", "customer-journey"],
+  },
+  {
+    id: "operations", app: "seller", title: "Đơn hàng & tồn kho",
+    description: "Theo dõi đơn, dự báo nhu cầu và nhập hàng đúng lúc.",
+    icon: PackagePlus, primarySlug: "orders",
+    slugs: ["orders", "restock-planner", "demand-forecast", "sentiment-alert", "supply-chain"],
+  },
+  {
+    id: "content", app: "seller", title: "Nội dung & nhà sáng tạo",
+    description: "Sản xuất nội dung và đo hiệu quả creator.",
+    icon: PenLine, primarySlug: "content-generator",
+    slugs: ["content-generator", "creator-performance"],
+  },
 ];
 
-export const SECTION_TITLES: Record<NavItem["section"], string> = {
-  commerce: "Commerce",
-  intelligence: "Intelligence",
-  creator: "Creator",
-  operations: "Operations",
-  demand: "Demand",
-};
+/** Kept reachable by URL/search, but removed from everyday navigation until
+ * they become part of a complete action workflow. */
+export const INTERNAL_TOOL_SLUGS = new Set([
+  "daily-briefing",
+  "decision-intelligence",
+  "seller-coach",
+  "product-knowledge",
+  "product-graph",
+  "emotion-sale",
+  "segmentation",
+  "sentiment-alert",
+  "supply-chain",
+]);
 
 /** Quick lookup by slug for the dynamic page fallback. */
 export function findBySlug(slug: string): NavItem | undefined {

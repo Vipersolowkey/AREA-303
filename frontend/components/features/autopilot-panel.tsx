@@ -96,7 +96,7 @@ export function AutopilotPanel() {
           <div className="flex gap-3">
             <span className="doodle-sticker h-11 w-11 shrink-0"><Bot className="h-5 w-5" /></span>
             <div>
-              <div className="text-sm font-semibold text-accent-deep">Commerce Digital Twin</div>
+              <div className="text-sm font-semibold text-accent-deep">Commerce Decision Center</div>
               <h2 className="mt-1 text-2xl">{t("Từ tín hiệu thành một quyết định có thể thực thi")}</h2>
               <p className="mt-2 max-w-2xl text-sm text-text-muted">
                 {t("Các module phân tích chạy phía sau để cung cấp bằng chứng. Màn hình này chỉ giữ lại vấn đề cần quyết định, tác động và hành động tiếp theo.")}
@@ -105,7 +105,7 @@ export function AutopilotPanel() {
           </div>
           <Button onClick={refresh} disabled={busy !== null}>
             <RefreshCw className={`h-4 w-4 ${busy === "refresh" ? "animate-spin" : ""}`} />
-            {busy === "refresh" ? t("Đang dựng snapshot…") : t("Cập nhật Digital Twin")}
+            {busy === "refresh" ? t("Đang dựng snapshot…") : t("Cập nhật phân tích")}
           </Button>
         </CardContent>
       </Card>
@@ -121,7 +121,7 @@ export function AutopilotPanel() {
         <Card><CardContent className="p-10 text-center">
           <Target className="mx-auto h-8 w-8 text-accent" />
           <h3 className="mt-3 text-lg">{t("Chưa có snapshot quyết định")}</h3>
-          <p className="mt-1 text-sm text-text-muted">{t("Cập nhật Digital Twin để đọc tồn kho, khách hàng và review từ cùng một snapshot.")}</p>
+          <p className="mt-1 text-sm text-text-muted">{t("Cập nhật phân tích để đọc tồn kho, khách hàng và review từ cùng một snapshot.")}</p>
         </CardContent></Card>
       )}
 
@@ -226,7 +226,7 @@ export function AutopilotPanel() {
 
       <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning/10 p-3 text-xs text-text-muted">
         <CircleAlert className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-        {t("Digital Twin chỉ dùng dữ liệu có nguồn trong snapshot. LLM được phép giải thích, không được tự tạo chỉ số hoặc vượt qua bước seller duyệt.")}
+        {t("Trung tâm quyết định chỉ dùng dữ liệu có nguồn trong snapshot. LLM được phép giải thích, không được tự tạo chỉ số hoặc vượt qua bước seller duyệt.")}
       </div>
     </div>
   );

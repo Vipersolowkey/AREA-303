@@ -54,6 +54,29 @@ export const EN: Record<string, string> = {
   // --- Điều hướng: nhóm và nhãn --------------------------------------------
   "Điều hướng": "Navigation",
   "Tổng quan": "Overview",
+  "Không gian làm việc": "Workspaces",
+  "Mua sắm thông minh": "Smart shopping",
+  "Trung tâm quyết định": "Decision center",
+  "Tăng trưởng & ưu đãi": "Growth & promotions",
+  "Đơn hàng & tồn kho": "Orders & inventory",
+  "Nội dung & nhà sáng tạo": "Content & creators",
+  "Luồng chính": "Primary",
+  "Công cụ nâng cao": "Advanced tools",
+  "Kết nối dữ liệu": "Data connections",
+  "Tìm, khám phá và thử sản phẩm trong cùng một hành trình.":
+    "Search, discover and try products in one journey.",
+  "Phát hiện vấn đề, mô phỏng phương án và duyệt hành động.":
+    "Detect issues, simulate options and approve actions.",
+  "Tăng doanh thu mà vẫn bảo vệ biên lợi nhuận.":
+    "Grow revenue while protecting margin.",
+  "Hiểu phản hồi, hành vi và nhóm khách cần can thiệp.":
+    "Understand feedback, behavior and customers needing attention.",
+  "Theo dõi đơn, dự báo nhu cầu và nhập hàng đúng lúc.":
+    "Track orders, forecast demand and restock on time.",
+  "Sản xuất nội dung và đo hiệu quả creator.":
+    "Create content and measure creator performance.",
+  "Hợp nhất tín hiệu shop thành quyết định có thể mô phỏng, duyệt và theo dõi kết quả.":
+    "Turn shop signals into decisions you can simulate, approve and measure.",
   "Danh mục sản phẩm": "Product categories",
   "công cụ trong cùng một luồng công việc": "tools in one workflow",
   "snapshot vận hành liên kết": "connected operations snapshot",
@@ -213,6 +236,11 @@ export const EN: Record<string, string> = {
 
   // --- Digital Twin / Autopilot ---------------------------------------------
   "Cập nhật Digital Twin": "Refresh Digital Twin",
+  "Cập nhật phân tích": "Refresh analysis",
+  "Cập nhật phân tích để đọc tồn kho, khách hàng và review từ cùng một snapshot.":
+    "Refresh the analysis to read inventory, customers and reviews from one snapshot.",
+  "Trung tâm quyết định chỉ dùng dữ liệu có nguồn trong snapshot. LLM được phép giải thích, không được tự tạo chỉ số hoặc vượt qua bước seller duyệt.":
+    "The decision center only uses sourced snapshot data. The LLM may explain it, but cannot invent metrics or bypass seller approval.",
   "Đang dựng snapshot…": "Building snapshot…",
   "So sánh tác động trước khi duyệt": "Compare the impact before approving",
   "Doanh thu có rủi ro": "Revenue at risk",
