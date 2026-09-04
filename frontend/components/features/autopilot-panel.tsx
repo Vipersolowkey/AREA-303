@@ -157,49 +157,55 @@ export function AutopilotPanel() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-md border-2 border-text/70 bg-surface p-4 shadow-[3px_4px_0_hsl(var(--text)/calc(.1*var(--shadow-strength)))]">
-                  <div className="flex items-start justify-between gap-3">
-                    <div><div className="text-xs font-semibold text-accent-deep">{t("HÀNH ĐỘNG ĐỀ XUẤT")}</div><div className="mt-1 font-semibold">{selected.label}</div></div>
-                    <Badge variant={selected.risk === "low" ? "success" : "warning"}>{t("Rủi ro")} {riskLabels[selected.risk] ? t(riskLabels[selected.risk]) : selected.risk}</Badge>
-                  </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                    {Object.entries(selected.impact).slice(0, 4).map(([key, value]) => (
-                      <div key={key} className="rounded-md bg-surface-2 p-2.5 text-xs text-text-muted">
-                        {impactLabels[key] ? t(impactLabels[key]) : key.replaceAll("_", " ")}<div className="mono mt-1 font-bold text-text">{showValue(key, value)}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {!terminal && <div className="mt-4 flex flex-wrap gap-2">
-                    {item.status !== "simulated" ? (
-                      <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => act(item, selected)}>
-                        <FlaskConical className="h-3.5 w-3.5" /> {t("Mô phỏng tác động")}
+                {selected ? (
+                  <div className="rounded-md border-2 border-text/70 bg-surface p-4 shadow-[3px_4px_0_hsl(var(--text)/calc(.1*var(--shadow-strength)))]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div><div className="text-xs font-semibold text-accent-deep">{t("HÀNH ĐỘNG ĐỀ XUẤT")}</div><div className="mt-1 font-semibold">{selected.label}</div></div>
+                      <Badge variant={selected.risk === "low" ? "success" : "warning"}>{t("Rủi ro")} {riskLabels[selected.risk] ? t(riskLabels[selected.risk]) : selected.risk}</Badge>
+                    </div>
+                    <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                      {Object.entries(selected.impact).slice(0, 4).map(([key, value]) => (
+                        <div key={key} className="rounded-md bg-surface-2 p-2.5 text-xs text-text-muted">
+                          {impactLabels[key] ? t(impactLabels[key]) : key.replaceAll("_", " ")}<div className="mono mt-1 font-bold text-text">{showValue(key, value)}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {!terminal && <div className="mt-4 flex flex-wrap gap-2">
+                      {item.status !== "simulated" ? (
+                        <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => act(item, selected)}>
+                          <FlaskConical className="h-3.5 w-3.5" /> {t("Mô phỏng tác động")}
+                        </Button>
+                      ) : (
+                        <Button size="sm" disabled={busy !== null} onClick={() => act(item, selected, "approve")}>
+                          <Check className="h-3.5 w-3.5" /> {t("Duyệt hành động")}
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => act(item, selected, "reject")}>
+                        <X className="h-3.5 w-3.5" /> {t("Bỏ qua")}
                       </Button>
-                    ) : (
-                      <Button size="sm" disabled={busy !== null} onClick={() => act(item, selected, "approve")}>
-                        <Check className="h-3.5 w-3.5" /> {t("Duyệt hành động")}
-                      </Button>
+                      {item.kind === "customer_risk" && (
+                        <Button asChild size="sm" variant="ghost"><Link href="/seller/voucher-booster">{t("Mở Voucher Booster")} <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
+                      )}
+                    </div>}
+                    {item.options.length > 1 && !terminal && (
+                      <details className="mt-4 border-t border-border pt-3 text-xs text-text-muted">
+                        <summary className="cursor-pointer">Xem {item.options.length - 1} phương án khác</summary>
+                        <div className="mt-2 space-y-1">
+                          {item.options.filter((option) => option.id !== selected.id).map((option) => (
+                            <button key={option.id} type="button" onClick={() => act(item, option)}
+                              className="block w-full rounded-md border border-border px-3 py-2 text-left hover:border-accent hover:text-text">
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </details>
                     )}
-                    <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => act(item, selected, "reject")}>
-                      <X className="h-3.5 w-3.5" /> {t("Bỏ qua")}
-                    </Button>
-                    {item.kind === "customer_risk" && (
-                      <Button asChild size="sm" variant="ghost"><Link href="/seller/voucher-booster">{t("Mở Voucher Booster")} <ArrowRight className="h-3.5 w-3.5" /></Link></Button>
-                    )}
-                  </div>}
-                  {item.options.length > 1 && !terminal && (
-                    <details className="mt-4 border-t border-border pt-3 text-xs text-text-muted">
-                      <summary className="cursor-pointer">Xem {item.options.length - 1} phương án khác</summary>
-                      <div className="mt-2 space-y-1">
-                        {item.options.filter((option) => option.id !== selected.id).map((option) => (
-                          <button key={option.id} type="button" onClick={() => act(item, option)}
-                            className="block w-full rounded-md border border-border px-3 py-2 text-left hover:border-accent hover:text-text">
-                            {option.label}
-                          </button>
-                        ))}
-                      </div>
-                    </details>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="rounded-md border-2 border-text/70 bg-surface p-4 text-sm text-text-muted">
+                    {t("Không có hành động nào cần duyệt — mục này chỉ mang tính thông tin.")}
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
