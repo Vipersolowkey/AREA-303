@@ -4,8 +4,9 @@ Revision ID: 0014_workspace_business_profile
 Revises: 0013_merge_marketplace_heads
 """
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision = "0014_workspace_business_profile"
 down_revision = "0013_merge_marketplace_heads"
