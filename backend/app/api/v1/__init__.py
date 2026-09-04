@@ -40,6 +40,7 @@ from app.api.v1.endpoints import (
     kpis,
     market,
     marketplace,
+    onboarding,
     personal_shopper,
     recsys,
     regret,
@@ -66,6 +67,8 @@ _SELLER_OR_ADMIN = [Depends(require_seller_workspace_or_admin)]
 api_router.include_router(health.router, tags=["health"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(workspaces.router, prefix="/workspaces", tags=["workspaces"])
+api_router.include_router(onboarding.router, prefix="/onboarding", tags=["onboarding"])
+api_router.include_router(marketplace.callback_router, prefix="/marketplace", tags=["marketplace"])
 api_router.include_router(autopilot.router, prefix="/autopilot", tags=["seller-autopilot"])
 api_router.include_router(voucher_booster.router, prefix="/voucher-booster", tags=["voucher-booster"])
 

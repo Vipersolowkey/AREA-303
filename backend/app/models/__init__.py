@@ -17,6 +17,12 @@ from app.models.marketplace import (
     SyncRun,
 )
 from app.models.marketplace_shop import MarketplaceShop
+from app.models.onboarding_data import (
+    WorkspaceDataImport,
+    WorkspaceDataImportRow,
+    WorkspaceDataRecord,
+    WorkspaceMarketplaceAccount,
+)
 from app.models.order import Order, OrderItem
 from app.models.product_stock import ProductStock
 from app.models.review import Review
@@ -33,6 +39,10 @@ __all__ = [
     "CompetitorSnapshot",
     "Idea",
     "MarketplaceShop",
+    "WorkspaceDataImport",
+    "WorkspaceDataImportRow",
+    "WorkspaceDataRecord",
+    "WorkspaceMarketplaceAccount",
     "OAuthState",
     "Order",
     "OrderItem",

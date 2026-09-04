@@ -33,16 +33,15 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import {
-  getStoreProducts,
   recommendPrice,
   type PriceSource,
   type PricingResult,
-  type StoreProduct,
 } from "@/lib/features";
+import { getWorkspaceProducts, type WorkspaceProduct } from "@/lib/onboarding";
 import { cn } from "@/lib/utils";
 import { useT, useTf } from "@/lib/i18n";
 
-const CATEGORIES = ["Thời trang", "Phụ kiện"] as const;
+const CATEGORIES = ["Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
 
 /** Commission rates mirror backend/app/data/restock_market.json — the backend
  *  recomputes from that file, so these labels are display only. */
@@ -157,7 +156,7 @@ function markerPosition(value: number, low: number, high: number): number {
 export function DynamicPricingPanel() {
   const t = useT();
   const tf = useTf();
-  const [name, setName] = useState("Serum Vitamin C 15%");
+  const [name, setName] = useState("");
   const [category, setCategory] = useState<Category>("Thời trang");
   // Empty, not pre-filled: a seeded price is submitted as if the seller typed
   // it, and the whole point of the field is their own number.
@@ -171,7 +170,7 @@ export function DynamicPricingPanel() {
   const [result, setResult] = useState<PricingResult | null>(null);
   const [submitted, setSubmitted] = useState<PricingQuery | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [products, setProducts] = useState<StoreProduct[]>([]);
+  const [products, setProducts] = useState<WorkspaceProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const nameId = useId();
@@ -183,11 +182,17 @@ export function DynamicPricingPanel() {
     let active = true;
     setProductsLoading(true);
 
-    void getStoreProducts(undefined, category).then((response) => {
-      if (!active) return;
-      setProducts(response?.products ?? []);
-      setProductsLoading(false);
-    });
+    void getWorkspaceProducts()
+      .then((response) => {
+        if (!active) return;
+        setProducts(response.filter((product) => product.category === category));
+      })
+      .catch(() => {
+        if (active) setError("Không tải được catalogue đã import của workspace.");
+      })
+      .finally(() => {
+        if (active) setProductsLoading(false);
+      });
 
     return () => {
       active = false;
@@ -203,7 +208,7 @@ export function DynamicPricingPanel() {
     setError(null);
   }
 
-  function selectProduct(product: StoreProduct) {
+  function selectProduct(product: WorkspaceProduct) {
     setName(product.name);
     setPrice(String(product.price_vnd));
     setProductPickerOpen(false);
@@ -812,7 +817,7 @@ export function DynamicPricingPanel() {
               {products.map((product) => (
                 <CommandItem
                   key={product.id}
-                  value={`${product.name} ${product.brand}`}
+                  value={`${product.name} ${product.sku}`}
                   onSelect={() => selectProduct(product)}
                   className="h-auto min-h-12 cursor-pointer py-2.5"
                 >
@@ -825,7 +830,7 @@ export function DynamicPricingPanel() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium text-text">{product.name}</p>
-                    <p className="mt-0.5 truncate text-xs text-text-muted">{product.brand}</p>
+                    <p className="mt-0.5 truncate text-xs text-text-muted">SKU: {product.sku} · Tồn: {product.stock}</p>
                   </div>
                   <span className="tnum shrink-0 text-sm font-medium text-text">
                     {VND.format(product.price_vnd)}

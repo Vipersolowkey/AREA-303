@@ -17,6 +17,7 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.models.autopilot import AutopilotAuditEvent, AutopilotOpportunity
+from app.models.onboarding_data import WorkspaceDataRecord
 from app.services import commerce_store as store
 
 
@@ -207,6 +208,61 @@ def _concise(value: str, limit: int = 240) -> str:
     return text[: limit - 1].rstrip(" ,;:") + "…"
 
 
+async def _workspace_candidates(db: AsyncSession, workspace_id: int) -> list[dict]:
+    """Derive operational work only from this workspace's confirmed import.
+
+    Imports currently guarantee product name, SKU, price and stock.  They do
+    not invent velocity, reviews, customers or campaign spend, so this helper
+    deliberately limits its advice to inventory facts actually available.
+    """
+    result = await db.execute(
+        select(WorkspaceDataRecord).where(
+            WorkspaceDataRecord.workspace_id == workspace_id,
+            WorkspaceDataRecord.dataset_type == "products",
+        )
+    )
+    products = [row.payload for row in result.scalars().all()]
+    low = sorted(
+        (product for product in products if int(product.get("stock", 0)) <= 5),
+        key=lambda product: int(product.get("stock", 0)),
+    )
+    if not low:
+        return [
+            {
+                "fingerprint": f"inventory:imported-catalogue:{len(products)}",
+                "kind": "inventory",
+                "severity": "info",
+                "title": f"Đã kiểm tra tồn kho của {len(products)} sản phẩm",
+                "evidence": {"source": "confirmed_import", "products_checked": len(products), "low_stock_threshold": 5},
+                "baseline_explanation": "Không có sản phẩm nào trong file đã xác nhận có tồn kho từ 5 trở xuống.",
+                "options": [],
+            }
+        ]
+    candidates: list[dict] = []
+    for product in low:
+        sku = str(product.get("sku", ""))
+        name = str(product.get("name", sku))
+        stock = int(product.get("stock", 0))
+        candidates.append(
+            {
+                "fingerprint": f"inventory:imported:{sku}:{stock}",
+                "kind": "inventory",
+                "severity": "critical" if stock == 0 else "warning",
+                "title": f"{name} còn {stock} sản phẩm trong kho",
+                "evidence": {
+                    "source": "confirmed_import", "sku": sku, "product_name": name,
+                    "stock": stock, "current_price_vnd": int(product.get("price", 0)),
+                },
+                "baseline_explanation": "Cảnh báo dựa trên tồn kho trong file đã xác nhận; chưa ước tính doanh thu hay tốc độ bán vì bạn chưa nạp lịch sử đơn hàng.",
+                "options": [
+                    {"id": "review-restock", "label": "Tạo việc kiểm tra và nhập thêm hàng", "risk": "low", "impact": {"sku": sku, "stock_before": stock}},
+                    {"id": "review-listing", "label": "Kiểm tra listing và tạm dừng khuyến mãi nếu cần", "risk": "low", "impact": {"sku": sku, "stock_before": stock}},
+                ],
+            }
+        )
+    return candidates
+
+
 def serialize(row: AutopilotOpportunity) -> dict:
     return {
         "id": row.id, "workspace_id": row.workspace_id, "kind": row.kind,
@@ -221,7 +277,7 @@ def serialize(row: AutopilotOpportunity) -> dict:
 
 
 async def refresh(db: AsyncSession, *, workspace_id: int, actor_user_id: int) -> list[dict]:
-    candidates = _candidates()
+    candidates = await _workspace_candidates(db, workspace_id)
     explanations, llm_used, model = await _ollama_explain(candidates)
     existing = await db.execute(select(AutopilotOpportunity).where(
         AutopilotOpportunity.workspace_id == workspace_id

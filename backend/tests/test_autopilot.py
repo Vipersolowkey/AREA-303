@@ -11,29 +11,29 @@ from app.core.exceptions import UpstreamUnavailableError
 from app.services import autopilot
 
 
-def test_candidates_are_grounded_in_shop_snapshot() -> None:
-    candidates = autopilot._candidates()  # noqa: SLF001
+@pytest.mark.asyncio
+async def test_candidates_use_confirmed_workspace_import_only() -> None:
+    class _Row:
+        payload = {"sku": "SER-01", "name": "Serum thật", "price": 250000, "stock": 2}
 
-    assert {item["kind"] for item in candidates} == {
-        "inventory", "reviews", "customer_risk"
-    }
-    inventory = next(item for item in candidates if item["kind"] == "inventory")
-    evidence = inventory["evidence"]
-    assert evidence["runway_days"] == round(
-        evidence["stock"] / evidence["daily_sales"], 1
-    )
-    assert all(option["impact"] for item in candidates for option in item["options"])
+    class _Scalars:
+        def all(self):
+            return [_Row()]
 
+    class _Result:
+        def scalars(self):
+            return _Scalars()
 
-def test_out_of_stock_product_never_recommends_a_price_increase() -> None:
-    inventory = next(
-        item for item in autopilot._candidates() if item["kind"] == "inventory"  # noqa: SLF001
-    )
+    class _Db:
+        async def execute(self, _statement):  # noqa: ANN001
+            return _Result()
 
-    if inventory["evidence"]["stock"] == 0:
-        option_ids = {option["id"] for option in inventory["options"]}
-        assert "raise-price-5" not in option_ids
-        assert option_ids == {"restock", "pause-campaigns"}
+    candidates = await autopilot._workspace_candidates(_Db(), 7)  # noqa: SLF001
+    assert len(candidates) == 1
+    evidence = candidates[0]["evidence"]
+    assert evidence["source"] == "confirmed_import"
+    assert evidence["product_name"] == "Serum thật"
+    assert all("revenue" not in option["impact"] for option in candidates[0]["options"])
 
 
 def test_concise_keeps_model_copy_within_ui_limit() -> None:

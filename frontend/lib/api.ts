@@ -63,7 +63,7 @@ async function request<T>(
     ...init,
     signal,
     headers: {
-      "Content-Type": "application/json",
+      ...(init?.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       // Admin-gated endpoints need this; harmless when absent.
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(workspaceId ? { "X-Workspace-ID": String(workspaceId) } : {}),
@@ -126,5 +126,8 @@ export const api = {
   },
   delete<T>(path: string, signal?: AbortSignal) {
     return request<T>(path, { method: "DELETE" }, signal);
+  },
+  postForm<T>(path: string, body: FormData, signal?: AbortSignal) {
+    return request<T>(path, { method: "POST", body }, signal);
   },
 };

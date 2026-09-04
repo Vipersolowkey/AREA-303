@@ -12,6 +12,8 @@ const buttonVariants = cva(
       variant: {
         primary:
           "border-text bg-accent text-white shadow-[2px_3px_0_hsl(var(--text)/calc(0.22*var(--shadow-strength)))] hover:-translate-y-0.5 hover:bg-accent-hover",
+        default:
+          "border-text bg-accent text-white shadow-[2px_3px_0_hsl(var(--text)/calc(0.22*var(--shadow-strength)))] hover:-translate-y-0.5 hover:bg-accent-hover",
         secondary:
           "border-border-strong bg-surface text-text shadow-[2px_3px_0_hsl(var(--text)/calc(0.10*var(--shadow-strength)))] hover:-translate-y-0.5 hover:border-accent hover:text-accent",
         ghost: "border-transparent text-text-muted hover:bg-surface-2 hover:text-text",

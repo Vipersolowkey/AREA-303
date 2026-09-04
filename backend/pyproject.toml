@@ -19,6 +19,7 @@ dependencies = [
     # Used directly: passlib 1.7.4's backend probe breaks with bcrypt 5.x.
     "bcrypt>=4.0.1,<6.0",
     "python-multipart>=0.0.20",
+    "openpyxl>=3.1.5",
     "httpx>=0.28.0",
     "tenacity>=9.0.0",
     "structlog>=24.4.0",

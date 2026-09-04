@@ -15,7 +15,7 @@ from app.core.config import settings
 from app.core.exceptions import ValidationError
 from app.core.responses import ApiResponse, PageMeta
 from app.db.session import get_db
-from app.models.marketplace import PLATFORMS
+from app.models.marketplace import PLATFORMS, OAuthState
 from app.schemas.marketplace import (
     BeginAuthRequest,
     BeginAuthResponse,
@@ -25,10 +25,13 @@ from app.schemas.marketplace import (
     ShopConnectionOut,
     SyncResponse,
 )
-from app.services import marketplace_link
+from app.services import marketplace_link, onboarding_data
 from app.services.marketplace import AdapterError, all_adapters
 
 router = APIRouter()
+# OAuth providers cannot send our JWT on their redirect.  Keep only this
+# callback public; it is still protected by a single-use, expiring OAuth state.
+callback_router = APIRouter()
 
 PLATFORM_LABELS = {"shopee": "Shopee", "lazada": "Lazada", "tiktok": "TikTok Shop"}
 STATUS_LABELS = {
@@ -148,7 +151,7 @@ async def begin_connect(
     ))
 
 
-@router.get("/callback")
+@callback_router.get("/callback")
 async def callback(
     request: Request,
     state: str = Query(default=""),
@@ -165,7 +168,16 @@ async def callback(
         (origin for origin in settings.CORS_ORIGINS if "localhost" not in origin and "127.0.0.1" not in origin),
         settings.CORS_ORIGINS[0],
     ).rstrip("/")
-    ui = f"{frontend_origin}/seller/marketplace"
+    # Resolve the workspace *before* completing the state.  The callback is
+    # shared with the legacy connector, but workspace onboarding must land back
+    # in its data gate and not in an unscoped, old marketplace screen.
+    oauth_state = await db.get(OAuthState, state)
+    workspace_id = (
+        await onboarding_data.workspace_for_seller_account(db, oauth_state.seller_account_id)
+        if oauth_state is not None
+        else None
+    )
+    ui = f"{frontend_origin}/seller/onboarding" if workspace_id else f"{frontend_origin}/seller/marketplace"
     params = {k: v for k, v in request.query_params.items()}
     try:
         result = await marketplace_link.complete_authorisation(
@@ -173,7 +185,21 @@ async def callback(
         )
     except (marketplace_link.LinkError, AdapterError) as exc:
         from urllib.parse import quote
-        return RedirectResponse(f"{ui}?connect=error&message={quote(str(exc))}", 302)
+        workspace_query = f"&workspace={workspace_id}" if workspace_id else ""
+        return RedirectResponse(f"{ui}?connect=error{workspace_query}&message={quote(str(exc))}", 302)
+    if workspace_id:
+        try:
+            summary = await marketplace_link.sync_shop(db, result.shop_connection_id)
+            if summary.products + summary.orders <= 0:
+                message = "Kết nối thành công nhưng sàn chưa trả về sản phẩm hoặc đơn hàng hợp lệ."
+                return RedirectResponse(f"{ui}?workspace={workspace_id}&connect=empty&message={quote(message)}", 302)
+            return RedirectResponse(
+                f"{ui}?workspace={workspace_id}&connect=ok&platform={result.platform}", 302
+            )
+        except (marketplace_link.LinkError, AdapterError) as exc:
+            return RedirectResponse(
+                f"{ui}?workspace={workspace_id}&connect=sync_error&message={quote(str(exc))}", 302
+            )
     return RedirectResponse(
         f"{ui}?connect=ok&shop={result.shop_connection_id}"
         f"&platform={result.platform}", 302

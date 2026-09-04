@@ -83,7 +83,10 @@ async def create_workspace(
     user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_dep),
 ) -> ApiResponse[dict]:
-    if any((req.description, req.target_customer, req.brand_voice)) or req.industry != "fashion":
+    # Keep the minimal create contract minimal.  Extra business-profile values
+    # are persisted only when the caller actually supplied them; nothing is
+    # invented for a new seller.
+    if {"industry", "description", "target_customer", "brand_voice"} & req.model_fields_set:
         workspace, membership, account = await workspace_service.create_workspace(
             db,
             user_id=int(user["sub"]),

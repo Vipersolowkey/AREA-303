@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useT } from "@/lib/i18n";
+import { getWorkspaceReadiness } from "@/lib/onboarding";
 import {
   WorkspaceLoadErrorScreen,
   WorkspaceLoadingScreen,
@@ -90,6 +91,12 @@ export default function SellerWorkspacePage() {
         router.replace("/seller/onboarding");
         return;
       }
+      const readiness = await getWorkspaceReadiness(selected.id);
+      if (!readiness.ready) {
+        setActiveWorkspaceId(selected.id);
+        router.replace("/seller/onboarding");
+        return;
+      }
       setActiveWorkspaceId(selected.id);
       setWorkspaces(available);
       setWorkspace(selected);
@@ -132,6 +139,11 @@ export default function SellerWorkspacePage() {
     setLoading(true);
     setError(null);
     try {
+      const readiness = await getWorkspaceReadiness(selected.id);
+      if (!readiness.ready) {
+        router.replace("/seller/onboarding");
+        return;
+      }
       const [memberRows, shopRows] = await Promise.all([
         listWorkspaceMembers(selected.id),
         listMarketplaceShops(selected.id),

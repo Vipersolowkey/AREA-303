@@ -60,10 +60,8 @@ export async function listWorkspaces(signal?: AbortSignal): Promise<SellerWorksp
   return response.data ?? [];
 }
 
-export type WorkspaceCreateInput = Pick<
-  SellerWorkspace,
-  "name" | "industry" | "description" | "target_customer" | "brand_voice"
->;
+export type WorkspaceCreateInput = Pick<SellerWorkspace, "name"> &
+  Partial<Pick<SellerWorkspace, "industry" | "description" | "target_customer" | "brand_voice">>;
 
 export async function createWorkspace(input: WorkspaceCreateInput): Promise<WorkspaceCreateResult> {
   const response = await api.post<WorkspaceCreateResult>("/workspaces/", input);
