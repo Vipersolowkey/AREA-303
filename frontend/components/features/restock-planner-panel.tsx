@@ -103,7 +103,7 @@ function PriorityRow({ item }: { item: RestockPlan["items"][number] }) {
 
 export function RestockPlannerPanel() {
   const now = new Date().getMonth() + 1;
-  const [budgetText, setBudgetText] = useState("50000000");
+  const [budgetText, setBudgetText] = useState("8000000");
   const [month, setMonth] = useState(now);
   const [horizonText, setHorizonText] = useState("30");
   const [categories, setCategories] = useState<Category[]>([]);

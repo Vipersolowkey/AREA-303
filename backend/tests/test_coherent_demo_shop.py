@@ -92,6 +92,34 @@ def test_dashboard_kpis_are_derived_from_daily_fact_table() -> None:
     assert result["counts"]["orders"] == len(store.all_demo_orders())
 
 
+def test_demo_business_metrics_are_plausible_and_reconcile() -> None:
+    result = shop_analytics.summary()
+    period = result["period_summary"]
+    products = store.all_products()
+    recent_dates = {row["date"] for row in store.all_daily_metrics()[-30:]}
+    recent_orders = [
+        order for order in store.all_demo_orders()
+        if order["created_at"][:10] in recent_dates
+    ]
+    recognized = [
+        order for order in recent_orders
+        if order["status"] not in {"cancelled", "returned", "pending"}
+    ]
+
+    assert store.all_daily_metrics()[-1]["date"] == store.shop_profile()["data_as_of"][:10]
+    assert period["revenue_vnd"] == sum(order["total_vnd"] for order in recognized)
+    assert period["total_orders"] == len(recent_orders)
+    assert period["recognized_orders"] == len(recognized)
+    assert 30_000_000 <= period["revenue_vnd"] <= 120_000_000
+    assert 150_000 <= period["average_order_value_vnd"] <= 900_000
+    assert 3 <= period["cancellation_rate_pct"] <= 15
+    assert 1 <= period["return_rate_pct"] <= 8
+    assert 10 <= period["returning_customer_rate_pct"] <= 60
+    assert period["out_of_stock_skus"] == sum(p["stock"] == 0 for p in products)
+    assert period["out_of_stock_skus"] / len(products) <= 0.1
+    assert (period["low_stock_skus"] + period["out_of_stock_skus"]) / len(products) <= 0.3
+
+
 def test_storefront_rating_is_the_same_review_average() -> None:
     source = store.all_products()[0]
     view = storefront.get_product(source["id"])

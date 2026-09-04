@@ -11,7 +11,7 @@ export function DashboardShell({
   ambient?: boolean;
 }) {
   return (
-    <div className="relative min-h-screen bg-bg">
+    <div className="dashboard-motion relative min-h-screen bg-bg">
       {/* Ambient glow field — dock.cool marketing-page background: a colorful
           atmosphere behind bold black type. */}
       {ambient && (
@@ -25,7 +25,7 @@ export function DashboardShell({
         <Sidebar />
         <div className="lg:pl-64">
           <TopBar breadcrumb={breadcrumb} />
-          <main className="px-4 py-6 lg:px-8 lg:py-8">{children}</main>
+          <main className="dashboard-page px-4 py-6 lg:px-8 lg:py-8">{children}</main>
         </div>
       </div>
     </div>

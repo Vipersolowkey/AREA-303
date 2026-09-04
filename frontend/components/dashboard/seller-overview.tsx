@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { PackageX, RefreshCcw, Star, TrendingUp, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { TrafficChart } from "@/components/dashboard/traffic-chart";
@@ -23,12 +23,37 @@ import {
 type Summary = {
   shop: { name: string; channels: string[]; data_as_of: string; demo_mode: boolean };
   counts: { products: number; customers: number; orders: number; reviews: number };
+  period_summary: {
+    days: number;
+    revenue_vnd: number;
+    total_orders: number;
+    recognized_orders: number;
+    average_order_value_vnd: number;
+    active_customers: number;
+    returning_customer_rate_pct: number;
+    cancellation_rate_pct: number;
+    return_rate_pct: number;
+    low_stock_skus: number;
+    out_of_stock_skus: number;
+  };
   kpis: Kpi[];
   timeseries: typeof TIMESERIES;
   alerts: Alert[];
   provinces: ProvinceNode[];
   demo_mode: boolean;
 };
+
+const COMPACT_VND = new Intl.NumberFormat("vi-VN", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+const SNAPSHOT_DATE = new Intl.DateTimeFormat("vi-VN", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  timeZone: "Asia/Ho_Chi_Minh",
+});
 
 export function SellerOverview() {
   const [data, setData] = useState<Summary | null>(null);
@@ -48,13 +73,46 @@ export function SellerOverview() {
   const alerts = data?.alerts ?? ALERTS;
   const provinces = data?.provinces ?? PROVINCES;
   const okNodes = provinces.filter((node) => node.status === "ok").length;
+  const period = data?.period_summary;
+  const periodFacts = period ? [
+    {
+      label: "GMV ghi nhận / 30 ngày",
+      value: `${COMPACT_VND.format(period.revenue_vnd)}₫`,
+      note: `${period.recognized_orders}/${period.total_orders} đơn được ghi nhận`,
+      icon: TrendingUp,
+      tone: "bg-accent/10 text-accent",
+    },
+    {
+      label: "Khách hoạt động",
+      value: period.active_customers.toLocaleString("vi-VN"),
+      note: `${period.returning_customer_rate_pct}% đã quay lại mua`,
+      icon: Users,
+      tone: "bg-accent-2/10 text-accent-2",
+    },
+    {
+      label: "Sau bán hàng",
+      value: `${period.return_rate_pct}% hoàn`,
+      note: `${period.cancellation_rate_pct}% đơn bị huỷ`,
+      icon: RefreshCcw,
+      tone: "bg-warning/10 text-warning",
+    },
+    {
+      label: "Tồn kho cần xử lý",
+      value: `${period.out_of_stock_skus} hết hàng`,
+      note: `${period.low_stock_skus} SKU sắp thiếu`,
+      icon: PackageX,
+      tone: "bg-danger/10 text-danger",
+    },
+  ] : [];
 
   return (
     <>
-      <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div className="dashboard-reveal relative mb-8 flex flex-col gap-4 overflow-hidden rounded-2xl border border-dashed border-accent/25 bg-surface/55 p-5 sm:flex-row sm:items-end sm:justify-between">
+        <span className="dashboard-orbit dashboard-orbit-one" aria-hidden="true" />
+        <span className="dashboard-orbit dashboard-orbit-two" aria-hidden="true" />
         <div>
           <div className="text-sm font-medium text-text-dim">
-            {data?.shop.name ?? "Mây House Official"} · dữ liệu demo thống nhất
+            {data?.shop.name ?? "Mây House Official"} · snapshot vận hành liên kết
           </div>
           <h1 className="mt-2 text-5xl font-extrabold leading-[1.05] tracking-tight text-text sm:text-6xl">
             Tình hình <span className="text-gradient">cửa hàng</span>
@@ -66,7 +124,9 @@ export function SellerOverview() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="muted">shop demo có quan hệ dữ liệu</Badge>
+          <Badge variant="muted">
+            {data ? `Cập nhật ${SNAPSHOT_DATE.format(new Date(data.shop.data_as_of))}` : "Đang đồng bộ dữ liệu"}
+          </Badge>
           <span className="mono text-xs text-text-muted">{okNodes}/{provinces.length} khu vực ổn định</span>
           <Button asChild size="sm" variant="primary">
             <Link href="/seller/review-intelligence"><Star className="h-3.5 w-3.5" />Phân tích đánh giá</Link>
@@ -74,14 +134,46 @@ export function SellerOverview() {
         </div>
       </div>
 
+      {periodFacts.length > 0 && (
+        <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {periodFacts.map((fact, index) => {
+            const Icon = fact.icon;
+            return (
+              <div
+                key={fact.label}
+                className="business-fact dashboard-reveal card-surface flex items-center gap-3 rounded-xl border p-4"
+                style={{ animationDelay: `${100 + index * 70}ms` }}
+              >
+                <span className={`doodle-sticker h-10 w-10 shrink-0 ${fact.tone}`}>
+                  <Icon className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-2xs font-semibold uppercase tracking-wide text-text-dim">{fact.label}</p>
+                  <p className="mt-0.5 text-lg font-extrabold text-text">{fact.value}</p>
+                  <p className="truncate text-xs text-text-muted">{fact.note}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((kpi) => <KpiCard key={kpi.id} kpi={kpi} />)}
+        {kpis.map((kpi, index) => (
+          <div
+            key={kpi.id}
+            className="dashboard-reveal"
+            style={{ animationDelay: `${(periodFacts.length ? 380 : 100) + index * 70}ms` }}
+          >
+            <KpiCard kpi={kpi} />
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-8"><TrafficChart data={timeseries} /></div>
-        <div className="lg:col-span-4"><GeoMap nodes={provinces} /></div>
-        <div className="lg:col-span-12"><AlertsTable data={alerts} /></div>
+        <div className="dashboard-reveal lg:col-span-8" style={{ animationDelay: "450ms" }}><TrafficChart data={timeseries} /></div>
+        <div className="dashboard-reveal lg:col-span-4" style={{ animationDelay: "520ms" }}><GeoMap nodes={provinces} /></div>
+        <div className="dashboard-reveal lg:col-span-12" style={{ animationDelay: "590ms" }}><AlertsTable data={alerts} /></div>
       </div>
     </>
   );

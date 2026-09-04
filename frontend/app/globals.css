@@ -425,6 +425,71 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
+  /* Product motion system: quick entrances and tactile hover feedback. */
+  .dashboard-page .dashboard-reveal {
+    opacity: 0;
+    animation: dashboard-sketch-in 620ms cubic-bezier(.2,.8,.2,1) forwards;
+  }
+  .dashboard-motion .glow-blob:first-child { animation: dashboard-ambient-one 14s ease-in-out infinite alternate; }
+  .dashboard-motion .glow-blob:nth-child(2) { animation: dashboard-ambient-two 17s ease-in-out infinite alternate; }
+
+  .dashboard-orbit {
+    position: absolute;
+    border: 1.5px dashed hsl(var(--accent) / .3);
+    border-radius: 9999px;
+    pointer-events: none;
+    animation: orbit-drift 9s ease-in-out infinite alternate;
+  }
+  .dashboard-orbit-one { right: 8%; top: -2rem; width: 8rem; height: 8rem; }
+  .dashboard-orbit-two { right: 2%; bottom: -3rem; width: 6rem; height: 6rem; animation-delay: -3s; }
+
+  .kpi-motion-card::after {
+    content: "";
+    position: absolute;
+    inset: -40% auto -40% -45%;
+    width: 28%;
+    rotate: 14deg;
+    background: linear-gradient(90deg, transparent, hsl(var(--surface) / .8), transparent);
+    transition: translate 520ms cubic-bezier(.2,.8,.2,1);
+    pointer-events: none;
+  }
+  .kpi-motion-card:hover::after { translate: 560% 0; }
+  .kpi-motion-card:hover .kpi-delta-icon { animation: metric-arrow-pop 440ms cubic-bezier(.2,.8,.2,1); }
+
+  .business-fact {
+    transition: transform 220ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease;
+  }
+  .business-fact:hover { transform: translateY(-4px) rotate(-.35deg); box-shadow: 5px 7px 0 hsl(var(--accent) / .14); }
+  .business-fact:nth-child(even):hover { transform: translateY(-4px) rotate(.35deg); }
+
+  .nav-flyout { transform-origin: left top; animation: nav-flyout-mobile-in 190ms cubic-bezier(.2,.8,.2,1) both; }
+  .nav-flyout-item { opacity: 0; animation: nav-item-in 260ms cubic-bezier(.2,.8,.2,1) forwards; }
+
+  @media (min-width: 1024px) {
+    .nav-flyout { animation-name: nav-flyout-in; }
+  }
+
+  @keyframes dashboard-sketch-in {
+    from { opacity: 0; transform: translateY(16px) scale(.992); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes dashboard-ambient-one { to { transform: translate(5vw, 3rem) rotate(7deg) scale(1.06); } }
+  @keyframes dashboard-ambient-two { to { transform: translate(-4vw, 4rem) rotate(-9deg) scale(.95); } }
+  @keyframes orbit-drift { to { translate: 12px -9px; rotate: 12deg; scale: 1.08; } }
+  @keyframes metric-arrow-pop { 50% { transform: translate(2px, -2px) scale(1.18); } }
+  @keyframes nav-flyout-in {
+    from { opacity: 0; transform: translateX(.35rem) scale(.96) rotate(-.4deg); }
+    to { opacity: 1; transform: translateX(.75rem) scale(1) rotate(0); }
+  }
+  @keyframes nav-flyout-mobile-in {
+    from { opacity: 0; scale: .98; }
+    to { opacity: 1; scale: 1; }
+  }
+  @keyframes nav-item-in {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
   @media (max-width: 640px) {
     .hero-doodle-star { top: 10rem; }
     .hero-doodle-loop { top: 34rem; }
@@ -439,6 +504,17 @@
       animation-delay: 0ms !important;
       animation-iteration-count: 1 !important;
       scroll-behavior: auto !important;
+    }
+    .dashboard-page *,
+    .dashboard-page *::before,
+    .dashboard-page *::after,
+    .nav-flyout,
+    .nav-flyout-item,
+    .dashboard-motion .glow-blob {
+      animation-duration: 1ms !important;
+      animation-delay: 0ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 1ms !important;
     }
   }
 }

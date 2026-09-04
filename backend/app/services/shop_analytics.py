@@ -152,6 +152,52 @@ def _province_nodes() -> list[dict]:
     return result
 
 
+def _period_summary(days: int = 30) -> dict:
+    """Business-health snapshot derived from the same order and stock facts."""
+    recent_dates = {row["date"] for row in store.all_daily_metrics()[-days:]}
+    recent_orders = [
+        order for order in store.all_demo_orders()
+        if order["created_at"][:10] in recent_dates
+    ]
+    recognized = [order for order in recent_orders if _recognized(order)]
+    recent_orders_by_customer: dict[str, int] = defaultdict(int)
+    for order in recognized:
+        recent_orders_by_customer[order["customer_id"]] += 1
+
+    active_customer_ids = {order["customer_id"] for order in recognized}
+    returning_customers = sum(
+        recent_orders_by_customer[customer_id] >= 2
+        for customer_id in active_customer_ids
+    )
+    products = store.all_products()
+    revenue = sum(order["total_vnd"] for order in recognized)
+    total_orders = len(recent_orders)
+
+    return {
+        "days": days,
+        "revenue_vnd": revenue,
+        "total_orders": total_orders,
+        "recognized_orders": len(recognized),
+        "average_order_value_vnd": round(revenue / max(len(recognized), 1)),
+        "active_customers": len(active_customer_ids),
+        "returning_customer_rate_pct": round(
+            returning_customers / max(len(active_customer_ids), 1) * 100, 1
+        ),
+        "cancellation_rate_pct": round(
+            sum(order["status"] == "cancelled" for order in recent_orders)
+            / max(total_orders, 1) * 100,
+            1,
+        ),
+        "return_rate_pct": round(
+            sum(order["status"] == "returned" for order in recent_orders)
+            / max(total_orders, 1) * 100,
+            1,
+        ),
+        "low_stock_skus": sum(product["stock_status"] == "low" for product in products),
+        "out_of_stock_skus": sum(product["stock_status"] == "out" for product in products),
+    }
+
+
 def summary() -> dict:
     products = store.all_products()
     orders = store.all_demo_orders()
@@ -166,6 +212,7 @@ def summary() -> dict:
             "creators": len(store.all_creators()),
             "reviews": sum(len(p["reviews_list"]) for p in products),
         },
+        "period_summary": _period_summary(),
         "kpis": _kpis(),
         "timeseries": _hourly_series(),
         "alerts": _alerts(),

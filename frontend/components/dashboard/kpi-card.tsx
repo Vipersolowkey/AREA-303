@@ -32,7 +32,7 @@ export function KpiCard({ kpi }: { kpi: Kpi }) {
   const isGood = goodWhenDown ? !positive : positive;
 
   return (
-    <div className="card-surface group rounded-lg border p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-border-strong hover:shadow-lg">
+    <div className="kpi-motion-card card-surface group relative overflow-hidden rounded-lg border p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-border-strong hover:shadow-lg">
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium text-text-muted">
           {kpi.label}
@@ -44,9 +44,9 @@ export function KpiCard({ kpi }: { kpi: Kpi }) {
           )}
         >
           {positive ? (
-            <ArrowUpRight className="h-3 w-3" />
+            <ArrowUpRight className="kpi-delta-icon h-3 w-3" />
           ) : (
-            <ArrowDownRight className="h-3 w-3" />
+            <ArrowDownRight className="kpi-delta-icon h-3 w-3" />
           )}
           {Math.abs(kpi.delta).toFixed(1)}%
         </span>

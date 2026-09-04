@@ -29,7 +29,7 @@ CaseId = Literal["hot", "slow", "seasonal", "dead"]
 
 
 class RestockPlanRequest(BaseModel):
-    budget_vnd: float = Field(50_000_000, gt=0, description="Vốn nhập hàng khả dụng")
+    budget_vnd: float = Field(8_000_000, gt=0, description="Vốn nhập hàng khả dụng")
     month: int = Field(0, ge=0, le=12, description="Tháng lập kế hoạch; 0 = tháng hiện tại")
     horizon_days: int = Field(30, ge=7, le=120, description="Số ngày cần phủ tồn kho")
     categories: list[Category] = Field(

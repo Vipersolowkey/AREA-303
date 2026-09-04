@@ -27,7 +27,9 @@ SHOP_PROFILE = {
     "warehouse": "Kho Bình Dương",
     "channels": ["Shopee", "TikTok Shop", "Tiki", "Website"],
     "categories": ["Thời trang", "Mỹ phẩm", "Phụ kiện"],
-    "data_as_of": "2026-08-12T16:00:00+00:00",
+    "seller_segment": "SMB đang tăng trưởng",
+    "reporting_window_days": 180,
+    "data_as_of": "2026-09-03T16:00:00+00:00",
     "demo_mode": True,
 }
 
@@ -154,7 +156,10 @@ _CATALOG_SPEC: dict[str, dict] = {
 }
 
 _TRENDS = ["rising", "rising", "stable", "stable", "cooling", "cooling"]
-_STOCK_STATUS = ["ok", "ok", "ok", "low", "out"]
+# A growing 60-SKU shop should have work to do without looking operationally
+# broken: 44 healthy, 12 low-stock and 4 stockout SKUs. All inventory features
+# read this same distribution and the velocity derived from recognized orders.
+_STOCK_STATUS = ["ok"] * 11 + ["low"] * 3 + ["out"]
 
 # --- synthetic per-session timestamps (for real dwell/cart-abandon metrics) - #
 # S4 ends on "cart" with nothing after it and is meant to demo an abandoned
@@ -353,7 +358,7 @@ def _build() -> dict:
         })
 
     # --- linked order history: customers ↔ orders ↔ products/channels ------- #
-    anchor = datetime(2026, 8, 12, 16, 0, tzinfo=UTC)
+    anchor = datetime(2026, 9, 3, 16, 0, tzinfo=UTC)
     orders: list[dict] = []
     provinces = ["TP.HCM", "Hà Nội", "Bình Dương", "Đà Nẵng", "Đồng Nai", "Cần Thơ"]
     for i in range(540):

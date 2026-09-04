@@ -2,7 +2,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Store, ShoppingCart, ArrowLeftRight } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Boxes,
+  BrainCircuit,
+  ChevronRight,
+  LayoutGrid,
+  Menu,
+  Palette,
+  ShoppingCart,
+  Store,
+  X,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { navForApp, NAV_SECTIONS, SELLER_SELF_SERVICE_SLUGS, type AppKind } from "@/lib/nav";
@@ -12,10 +23,14 @@ import { useMounted } from "@/lib/hooks/use-mounted";
 export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const { user, isAdmin } = useAuth();
   const mounted = useMounted();
 
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    setOpen(false);
+    setExpandedSection(null);
+  }, [pathname]);
 
   const app: AppKind = pathname.startsWith("/seller") ? "seller" : "shop";
   const items = navForApp(app).filter(
@@ -29,6 +44,14 @@ export function Sidebar() {
 
   const isActive = (href: string) =>
     href === home ? pathname === home : pathname.startsWith(href);
+
+  const sectionIcons = {
+    commerce: ShoppingCart,
+    intelligence: BrainCircuit,
+    creator: Palette,
+    operations: Boxes,
+    demand: BrainCircuit,
+  } as const;
 
   return (
     <>
@@ -45,8 +68,11 @@ export function Sidebar() {
       )}
 
       <aside
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setExpandedSection(null);
+        }}
         className={cn(
-          "card-surface fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r bg-surface/95 transition-transform lg:translate-x-0",
+          "card-surface fixed inset-y-0 left-0 z-40 flex w-64 flex-col overflow-visible border-r bg-surface/95 transition-transform lg:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full",
         )}
       >
@@ -61,38 +87,103 @@ export function Sidebar() {
           </div>
         </Link>
 
-        {/* Nav grouped by section */}
-        <nav className="flex-1 overflow-y-auto p-3">
+        {/* Product-style navigation: compact categories open a Firebase-like
+            flyout on desktop and an inline accordion on mobile. */}
+        <nav className="flex-1 overflow-y-auto p-3 lg:overflow-visible">
+          <p className="px-3 pb-2 pt-1 text-2xs font-medium uppercase tracking-wider text-text-dim">
+            Danh mục sản phẩm
+          </p>
+
+          <Link
+            href={home}
+            className={cn(
+              "mb-1 flex h-11 items-center gap-3 rounded-xl border-[1.5px] px-3 text-sm font-semibold transition-all",
+              pathname === home
+                ? "border-accent/40 bg-accent/12 text-accent shadow-[2px_2px_0_hsl(var(--accent)/0.14)]"
+                : "border-transparent text-text-muted hover:border-border hover:bg-surface-2 hover:text-text",
+            )}
+          >
+            <LayoutGrid className="h-4 w-4 shrink-0" />
+            <span className="flex-1">Tổng quan</span>
+          </Link>
+
           {NAV_SECTIONS.map((section) => {
             const secItems = items.filter((i) => i.section === section.id);
             if (!secItems.length) return null;
+            const SectionIcon = sectionIcons[section.id];
+            const sectionActive = secItems.some((item) => isActive(item.href));
+            const expanded = expandedSection === section.id;
             return (
-              <div key={section.id} className="mb-5">
-                <div className="px-3 pb-2 pt-2 text-2xs font-medium uppercase tracking-wider text-text-dim">
-                  {section.title}
-                </div>
-                <ul className="space-y-1">
-                  {secItems.map((item) => {
+              <div
+                key={section.id}
+                className="relative"
+                onMouseEnter={() => setExpandedSection(section.id)}
+                onMouseLeave={() => setExpandedSection(null)}
+              >
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={`nav-section-${section.id}`}
+                  onClick={() => setExpandedSection(expanded ? null : section.id)}
+                  className={cn(
+                    "group mb-1 flex h-11 w-full items-center gap-3 rounded-xl border-[1.5px] px-3 text-left text-sm font-semibold transition-all",
+                    sectionActive || expanded
+                      ? "border-accent/35 bg-accent/10 text-accent"
+                      : "border-transparent text-text-muted hover:border-border hover:bg-surface-2 hover:text-text",
+                  )}
+                >
+                  <SectionIcon className="h-4 w-4 shrink-0" />
+                  <span className="flex-1 truncate">{section.title}</span>
+                  <span className="mono text-2xs text-text-dim">{secItems.length}</span>
+                  <ChevronRight
+                    className={cn(
+                      "h-4 w-4 shrink-0 transition-transform lg:group-hover:translate-x-0.5",
+                      expanded && "rotate-90 lg:rotate-0",
+                    )}
+                  />
+                </button>
+
+                <div
+                  id={`nav-section-${section.id}`}
+                  className={cn(
+                    "mb-2 ml-3 border-l border-dashed border-border pl-2 lg:absolute lg:left-full lg:top-0 lg:z-50 lg:mb-0 lg:ml-0 lg:max-h-[calc(100vh-2rem)] lg:w-80 lg:translate-x-3 lg:overflow-y-auto lg:rounded-2xl lg:border lg:border-solid lg:bg-surface lg:p-3 lg:shadow-[6px_7px_0_hsl(var(--border)/0.65)]",
+                    expanded ? "nav-flyout block" : "hidden",
+                  )}
+                >
+                  <div className="hidden border-b border-dashed border-border px-2 pb-2.5 pt-1 lg:block">
+                    <p className="text-xs font-semibold text-text">{section.title}</p>
+                    <p className="mt-0.5 text-2xs text-text-dim">
+                      {secItems.length} công cụ trong cùng một luồng công việc
+                    </p>
+                  </div>
+                  <ul className="space-y-1 lg:pt-2">
+                  {secItems.map((item, itemIndex) => {
                     const Icon = item.icon;
                     const active = isActive(item.href);
                     return (
-                      <li key={item.slug}>
+                      <li
+                        key={item.slug}
+                        className="nav-flyout-item"
+                        style={{ animationDelay: `${45 + itemIndex * 35}ms` }}
+                      >
                         <Link
                           href={item.href}
                           className={cn(
-                            "group flex h-10 items-center gap-2.5 rounded-md border-[1.5px] border-transparent px-3 text-sm font-medium transition-all",
+                            "group flex min-h-10 items-center gap-2.5 rounded-xl border-[1.5px] border-transparent px-3 py-2 text-sm font-medium transition-all",
                             active
                               ? "rotate-[-0.5deg] border-accent/40 bg-accent/12 text-accent shadow-[2px_2px_0_hsl(var(--accent)/0.14)]"
                               : "text-text-muted hover:border-border hover:bg-surface-2 hover:text-text",
                           )}
                         >
                           <Icon className="h-4 w-4 shrink-0" />
-                          <span className="truncate">{item.label}</span>
+                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          <span className="mono text-2xs text-text-dim">{item.id}</span>
                         </Link>
                       </li>
                     );
                   })}
-                </ul>
+                  </ul>
+                </div>
               </div>
             );
           })}
