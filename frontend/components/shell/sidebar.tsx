@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { navForApp, NAV_SECTIONS, SELLER_SELF_SERVICE_SLUGS, type AppKind } from "@/lib/nav";
 import { useAuth } from "@/lib/auth-context";
 import { useMounted } from "@/lib/hooks/use-mounted";
+import { useT } from "@/lib/i18n";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -26,6 +27,7 @@ export function Sidebar() {
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const { user, isAdmin } = useAuth();
   const mounted = useMounted();
+  const t = useT();
 
   useEffect(() => {
     setOpen(false);
@@ -37,8 +39,8 @@ export function Sidebar() {
     (item) => app !== "seller" || isAdmin || SELLER_SELF_SERVICE_SLUGS.has(item.slug),
   );
   const brand = app === "seller"
-    ? { label: "Người bán", icon: Store, other: "/shop", otherLabel: "Cửa hàng" }
-    : { label: "Cửa hàng", icon: ShoppingCart, other: "/seller", otherLabel: "Người bán" };
+    ? { label: t("Người bán"), icon: Store, other: "/shop", otherLabel: t("Cửa hàng") }
+    : { label: t("Cửa hàng"), icon: ShoppingCart, other: "/seller", otherLabel: t("Người bán") };
   const BrandIcon = brand.icon;
   const home = app === "seller" && user?.role !== "admin" ? "/seller/workspace" : app === "seller" ? "/seller" : "/shop";
 
@@ -91,7 +93,7 @@ export function Sidebar() {
             flyout on desktop and an inline accordion on mobile. */}
         <nav className="flex-1 overflow-y-auto p-3 lg:overflow-visible">
           <p className="px-3 pb-2 pt-1 text-2xs font-medium uppercase tracking-wider text-text-dim">
-            Danh mục sản phẩm
+            {t("Danh mục sản phẩm")}
           </p>
 
           <Link
@@ -104,7 +106,7 @@ export function Sidebar() {
             )}
           >
             <LayoutGrid className="h-4 w-4 shrink-0" />
-            <span className="flex-1">Tổng quan</span>
+            <span className="flex-1">{t("Tổng quan")}</span>
           </Link>
 
           {NAV_SECTIONS.map((section) => {
@@ -133,7 +135,7 @@ export function Sidebar() {
                   )}
                 >
                   <SectionIcon className="h-4 w-4 shrink-0" />
-                  <span className="flex-1 truncate">{section.title}</span>
+                  <span className="flex-1 truncate">{t(section.title)}</span>
                   <span className="mono text-2xs text-text-dim">{secItems.length}</span>
                   <ChevronRight
                     className={cn(
@@ -151,9 +153,9 @@ export function Sidebar() {
                   )}
                 >
                   <div className="hidden border-b border-dashed border-border px-2 pb-2.5 pt-1 lg:block">
-                    <p className="text-xs font-semibold text-text">{section.title}</p>
+                    <p className="text-xs font-semibold text-text">{t(section.title)}</p>
                     <p className="mt-0.5 text-2xs text-text-dim">
-                      {secItems.length} công cụ trong cùng một luồng công việc
+                      {secItems.length} {t("công cụ trong cùng một luồng công việc")}
                     </p>
                   </div>
                   <ul className="space-y-1 lg:pt-2">
@@ -176,7 +178,7 @@ export function Sidebar() {
                           )}
                         >
                           <Icon className="h-4 w-4 shrink-0" />
-                          <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          <span className="min-w-0 flex-1 truncate">{t(item.label)}</span>
                           <span className="mono text-2xs text-text-dim">{item.id}</span>
                         </Link>
                       </li>
@@ -199,7 +201,7 @@ export function Sidebar() {
               className="flex items-center gap-2 rounded-xl bg-surface-2 px-3 py-2.5 text-xs text-text-muted transition-colors hover:bg-surface-3 hover:text-text"
             >
               <ArrowLeftRight className="h-3.5 w-3.5" />
-              <span>Chuyển sang <span className="text-text">{brand.otherLabel}</span></span>
+              <span>{t("Chuyển sang")} <span className="text-text">{brand.otherLabel}</span></span>
             </Link>
           </div>
         )}

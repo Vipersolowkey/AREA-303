@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono, Patrick_Hand } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 import { AuthProvider } from "@/lib/auth-context";
+import { LanguageProvider } from "@/lib/i18n";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -38,8 +39,21 @@ export default function RootLayout({
       lang="vi"
       className={`${inter.variable} ${jetbrainsMono.variable} ${patrickHand.variable}`}
     >
+      <head>
+        {/* Đặt theme TRƯỚC khi trang vẽ. Nếu để React làm sau khi mount thì
+            người chọn giao diện tối sẽ thấy một nháy sáng trắng trước khi
+            chuyển — lỗi này gọi là "flash of wrong theme", và cách duy nhất
+            tránh được là chạy đồng bộ ngay trong <head>. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{if(localStorage.getItem("area303:theme")==="dark")document.documentElement.setAttribute("data-theme","dark")}catch(e){}`,
+          }}
+        />
+      </head>
       <body className="min-h-screen bg-bg text-text antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -19,6 +19,7 @@ import {
   type Alert,
   type ProvinceNode,
 } from "@/lib/mock-data";
+import { useT, useTf } from "@/lib/i18n";
 
 type Summary = {
   shop: { name: string; channels: string[]; data_as_of: string; demo_mode: boolean };
@@ -56,6 +57,8 @@ const SNAPSHOT_DATE = new Intl.DateTimeFormat("vi-VN", {
 });
 
 export function SellerOverview() {
+  const t = useT();
+  const tf = useTf();
   const [data, setData] = useState<Summary | null>(null);
 
   useEffect(() => {
@@ -76,30 +79,33 @@ export function SellerOverview() {
   const period = data?.period_summary;
   const periodFacts = period ? [
     {
-      label: "GMV ghi nhận / 30 ngày",
+      label: t("GMV ghi nhận / 30 ngày"),
       value: `${COMPACT_VND.format(period.revenue_vnd)}₫`,
-      note: `${period.recognized_orders}/${period.total_orders} đơn được ghi nhận`,
+      note: tf("{recognized}/{total} đơn được ghi nhận", {
+        recognized: period.recognized_orders,
+        total: period.total_orders,
+      }),
       icon: TrendingUp,
       tone: "bg-accent/10 text-accent",
     },
     {
-      label: "Khách hoạt động",
+      label: t("Khách hoạt động"),
       value: period.active_customers.toLocaleString("vi-VN"),
-      note: `${period.returning_customer_rate_pct}% đã quay lại mua`,
+      note: tf("{rate}% đã quay lại mua", { rate: period.returning_customer_rate_pct }),
       icon: Users,
       tone: "bg-accent-2/10 text-accent-2",
     },
     {
-      label: "Sau bán hàng",
-      value: `${period.return_rate_pct}% hoàn`,
-      note: `${period.cancellation_rate_pct}% đơn bị huỷ`,
+      label: t("Sau bán hàng"),
+      value: tf("{rate}% hoàn", { rate: period.return_rate_pct }),
+      note: tf("{rate}% đơn bị huỷ", { rate: period.cancellation_rate_pct }),
       icon: RefreshCcw,
       tone: "bg-warning/10 text-warning",
     },
     {
-      label: "Tồn kho cần xử lý",
-      value: `${period.out_of_stock_skus} hết hàng`,
-      note: `${period.low_stock_skus} SKU sắp thiếu`,
+      label: t("Tồn kho cần xử lý"),
+      value: tf("{count} hết hàng", { count: period.out_of_stock_skus }),
+      note: tf("{count} SKU sắp thiếu", { count: period.low_stock_skus }),
       icon: PackageX,
       tone: "bg-danger/10 text-danger",
     },
@@ -112,24 +118,33 @@ export function SellerOverview() {
         <span className="dashboard-orbit dashboard-orbit-two" aria-hidden="true" />
         <div>
           <div className="text-sm font-medium text-text-dim">
-            {data?.shop.name ?? "Mây House Official"} · snapshot vận hành liên kết
+            {data?.shop.name ?? "Mây House Official"} · {t("snapshot vận hành liên kết")}
           </div>
           <h1 className="mt-2 text-5xl font-extrabold leading-[1.05] tracking-tight text-text sm:text-6xl">
-            Tình hình <span className="text-gradient">cửa hàng</span>
+            {t("Tình hình")} <span className="text-gradient">{t("cửa hàng")}</span>
           </h1>
           <p className="mt-3 max-w-2xl text-base text-text-muted">
             {data
-              ? `${data.counts.products} SKU · ${data.counts.customers} khách · ${data.counts.orders} đơn · ${data.counts.reviews} đánh giá.`
-              : "Đang tải snapshot sản phẩm, khách, đơn, tồn kho và đánh giá dùng chung cho mọi feature."}
+              ? tf("{products} SKU · {customers} khách · {orders} đơn · {reviews} đánh giá.", {
+                  products: data.counts.products,
+                  customers: data.counts.customers,
+                  orders: data.counts.orders,
+                  reviews: data.counts.reviews,
+                })
+              : t("Đang tải snapshot sản phẩm, khách, đơn, tồn kho và đánh giá dùng chung cho mọi feature.")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="muted">
-            {data ? `Cập nhật ${SNAPSHOT_DATE.format(new Date(data.shop.data_as_of))}` : "Đang đồng bộ dữ liệu"}
+            {data
+              ? tf("Cập nhật {date}", { date: SNAPSHOT_DATE.format(new Date(data.shop.data_as_of)) })
+              : t("Đang đồng bộ dữ liệu")}
           </Badge>
-          <span className="mono text-xs text-text-muted">{okNodes}/{provinces.length} khu vực ổn định</span>
+          <span className="mono text-xs text-text-muted">
+            {tf("{ok}/{total} khu vực ổn định", { ok: okNodes, total: provinces.length })}
+          </span>
           <Button asChild size="sm" variant="primary">
-            <Link href="/seller/review-intelligence"><Star className="h-3.5 w-3.5" />Phân tích đánh giá</Link>
+            <Link href="/seller/review-intelligence"><Star className="h-3.5 w-3.5" />{t("Phân tích đánh giá")}</Link>
           </Button>
         </div>
       </div>
