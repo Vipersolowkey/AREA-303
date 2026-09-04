@@ -1055,9 +1055,13 @@ export type ShopSyncResult = {
 
 export async function syncShop(
   shopId: number,
+  days = 365,
 ): Promise<{ ok: true; data: ShopSyncResult } | { ok: false; message: string }> {
   try {
-    const env = await api.post<ShopSyncResult>(`/marketplace/shops/${shopId}/sync`, {});
+    const env = await api.post<ShopSyncResult>(
+      `/marketplace/shops/${shopId}/sync?days=${days}`,
+      {},
+    );
     return { ok: true, data: env.data as ShopSyncResult };
   } catch (e) {
     if (e instanceof ApiClientError) {

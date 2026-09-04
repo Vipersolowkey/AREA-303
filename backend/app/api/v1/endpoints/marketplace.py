@@ -161,7 +161,11 @@ async def callback(
     Always redirects into the app — a human is looking at this response. The
     outcome travels as query parameters so the panel can show it.
     """
-    ui = "http://localhost:3000/seller/marketplace"
+    frontend_origin = next(
+        (origin for origin in settings.CORS_ORIGINS if "localhost" not in origin and "127.0.0.1" not in origin),
+        settings.CORS_ORIGINS[0],
+    ).rstrip("/")
+    ui = f"{frontend_origin}/seller/marketplace"
     params = {k: v for k, v in request.query_params.items()}
     try:
         result = await marketplace_link.complete_authorisation(
