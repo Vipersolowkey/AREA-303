@@ -10,7 +10,7 @@ import { analyzeProductKnowledge, type ProductKnowledgeResult, type Category } f
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
-const CATEGORIES: Category[] = ["Thời trang", "Mỹ phẩm", "Phụ kiện"];
+const CATEGORIES: Category[] = ["Thời trang", "Phụ kiện"];
 const STOCKS = [
   { v: "ok", label: "Đủ hàng" },
   { v: "low", label: "Sắp hết" },

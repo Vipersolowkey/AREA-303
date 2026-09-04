@@ -25,7 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
-const CATEGORIES: Category[] = ["Thời trang", "Mỹ phẩm", "Phụ kiện"];
+const CATEGORIES: Category[] = ["Thời trang", "Phụ kiện"];
 const MONTHS = Array.from({ length: 12 }, (_, index) => index + 1);
 const HORIZON_MIN = 7;
 const HORIZON_MAX = 120;

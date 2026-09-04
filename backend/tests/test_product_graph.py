@@ -24,9 +24,9 @@ async def test_overview_reconciles_category_and_product_revenue(monkeypatch):
 
     assert result.data_available is True
     assert result.source == source
-    assert len(result.categories) == 3
+    assert len(result.categories) == 2
     assert len(result.top_products) == len(products) == source.product_records
-    assert [row.rank for row in result.categories] == [1, 2, 3]
+    assert [row.rank for row in result.categories] == [1, 2]
     assert [row.revenue_vnd for row in result.categories] == sorted(
         (row.revenue_vnd for row in result.categories), reverse=True
     )

@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import WorkspaceAccess, get_workspace_access
 from app.core.responses import ApiResponse, PageMeta
 from app.db.session import get_db
 from app.schemas.copilot import CopilotAgentRequest, CopilotRequest
@@ -14,23 +15,33 @@ router = APIRouter()
 
 
 @router.post("/ask", response_model=ApiResponse[dict])
-async def ask(req: CopilotRequest) -> ApiResponse[dict]:
-    data = await service.ask(req.question)
+async def ask(
+    req: CopilotRequest,
+    access: WorkspaceAccess = Depends(get_workspace_access),
+) -> ApiResponse[dict]:
+    data = await service.ask(req.question, workspace=access.workspace)
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)
 
 
 @router.post("/agent", response_model=ApiResponse[dict])
 async def agent(
-    req: CopilotAgentRequest, db: AsyncSession = Depends(get_db)
+    req: CopilotAgentRequest,
+    db: AsyncSession = Depends(get_db),
+    access: WorkspaceAccess = Depends(get_workspace_access),
 ) -> ApiResponse[dict]:
     """Multi-step agent: OpenAI function-calling over the store-grounded tools."""
     data = await service.agent_ask(
-        req.question, db, [h.model_dump() for h in req.history]
+        req.question,
+        db,
+        [h.model_dump() for h in req.history],
+        workspace=access.workspace,
     )
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)
 
 
 @router.get("/briefing", response_model=ApiResponse[dict])
-async def briefing() -> ApiResponse[dict]:
-    data = await service.briefing()
+async def briefing(
+    access: WorkspaceAccess = Depends(get_workspace_access),
+) -> ApiResponse[dict]:
+    data = await service.briefing(workspace=access.workspace)
     return ApiResponse[dict](success=True, data=data.model_dump(), meta=PageMeta(), error=None)

@@ -14,11 +14,15 @@ from app.services import insights, recsys, seller_coach, shop_analytics, storefr
 
 def test_demo_shop_has_realistic_connected_volume() -> None:
     assert store.shop_profile()["name"] == "Mây House Official"
-    assert len(store.all_products()) == 60
+    assert len(store.all_products()) == 40
+    assert {product["category"] for product in store.all_products()} == {
+        "Thời trang", "Phụ kiện"
+    }
     assert len(store.all_customers()) == 120
     assert len(store.all_demo_orders()) == 540
     assert len(store.all_daily_metrics()) == 90
-    assert len(store.all_creators()) == 12
+    assert len(store.all_creators()) == 7
+    assert all(creator["category"] != "Mỹ phẩm" for creator in store.all_creators())
     assert sum(len(product["reviews_list"]) for product in store.all_products()) >= 720
     assert len({customer["name"] for customer in store.all_customers()}) == 120
     assert len({customer["email"] for customer in store.all_customers()}) == 120
@@ -151,7 +155,7 @@ async def test_dynamic_pricing_falls_back_to_the_storefront_catalog(monkeypatch)
         "app.services.shopee_listings.reference_for_product", lambda _name, _cat: None
     )
 
-    category = "Mỹ phẩm"
+    category = "Thời trang"
     result = await insights.recommend_price(
         PricingRequest(product_name="Test", category=category, current_price=300_000)
     )
@@ -182,5 +186,5 @@ async def test_seller_coach_scores_are_calculated_from_the_same_shop() -> None:
     result = await seller_coach.coach(SellerCoachRequest(seller_id="shop-may-001"))
 
     assert len(result.audit) == 5
-    assert any("60" in step.tip for step in result.audit)
+    assert any("40" in step.tip for step in result.audit)
     assert any("đánh giá" in step.tip.lower() for step in result.audit)

@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 
 const SERIES = [
   { key: "fashion",     color: "hsl(var(--series-1))", label: "Thời trang" },
-  { key: "beauty",      color: "hsl(var(--series-2))", label: "Mỹ phẩm" },
   { key: "accessories", color: "hsl(var(--series-3))", label: "Phụ kiện" },
 ] as const;
 

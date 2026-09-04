@@ -10,15 +10,7 @@ import { AlertsTable } from "@/components/dashboard/incidents-table";
 import { GeoMap } from "@/components/dashboard/geo-map-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  KPIS,
-  TIMESERIES,
-  ALERTS,
-  PROVINCES,
-  type Kpi,
-  type Alert,
-  type ProvinceNode,
-} from "@/lib/mock-data";
+import type { Kpi, Alert, ProvinceNode } from "@/lib/mock-data";
 import { useT, useTf } from "@/lib/i18n";
 
 type Summary = {
@@ -38,7 +30,7 @@ type Summary = {
     out_of_stock_skus: number;
   };
   kpis: Kpi[];
-  timeseries: typeof TIMESERIES;
+  timeseries: Array<{ t: string; fashion: number; beauty: number; accessories: number }>;
   alerts: Alert[];
   provinces: ProvinceNode[];
 };
@@ -70,10 +62,10 @@ export function SellerOverview() {
     return () => { active = false; };
   }, []);
 
-  const kpis = data?.kpis ?? KPIS;
-  const timeseries = data?.timeseries ?? TIMESERIES;
-  const alerts = data?.alerts ?? ALERTS;
-  const provinces = data?.provinces ?? PROVINCES;
+  const kpis = data?.kpis ?? [];
+  const timeseries = data?.timeseries ?? [];
+  const alerts = data?.alerts ?? [];
+  const provinces = data?.provinces ?? [];
   const okNodes = provinces.filter((node) => node.status === "ok").length;
   const period = data?.period_summary;
   const periodFacts = period ? [

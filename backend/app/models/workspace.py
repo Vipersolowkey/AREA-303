@@ -8,7 +8,7 @@ workspace and collaborate in another without becoming a platform admin.
 
 from __future__ import annotations
 
-from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, TimestampMixin
@@ -24,9 +24,11 @@ class SellerWorkspace(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     slug: Mapped[str] = mapped_column(String(80), index=True, nullable=False)
-    status: Mapped[str] = mapped_column(
-        String(16), default="active", index=True, nullable=False
-    )
+    status: Mapped[str] = mapped_column(String(16), default="active", index=True, nullable=False)
+    industry: Mapped[str] = mapped_column(String(40), default="fashion", nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    target_customer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    brand_voice: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     memberships: Mapped[list[WorkspaceMember]] = relationship(
         back_populates="workspace", cascade="all, delete-orphan", lazy="selectin"
@@ -35,9 +37,7 @@ class SellerWorkspace(Base, TimestampMixin):
 
 class WorkspaceMember(Base, TimestampMixin):
     __tablename__ = "workspace_members"
-    __table_args__ = (
-        UniqueConstraint("workspace_id", "user_id", name="uq_workspace_member"),
-    )
+    __table_args__ = (UniqueConstraint("workspace_id", "user_id", name="uq_workspace_member"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     workspace_id: Mapped[int] = mapped_column(

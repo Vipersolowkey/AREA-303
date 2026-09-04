@@ -23,16 +23,22 @@ from app.models.workspace import SellerWorkspace, WorkspaceMember
 
 def _slugify(value: str) -> str:
     ascii_value = (
-        unicodedata.normalize("NFD", value.lower())
-        .encode("ascii", "ignore")
-        .decode("ascii")
+        unicodedata.normalize("NFD", value.lower()).encode("ascii", "ignore").decode("ascii")
     )
     slug = re.sub(r"[^a-z0-9]+", "-", ascii_value).strip("-")
     return slug[:65].rstrip("-") or "workspace"
 
 
 async def create_workspace(
-    db: AsyncSession, *, user_id: int, name: str, slug: str | None = None
+    db: AsyncSession,
+    *,
+    user_id: int,
+    name: str,
+    slug: str | None = None,
+    industry: str = "fashion",
+    description: str | None = None,
+    target_customer: str | None = None,
+    brand_voice: str | None = None,
 ) -> tuple[SellerWorkspace, WorkspaceMember, User]:
     """Create a tenant, make the caller owner, and activate seller access."""
     user = await db.get(User, user_id)
@@ -40,13 +46,19 @@ async def create_workspace(
         raise UnauthorizedError("Tài khoản không còn tồn tại.")
 
     final_slug = slug or f"{_slugify(name)}-{uuid.uuid4().hex[:6]}"
-    workspace = SellerWorkspace(name=name, slug=final_slug, status="active")
+    workspace = SellerWorkspace(
+        name=name,
+        slug=final_slug,
+        status="active",
+        industry=industry,
+        description=description,
+        target_customer=target_customer,
+        brand_voice=brand_voice,
+    )
     db.add(workspace)
     try:
         await db.flush()
-        membership = WorkspaceMember(
-            workspace_id=workspace.id, user_id=user_id, role="owner"
-        )
+        membership = WorkspaceMember(workspace_id=workspace.id, user_id=user_id, role="owner")
         db.add(membership)
         if user.role == "buyer":
             user.role = "seller"
@@ -59,6 +71,16 @@ async def create_workspace(
     await db.refresh(membership)
     await db.refresh(user)
     return workspace, membership, user
+
+
+async def update_workspace_profile(
+    db: AsyncSession, *, workspace: SellerWorkspace, values: dict[str, object]
+) -> SellerWorkspace:
+    for field, value in values.items():
+        setattr(workspace, field, value)
+    await db.commit()
+    await db.refresh(workspace)
+    return workspace
 
 
 async def list_accessible_workspaces(
@@ -197,9 +219,7 @@ async def update_member_role(
     member_user_id: int,
     role: str,
 ) -> tuple[WorkspaceMember, User]:
-    membership = await _get_membership(
-        db, workspace_id=workspace_id, member_user_id=member_user_id
-    )
+    membership = await _get_membership(db, workspace_id=workspace_id, member_user_id=member_user_id)
     if (
         membership.role == "owner"
         and role != "owner"
@@ -222,15 +242,10 @@ async def remove_member(
     member_user_id: int,
     acting_user_id: int,
 ) -> None:
-    membership = await _get_membership(
-        db, workspace_id=workspace_id, member_user_id=member_user_id
-    )
+    membership = await _get_membership(db, workspace_id=workspace_id, member_user_id=member_user_id)
     if member_user_id == acting_user_id:
         raise BusinessRuleError("Không thể tự xóa mình khỏi workspace tại đây.")
-    if (
-        membership.role == "owner"
-        and await _owner_count(db, workspace_id=workspace_id) <= 1
-    ):
+    if membership.role == "owner" and await _owner_count(db, workspace_id=workspace_id) <= 1:
         raise BusinessRuleError("Workspace phải luôn có ít nhất một chủ sở hữu.")
     await db.execute(
         delete(WorkspaceMember).where(

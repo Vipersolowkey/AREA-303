@@ -42,7 +42,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useT, useTf } from "@/lib/i18n";
 
-const CATEGORIES = ["Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
+const CATEGORIES = ["Thời trang", "Phụ kiện"] as const;
 
 /** Commission rates mirror backend/app/data/restock_market.json — the backend
  *  recomputes from that file, so these labels are display only. */
@@ -158,7 +158,7 @@ export function DynamicPricingPanel() {
   const t = useT();
   const tf = useTf();
   const [name, setName] = useState("Serum Vitamin C 15%");
-  const [category, setCategory] = useState<Category>("Mỹ phẩm");
+  const [category, setCategory] = useState<Category>("Thời trang");
   // Empty, not pre-filled: a seeded price is submitted as if the seller typed
   // it, and the whole point of the field is their own number.
   const [price, setPrice] = useState("");

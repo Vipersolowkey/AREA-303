@@ -53,6 +53,9 @@ export default function SellerOnboardingPage() {
   const { user, acceptAccessToken, logout } = useAuth();
   const [workspaces, setWorkspaces] = useState<SellerWorkspace[]>([]);
   const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [targetCustomer, setTargetCustomer] = useState("");
+  const [brandVoice, setBrandVoice] = useState("Thân thiện, rõ ràng, tư vấn như stylist");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,11 +81,19 @@ export default function SellerOnboardingPage() {
     setCreating(true);
     setError(null);
     try {
-      const result = await createWorkspace(normalizedName);
+      const result = await createWorkspace({
+        name: normalizedName,
+        industry: "fashion",
+        description: description.trim() || "Shop quần áo và phụ kiện thời trang",
+        target_customer: targetCustomer.trim() || null,
+        brand_voice: brandVoice.trim() || null,
+      });
       acceptAccessToken(result.auth.access_token);
       setWorkspaces((current) => [result.workspace, ...current]);
       setActiveWorkspaceId(result.workspace.id);
       setName("");
+      setDescription("");
+      setTargetCustomer("");
       router.push("/seller/workspace");
     } catch (err) {
       setError(errorMessage(err));
@@ -206,6 +217,47 @@ export default function SellerOnboardingPage() {
                       onChange={(event) => setName(event.target.value)}
                       maxLength={100}
                       placeholder={t("Tên shop hoặc doanh nghiệp")}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="workspace-industry" className="mb-1.5 block text-sm font-medium">
+                      Ngành hàng
+                    </label>
+                    <Input id="workspace-industry" value="Thời trang & phụ kiện" disabled />
+                    <p className="mt-1.5 text-xs text-text-muted">
+                      AI chỉ dùng dữ liệu đúng ngành của workspace này.
+                    </p>
+                  </div>
+                  <div>
+                    <label htmlFor="workspace-description" className="mb-1.5 block text-sm font-medium">
+                      Shop bán gì?
+                    </label>
+                    <Input
+                      id="workspace-description"
+                      value={description}
+                      onChange={(event) => setDescription(event.target.value)}
+                      placeholder="Ví dụ: áo thun unisex, áo khoác và quần jean"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="workspace-customer" className="mb-1.5 block text-sm font-medium">
+                      Khách hàng chính
+                    </label>
+                    <Input
+                      id="workspace-customer"
+                      value={targetCustomer}
+                      onChange={(event) => setTargetCustomer(event.target.value)}
+                      placeholder="Ví dụ: nam nữ 18–28 tuổi, thích local brand"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="workspace-voice" className="mb-1.5 block text-sm font-medium">
+                      Giọng thương hiệu
+                    </label>
+                    <Input
+                      id="workspace-voice"
+                      value={brandVoice}
+                      onChange={(event) => setBrandVoice(event.target.value)}
                     />
                   </div>
                   {error && (

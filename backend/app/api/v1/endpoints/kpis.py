@@ -12,6 +12,6 @@ router = APIRouter()
 
 @router.get("/summary", response_model=ApiResponse[dict])
 async def summary() -> ApiResponse[dict]:
-    """Return one internally consistent snapshot of Mây House Official."""
+    """Return the internally consistent bundled-shop snapshot."""
     data = shop_analytics.summary()
     return ApiResponse[dict](success=True, data=data, meta=PageMeta(), error=None)

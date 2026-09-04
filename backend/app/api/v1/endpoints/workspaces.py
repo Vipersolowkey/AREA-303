@@ -25,6 +25,7 @@ from app.schemas.workspace import (
     WorkspaceMemberOut,
     WorkspaceMemberRoleRequest,
     WorkspaceOut,
+    WorkspaceProfileUpdateRequest,
     WorkspaceRole,
 )
 from app.services import marketplace_shop_service, user_service, workspace_service
@@ -40,6 +41,10 @@ def _serialize(workspace, role: str) -> dict:  # noqa: ANN001
         name=workspace.name,
         slug=workspace.slug,
         status=workspace.status,
+        industry=getattr(workspace, "industry", "fashion"),
+        description=getattr(workspace, "description", None),
+        target_customer=getattr(workspace, "target_customer", None),
+        brand_voice=getattr(workspace, "brand_voice", None),
         current_role=cast(WorkspaceRole, role),
         created_at=workspace.created_at,
         updated_at=workspace.updated_at,
@@ -78,15 +83,48 @@ async def create_workspace(
     user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_dep),
 ) -> ApiResponse[dict]:
-    workspace, membership, account = await workspace_service.create_workspace(
-        db, user_id=int(user["sub"]), name=req.name, slug=req.slug
-    )
+    if any((req.description, req.target_customer, req.brand_voice)) or req.industry != "fashion":
+        workspace, membership, account = await workspace_service.create_workspace(
+            db,
+            user_id=int(user["sub"]),
+            name=req.name,
+            slug=req.slug,
+            industry=req.industry,
+            description=req.description,
+            target_customer=req.target_customer,
+            brand_voice=req.brand_voice,
+        )
+    else:
+        workspace, membership, account = await workspace_service.create_workspace(
+            db, user_id=int(user["sub"]), name=req.name, slug=req.slug
+        )
     return ApiResponse[dict](
         success=True,
         data={
             "workspace": _serialize(workspace, membership.role),
             "auth": user_service.issue_token_response(account),
         },
+        meta=PageMeta(),
+        error=None,
+    )
+
+
+@router.patch("/{workspace_id}", response_model=ApiResponse[dict])
+async def update_workspace_profile(
+    workspace_id: int,
+    req: WorkspaceProfileUpdateRequest,
+    access: WorkspaceAccess = Depends(_SHOP_MANAGER_ACCESS),
+    db: AsyncSession = Depends(get_db_dep),
+) -> ApiResponse[dict]:
+    if access.workspace_id != workspace_id:
+        raise NotFoundError("Không tìm thấy workspace.")
+    values = req.model_dump(exclude_unset=True)
+    workspace = await workspace_service.update_workspace_profile(
+        db, workspace=access.workspace, values=values
+    )
+    return ApiResponse[dict](
+        success=True,
+        data=_serialize(workspace, access.role),
         meta=PageMeta(),
         error=None,
     )

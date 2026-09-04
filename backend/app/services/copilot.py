@@ -47,66 +47,175 @@ log = get_logger("app.services.copilot")
 # --------------------------------------------------------------------------- #
 PRODUCTS: list[dict] = [
     {
-        "name": "Áo khoác dù unisex", "category": "Thời trang",
-        "price_vnd": 320000, "cost_vnd": 180000, "sales_prev": 210, "sales_curr": 340,
-        "stock": 45, "daily_sales": 22, "stock_status": "low", "trend": "rising",
-        "price_change_pct": 0, "traffic_change_pct": 35, "promotion_active": False,
-        "competitor_promo": False, "competitor_name": "Shop Outdoor",
-        "competitor_price_vnd": 350000, "competitor_discount_pct": 0,
+        "name": "Áo khoác dù unisex",
+        "category": "Thời trang",
+        "price_vnd": 320000,
+        "cost_vnd": 180000,
+        "sales_prev": 210,
+        "sales_curr": 340,
+        "stock": 45,
+        "daily_sales": 22,
+        "stock_status": "low",
+        "trend": "rising",
+        "price_change_pct": 0,
+        "traffic_change_pct": 35,
+        "promotion_active": False,
+        "competitor_promo": False,
+        "competitor_name": "Shop Outdoor",
+        "competitor_price_vnd": 350000,
+        "competitor_discount_pct": 0,
     },
     {
-        "name": "Kem chống nắng SPF50 50ml", "category": "Mỹ phẩm",
-        "price_vnd": 189000, "cost_vnd": 90000, "sales_prev": 300, "sales_curr": 280,
-        "stock": 600, "daily_sales": 18, "stock_status": "ok", "trend": "cooling",
-        "price_change_pct": 0, "traffic_change_pct": -8, "promotion_active": False,
-        "competitor_promo": True, "competitor_name": "Beauty Zone",
-        "competitor_price_vnd": 210000, "competitor_discount_pct": 30,
+        "name": "Kem chống nắng SPF50 50ml",
+        "category": "Mỹ phẩm",
+        "price_vnd": 189000,
+        "cost_vnd": 90000,
+        "sales_prev": 300,
+        "sales_curr": 280,
+        "stock": 600,
+        "daily_sales": 18,
+        "stock_status": "ok",
+        "trend": "cooling",
+        "price_change_pct": 0,
+        "traffic_change_pct": -8,
+        "promotion_active": False,
+        "competitor_promo": True,
+        "competitor_name": "Beauty Zone",
+        "competitor_price_vnd": 210000,
+        "competitor_discount_pct": 30,
     },
     {
-        "name": "Váy hoa nhí", "category": "Thời trang",
-        "price_vnd": 250000, "cost_vnd": 120000, "sales_prev": 500, "sales_curr": 320,
-        "stock": 220, "daily_sales": 12, "stock_status": "ok", "trend": "cooling",
-        "price_change_pct": 12, "traffic_change_pct": -15, "promotion_active": False,
-        "competitor_promo": True, "competitor_name": "Local Boutique",
-        "competitor_price_vnd": 230000, "competitor_discount_pct": 0,
+        "name": "Váy hoa nhí",
+        "category": "Thời trang",
+        "price_vnd": 250000,
+        "cost_vnd": 120000,
+        "sales_prev": 500,
+        "sales_curr": 320,
+        "stock": 220,
+        "daily_sales": 12,
+        "stock_status": "ok",
+        "trend": "cooling",
+        "price_change_pct": 12,
+        "traffic_change_pct": -15,
+        "promotion_active": False,
+        "competitor_promo": True,
+        "competitor_name": "Local Boutique",
+        "competitor_price_vnd": 230000,
+        "competitor_discount_pct": 0,
     },
     {
-        "name": "Túi tote canvas", "category": "Phụ kiện",
-        "price_vnd": 150000, "cost_vnd": 60000, "sales_prev": 180, "sales_curr": 260,
-        "stock": 8, "daily_sales": 15, "stock_status": "out", "trend": "rising",
-        "price_change_pct": 0, "traffic_change_pct": 40, "promotion_active": False,
-        "competitor_promo": False, "competitor_name": "Bag House",
-        "competitor_price_vnd": 165000, "competitor_discount_pct": 0,
+        "name": "Túi tote canvas",
+        "category": "Phụ kiện",
+        "price_vnd": 150000,
+        "cost_vnd": 60000,
+        "sales_prev": 180,
+        "sales_curr": 260,
+        "stock": 8,
+        "daily_sales": 15,
+        "stock_status": "out",
+        "trend": "rising",
+        "price_change_pct": 0,
+        "traffic_change_pct": 40,
+        "promotion_active": False,
+        "competitor_promo": False,
+        "competitor_name": "Bag House",
+        "competitor_price_vnd": 165000,
+        "competitor_discount_pct": 0,
     },
     {
-        "name": "Serum Vitamin C", "category": "Mỹ phẩm",
-        "price_vnd": 260000, "cost_vnd": 130000, "sales_prev": 260, "sales_curr": 250,
-        "stock": 400, "daily_sales": 9, "stock_status": "ok", "trend": "cooling",
-        "price_change_pct": 0, "traffic_change_pct": -5, "promotion_active": True,
-        "competitor_promo": False, "competitor_name": "Glow Store",
-        "competitor_price_vnd": 250000, "competitor_discount_pct": 10,
+        "name": "Serum Vitamin C",
+        "category": "Mỹ phẩm",
+        "price_vnd": 260000,
+        "cost_vnd": 130000,
+        "sales_prev": 260,
+        "sales_curr": 250,
+        "stock": 400,
+        "daily_sales": 9,
+        "stock_status": "ok",
+        "trend": "cooling",
+        "price_change_pct": 0,
+        "traffic_change_pct": -5,
+        "promotion_active": True,
+        "competitor_promo": False,
+        "competitor_name": "Glow Store",
+        "competitor_price_vnd": 250000,
+        "competitor_discount_pct": 10,
     },
 ]
 
 CREATORS_BY_CATEGORY: dict[str, list[dict]] = {
     "Mỹ phẩm": [
-        {"creator": "Hà Linh Official", "content_type": "livestream", "views": 120000, "engagements": 9800, "attributed_sales_vnd": 45000000},
-        {"creator": "Chan Review", "content_type": "video", "views": 85000, "engagements": 6200, "attributed_sales_vnd": 22000000},
-        {"creator": "Mai Beauty", "content_type": "post", "views": 30000, "engagements": 2100, "attributed_sales_vnd": 7000000},
+        {
+            "creator": "Hà Linh Official",
+            "content_type": "livestream",
+            "views": 120000,
+            "engagements": 9800,
+            "attributed_sales_vnd": 45000000,
+        },
+        {
+            "creator": "Chan Review",
+            "content_type": "video",
+            "views": 85000,
+            "engagements": 6200,
+            "attributed_sales_vnd": 22000000,
+        },
+        {
+            "creator": "Mai Beauty",
+            "content_type": "post",
+            "views": 30000,
+            "engagements": 2100,
+            "attributed_sales_vnd": 7000000,
+        },
     ],
     "Thời trang": [
-        {"creator": "Trang Fashionista", "content_type": "video", "views": 150000, "engagements": 12000, "attributed_sales_vnd": 38000000},
-        {"creator": "Style By An", "content_type": "livestream", "views": 60000, "engagements": 7000, "attributed_sales_vnd": 41000000},
+        {
+            "creator": "Trang Fashionista",
+            "content_type": "video",
+            "views": 150000,
+            "engagements": 12000,
+            "attributed_sales_vnd": 38000000,
+        },
+        {
+            "creator": "Style By An",
+            "content_type": "livestream",
+            "views": 60000,
+            "engagements": 7000,
+            "attributed_sales_vnd": 41000000,
+        },
     ],
 }
 
 # All ROAS so "best" is an apples-to-apples comparison (the decision service
 # ranks by raw value, so mixing metrics here would be misleading).
 DECISIONS: list[dict] = [
-    {"kind": "promo", "description": "Sale 11/11 giảm 20%", "metric": "ROAS", "value": 4.2, "month": 11},
-    {"kind": "ad", "description": "Đẩy ads TikTok tháng 12", "metric": "ROAS", "value": 5.1, "month": 12},
-    {"kind": "price", "description": "Giảm giá 10% ngày thường", "metric": "ROAS", "value": 2.3, "month": None},
-    {"kind": "promo", "description": "Freeship toàn shop", "metric": "ROAS", "value": 3.8, "month": 6},
+    {
+        "kind": "promo",
+        "description": "Sale 11/11 giảm 20%",
+        "metric": "ROAS",
+        "value": 4.2,
+        "month": 11,
+    },
+    {
+        "kind": "ad",
+        "description": "Đẩy ads TikTok tháng 12",
+        "metric": "ROAS",
+        "value": 5.1,
+        "month": 12,
+    },
+    {
+        "kind": "price",
+        "description": "Giảm giá 10% ngày thường",
+        "metric": "ROAS",
+        "value": 2.3,
+        "month": None,
+    },
+    {
+        "kind": "promo",
+        "description": "Freeship toàn shop",
+        "metric": "ROAS",
+        "value": 3.8,
+        "month": 6,
+    },
 ]
 
 # Replace the small legacy fixtures above with adapters over the same Mây House
@@ -115,38 +224,48 @@ DECISIONS: list[dict] = [
 PRODUCTS = []
 for _product in store.all_products():
     _competitor = _product["competitors"][0]
-    PRODUCTS.append({
-        "name": _product["name"], "category": _product["category"],
-        "price_vnd": _product["price_vnd"], "cost_vnd": _product["cost_vnd"],
-        "sales_prev": _product["sales_prev"], "sales_curr": _product["sales_curr"],
-        "stock": _product["stock"], "daily_sales": _product["daily_sales"],
-        "stock_status": _product["stock_status"], "trend": _product["trend"],
-        "price_change_pct": 0.0,
-        "traffic_change_pct": {"rising": 28.0, "cooling": -22.0, "stable": 3.0}[_product["trend"]],
-        "promotion_active": _product["promotion"] is not None,
-        "competitor_promo": _competitor["discount_pct"] > 0,
-        "competitor_name": _competitor["name"],
-        "competitor_price_vnd": _competitor["price_vnd"],
-        "competitor_discount_pct": _competitor["discount_pct"],
-    })
+    PRODUCTS.append(
+        {
+            "name": _product["name"],
+            "category": _product["category"],
+            "price_vnd": _product["price_vnd"],
+            "cost_vnd": _product["cost_vnd"],
+            "sales_prev": _product["sales_prev"],
+            "sales_curr": _product["sales_curr"],
+            "stock": _product["stock"],
+            "daily_sales": _product["daily_sales"],
+            "stock_status": _product["stock_status"],
+            "trend": _product["trend"],
+            "price_change_pct": 0.0,
+            "traffic_change_pct": {"rising": 28.0, "cooling": -22.0, "stable": 3.0}[
+                _product["trend"]
+            ],
+            "promotion_active": _product["promotion"] is not None,
+            "competitor_promo": _competitor["discount_pct"] > 0,
+            "competitor_name": _competitor["name"],
+            "competitor_price_vnd": _competitor["price_vnd"],
+            "competitor_discount_pct": _competitor["discount_pct"],
+        }
+    )
 
 CREATORS_BY_CATEGORY = {category: [] for category in store.categories()}
 for _creator in store.all_creators():
     for _campaign in _creator["campaigns"]:
-        CREATORS_BY_CATEGORY[_creator["category"]].append({
-            "creator": _creator["creator"],
-            "content_type": _campaign["content_type"],
-            "views": _campaign["views"],
-            "engagements": _campaign["engagements"],
-            "attributed_sales_vnd": _campaign["attributed_sales_vnd"],
-        })
+        CREATORS_BY_CATEGORY[_creator["category"]].append(
+            {
+                "creator": _creator["creator"],
+                "content_type": _campaign["content_type"],
+                "views": _campaign["views"],
+                "engagements": _campaign["engagements"],
+                "attributed_sales_vnd": _campaign["attributed_sales_vnd"],
+            }
+        )
 
 DECISIONS = [
-    {key: value for key, value in row.items() if key != "category"}
-    for row in store.all_decisions()
+    {key: value for key, value in row.items() if key != "category"} for row in store.all_decisions()
 ]
 
-_CATS = ("Thời trang", "Mỹ phẩm", "Phụ kiện")
+_CATS = tuple(store.categories())
 _VN_CHARS = set("àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ")
 
 
@@ -169,7 +288,7 @@ def _find_product(name: str | None) -> dict:
     return PRODUCTS[0]
 
 
-def _cat(name: str | None, default: str = "Mỹ phẩm") -> str:
+def _cat(name: str | None, default: str = "Thời trang") -> str:
     p = _find_product(name)
     return p["category"] if name else default
 
@@ -185,7 +304,7 @@ _ROUTER_SYSTEM = (
     "- creator: which KOL/KOC or content to use\n"
     "- decision: what past strategy worked / what to do given a situation\n"
     "- briefing: overview / what should I do today / across all products\n"
-    "Reply ONLY JSON: {\"skill\": \"...\", \"product\": \"<product name or null>\"}"
+    'Reply ONLY JSON: {"skill": "...", "product": "<product name or null>"}'
 )
 
 
@@ -193,7 +312,7 @@ def _known_products_hint() -> str:
     return "Known products: " + "; ".join(p["name"] for p in PRODUCTS) + "."
 
 
-async def ask(question: str) -> CopilotResponse:
+async def ask(question: str, *, workspace: object | None = None) -> CopilotResponse:
     route = await reason_json(
         _ROUTER_SYSTEM, f"{_known_products_hint()}\nQuestion: {question}", label="copilot.route"
     )
@@ -206,10 +325,13 @@ async def ask(question: str) -> CopilotResponse:
         skill = _keyword_route(question)
 
     if skill == "briefing":
-        b = await briefing()
+        b = await briefing(workspace=workspace)
         return CopilotResponse(
-            answer=b.summary, skill_used="briefing", entity=None,
-            impact_vnd=b.total_impact_vnd, tool_result=b.model_dump(),
+            answer=b.summary,
+            skill_used="briefing",
+            entity=None,
+            impact_vnd=b.total_impact_vnd,
+            tool_result=b.model_dump(),
         )
 
     p = _find_product(product_name)
@@ -219,49 +341,68 @@ async def ask(question: str) -> CopilotResponse:
     tool_label = ""
 
     if skill == "sales_explain":
-        pk = await knowledge_svc.explain_sales(ProductKnowledgeRequest(
-            product=p["name"], category=cast(Any, p["category"]),
-            sales_prev=p["sales_prev"], sales_curr=p["sales_curr"],
-            price_change_pct=p["price_change_pct"], promotion_active=p["promotion_active"],
-            competitor_promo=p["competitor_promo"], stock_status=cast(Any, p["stock_status"]),
-            traffic_change_pct=p["traffic_change_pct"],
-        ))
+        pk = await knowledge_svc.explain_sales(
+            ProductKnowledgeRequest(
+                product=p["name"],
+                category=cast(Any, p["category"]),
+                sales_prev=p["sales_prev"],
+                sales_curr=p["sales_curr"],
+                price_change_pct=p["price_change_pct"],
+                promotion_active=p["promotion_active"],
+                competitor_promo=p["competitor_promo"],
+                stock_status=cast(Any, p["stock_status"]),
+                traffic_change_pct=p["traffic_change_pct"],
+            )
+        )
         tool_result = pk.model_dump()
         tool_label = "product-knowledge"
         if p["sales_curr"] < p["sales_prev"]:
             impact = (p["sales_prev"] - p["sales_curr"]) * p["price_vnd"]
     elif skill == "competitor":
-        mk = await market_svc.analyze_market(MarketRequest(
-            our_product=p["name"], category=cast(Any, p["category"]),
-            our_price_vnd=p["price_vnd"], our_cost_vnd=p["cost_vnd"],
-            competitor_name=p["competitor_name"], competitor_price_vnd=p["competitor_price_vnd"],
-            competitor_discount_pct=p["competitor_discount_pct"],
-        ))
+        mk = await market_svc.analyze_market(
+            MarketRequest(
+                our_product=p["name"],
+                category=cast(Any, p["category"]),
+                our_price_vnd=p["price_vnd"],
+                our_cost_vnd=p["cost_vnd"],
+                competitor_name=p["competitor_name"],
+                competitor_price_vnd=p["competitor_price_vnd"],
+                competitor_discount_pct=p["competitor_discount_pct"],
+            )
+        )
         tool_result = mk.model_dump()
         tool_label = "market-intelligence"
     elif skill == "creator":
         cat = p["category"] if product_name else _cat(product_name)
-        items = CREATORS_BY_CATEGORY.get(cat, CREATORS_BY_CATEGORY["Mỹ phẩm"])
-        cr = await creator_svc.analyze_creators(CreatorRequest(
-            campaign_category=cast(Any, cat),
-            items=[ContentItem(**it) for it in items],
-        ))
+        items = CREATORS_BY_CATEGORY.get(cat, CREATORS_BY_CATEGORY["Thời trang"])
+        cr = await creator_svc.analyze_creators(
+            CreatorRequest(
+                campaign_category=cast(Any, cat),
+                items=[ContentItem(**it) for it in items],
+            )
+        )
         tool_result = cr.model_dump()
         tool_label = "creator-performance"
         entity = cat
     elif skill == "decision":
-        dc = await decision_svc.recommend_decision(DecisionRequest(
-            situation=question, category=cast(Any, p["category"]),
-            decisions=[PastDecision(**d) for d in DECISIONS],
-        ))
+        dc = await decision_svc.recommend_decision(
+            DecisionRequest(
+                situation=question,
+                category=cast(Any, p["category"]),
+                decisions=[PastDecision(**d) for d in DECISIONS],
+            )
+        )
         tool_result = dc.model_dump()
         tool_label = "decision-intelligence"
         entity = None
 
-    answer = await _synthesize(question, tool_label, tool_result, impact)
+    answer = await _synthesize(question, tool_label, tool_result, impact, workspace=workspace)
     return CopilotResponse(
-        answer=answer, skill_used=tool_label, entity=entity,
-        impact_vnd=impact, tool_result=tool_result,
+        answer=answer,
+        skill_used=tool_label,
+        entity=entity,
+        impact_vnd=impact,
+        tool_result=tool_result,
     )
 
 
@@ -280,18 +421,37 @@ def _keyword_route(q: str) -> str:
 
 _SYNTH_SYSTEM = (
     "You are a seller's AI business copilot for a Vietnamese e-commerce shop "
-    "(fashion & cosmetics). Given the seller's question and a tool result (JSON), "
+    "(clothing and fashion accessories). Given the seller's question and a tool result (JSON), "
     "answer in ONE concise, actionable paragraph (2-4 sentences). Use "
     "the numbers from the tool result; if an estimated VND impact is provided, "
-    "mention it. Do not invent data. Reply as JSON: {\"answer\": \"...\"}"
+    'mention it. Do not invent data. Reply as JSON: {"answer": "..."}'
 )
 
 
-async def _synthesize(question: str, tool: str, result: dict, impact: int | None) -> str:
+async def _synthesize(
+    question: str,
+    tool: str,
+    result: dict,
+    impact: int | None,
+    *,
+    workspace: object | None = None,
+) -> str:
     import json as _json
-    payload = f"Question: {question}\nTool ({tool}) result: {_json.dumps(result, ensure_ascii=False)}"
+
+    payload = (
+        f"Question: {question}\nTool ({tool}) result: {_json.dumps(result, ensure_ascii=False)}"
+    )
     if impact:
         payload += f"\nEstimated impact: {impact:,}₫."
+    if workspace is not None:
+        payload += (
+            f"\nWorkspace: {getattr(workspace, 'name', '')}; "
+            f"industry={getattr(workspace, 'industry', 'fashion')}; "
+            f"description={getattr(workspace, 'description', None) or 'not provided'}; "
+            f"target_customer={getattr(workspace, 'target_customer', None) or 'not provided'}; "
+            f"brand_voice={getattr(workspace, 'brand_voice', None) or 'not provided'}. "
+            "Do not mention products outside this workspace industry."
+        )
     data = await reason_json(_SYNTH_SYSTEM, payload, max_tokens=350, label="copilot.synth")
     ans = (data or {}).get("answer") if data else None
     if ans and ans.strip():
@@ -314,41 +474,69 @@ def _build_actions() -> list[BriefingAction]:
         # 1) Rising + low/out of stock -> restock (avoid a week of lost revenue)
         if p["trend"] == "rising" and p["stock_status"] in ("low", "out"):
             impact = int(p["daily_sales"] * p["price_vnd"] * 7)
-            actions.append(BriefingAction(
-                kind="restock", title=f"Nhập thêm {p['name']}", product=p["name"],
-                priority="high" if p["stock_status"] == "out" else "medium", impact_vnd=impact,
-                detail=(f"Xu hướng tăng, tồn kho {p['stock_status']} ({p['stock']} sp), bán ~"
-                        f"{p['daily_sales']}/ngày. Nhập gấp để không mất ~{impact:,}₫ doanh thu/tuần."),
-            ))
+            actions.append(
+                BriefingAction(
+                    kind="restock",
+                    title=f"Nhập thêm {p['name']}",
+                    product=p["name"],
+                    priority="high" if p["stock_status"] == "out" else "medium",
+                    impact_vnd=impact,
+                    detail=(
+                        f"Xu hướng tăng, tồn kho {p['stock_status']} ({p['stock']} sp), bán ~"
+                        f"{p['daily_sales']}/ngày. Nhập gấp để không mất ~{impact:,}₫ doanh thu/tuần."
+                    ),
+                )
+            )
         # 2) Sales dropped sharply -> investigate
         if p["sales_prev"] > 0 and (p["sales_prev"] - p["sales_curr"]) / p["sales_prev"] >= 0.2:
             impact = int((p["sales_prev"] - p["sales_curr"]) * p["price_vnd"])
-            actions.append(BriefingAction(
-                kind="investigate", title=f"Điều tra doanh số {p['name']} giảm", product=p["name"],
-                priority="high" if impact > 20_000_000 else "medium", impact_vnd=impact,
-                detail=(f"Doanh số {p['sales_prev']}→{p['sales_curr']} "
-                        f"(-{round((p['sales_prev']-p['sales_curr'])/p['sales_prev']*100)}%), "
-                        f"mất ~{impact:,}₫. Dùng Product Knowledge để tìm nguyên nhân."),
-            ))
+            actions.append(
+                BriefingAction(
+                    kind="investigate",
+                    title=f"Điều tra doanh số {p['name']} giảm",
+                    product=p["name"],
+                    priority="high" if impact > 20_000_000 else "medium",
+                    impact_vnd=impact,
+                    detail=(
+                        f"Doanh số {p['sales_prev']}→{p['sales_curr']} "
+                        f"(-{round((p['sales_prev'] - p['sales_curr']) / p['sales_prev'] * 100)}%), "
+                        f"mất ~{impact:,}₫. Dùng Product Knowledge để tìm nguyên nhân."
+                    ),
+                )
+            )
         # 3) Competitor materially cheaper -> reprice
         if eff_comp < p["price_vnd"] * 0.9:
             impact = int(p["daily_sales"] * p["price_vnd"] * 7 * 0.3)  # ~30% share at risk
-            actions.append(BriefingAction(
-                kind="reprice", title=f"Cân nhắc hạ giá {p['name']}", product=p["name"],
-                priority="medium", impact_vnd=impact,
-                detail=(f"{p['competitor_name']} bán ~{int(eff_comp):,}₫ (rẻ hơn ~"
-                        f"{round((1-eff_comp/p['price_vnd'])*100)}%). Rủi ro mất ~{impact:,}₫/tuần thị phần."),
-            ))
+            actions.append(
+                BriefingAction(
+                    kind="reprice",
+                    title=f"Cân nhắc hạ giá {p['name']}",
+                    product=p["name"],
+                    priority="medium",
+                    impact_vnd=impact,
+                    detail=(
+                        f"{p['competitor_name']} bán ~{int(eff_comp):,}₫ (rẻ hơn ~"
+                        f"{round((1 - eff_comp / p['price_vnd']) * 100)}%). Rủi ro mất ~{impact:,}₫/tuần thị phần."
+                    ),
+                )
+            )
         # 4) Cooling + heavy stock -> promote/reduce
         days_left = p["stock"] / p["daily_sales"] if p["daily_sales"] else 999
         if p["trend"] == "cooling" and days_left > 30:
             impact = int(p["stock"] * p["cost_vnd"] * 0.02)  # ~2%/mo holding cost proxy
-            actions.append(BriefingAction(
-                kind="promote", title=f"Xả/đẩy khuyến mãi {p['name']}", product=p["name"],
-                priority="low", impact_vnd=impact,
-                detail=(f"Xu hướng giảm nhưng còn {p['stock']} sp (~{int(days_left)} ngày bán). "
-                        f"Đẩy KM để giải phóng vốn tồn (~{impact:,}₫ phí lưu kho/tháng)."),
-            ))
+            actions.append(
+                BriefingAction(
+                    kind="promote",
+                    title=f"Xả/đẩy khuyến mãi {p['name']}",
+                    product=p["name"],
+                    priority="low",
+                    impact_vnd=impact,
+                    detail=(
+                        f"Xu hướng giảm nhưng còn {p['stock']} sp (~{int(days_left)} ngày bán). "
+                        f"Đẩy KM để giải phóng vốn tồn (~{impact:,}₫ phí lưu kho/tháng)."
+                    ),
+                )
+            )
     # Any very high-money action is high priority regardless of kind, so the
     # priority label never contradicts the money ordering.
     for a in actions:
@@ -358,21 +546,30 @@ def _build_actions() -> list[BriefingAction]:
     return actions
 
 
-async def briefing(narrate: bool = True) -> BriefingResponse:
+async def briefing(narrate: bool = True, *, workspace: object | None = None) -> BriefingResponse:
     actions = _build_actions()
     total = sum(a.impact_vnd for a in actions)
     top = actions[:3]
     top_txt = "; ".join(f"{a.title} (~{a.impact_vnd:,}₫)" for a in top)
-    data = await reason_json(
-        "You are a seller's AI copilot. Summarize today's top actions in ONE short "
-        "sentence (motivating, concrete). Reply JSON: {\"summary\": \"...\"}",
-        f"Top actions: {top_txt}. Total impact ~{total:,}₫ across {len(actions)} items.",
-        label="copilot.briefing",
-    ) if narrate else None
+    data = (
+        await reason_json(
+            "You are a seller's AI copilot. Summarize today's top actions in ONE short "
+            'sentence (motivating, concrete). Reply JSON: {"summary": "..."}',
+            f"Workspace {getattr(workspace, 'name', 'current shop')}: {top_txt}. "
+            f"Total impact ~{total:,}₫ across {len(actions)} items.",
+            label="copilot.briefing",
+        )
+        if narrate
+        else None
+    )
     summary = (data or {}).get("summary") if data else None
     if not (summary and summary.strip()):
-        summary = (f"Hôm nay có {len(actions)} việc nên làm, tổng tác động ~{total:,}₫. "
-                   f"Ưu tiên: {top[0].title}." if actions else "Không có cảnh báo nào — mọi thứ ổn định.")
+        summary = (
+            f"Hôm nay có {len(actions)} việc nên làm, tổng tác động ~{total:,}₫. "
+            f"Ưu tiên: {top[0].title}."
+            if actions
+            else "Không có cảnh báo nào — mọi thứ ổn định."
+        )
     return BriefingResponse(summary=summary.strip(), total_impact_vnd=total, actions=actions)
 
 
@@ -382,30 +579,71 @@ async def briefing(narrate: bool = True) -> BriefingResponse:
 # Falls back to the single-step ask() if the LLM/tool-calling isn't available.
 # --------------------------------------------------------------------------- #
 _TOOL_SPECS = [
-    {"type": "function", "function": {
-        "name": "product_graph",
-        "description": "Quan hệ 1 sản phẩm: SKU tương tự, brand, danh mục, khuyến mãi, và vì sao doanh số thay đổi.",
-        "parameters": {"type": "object", "properties": {"product": {"type": "string", "description": "Tên hoặc SKU sản phẩm"}}, "required": ["product"]}}},
-    {"type": "function", "function": {
-        "name": "market_scan",
-        "description": "Quét đa đối thủ cho 1 sản phẩm: vị thế giá trên thị trường + giá đề xuất giữ biên lợi nhuận.",
-        "parameters": {"type": "object", "properties": {"product": {"type": "string"}}, "required": ["product"]}}},
-    {"type": "function", "function": {
-        "name": "creator_correlation",
-        "description": "Xếp hạng KOL/KOC theo độ tương quan giữa nội dung và doanh số cho 1 danh mục.",
-        "parameters": {"type": "object", "properties": {"category": {"type": "string", "enum": ["Thời trang", "Mỹ phẩm", "Phụ kiện"]}}, "required": ["category"]}}},
-    {"type": "function", "function": {
-        "name": "decision_playbook",
-        "description": "Gợi ý chiến lược từ lịch sử quyết định (ROAS, thời điểm đẩy ads) cho 1 tình huống + danh mục.",
-        "parameters": {"type": "object", "properties": {"situation": {"type": "string"}, "category": {"type": "string", "enum": ["Thời trang", "Mỹ phẩm", "Phụ kiện"]}}, "required": ["situation", "category"]}}},
-    {"type": "function", "function": {
-        "name": "daily_briefing",
-        "description": "Danh sách việc cần làm hôm nay trên toàn shop, xếp theo tác động doanh thu.",
-        "parameters": {"type": "object", "properties": {}}}},
+    {
+        "type": "function",
+        "function": {
+            "name": "product_graph",
+            "description": "Quan hệ 1 sản phẩm: SKU tương tự, brand, danh mục, khuyến mãi, và vì sao doanh số thay đổi.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "product": {"type": "string", "description": "Tên hoặc SKU sản phẩm"}
+                },
+                "required": ["product"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "market_scan",
+            "description": "Quét đa đối thủ cho 1 sản phẩm: vị thế giá trên thị trường + giá đề xuất giữ biên lợi nhuận.",
+            "parameters": {
+                "type": "object",
+                "properties": {"product": {"type": "string"}},
+                "required": ["product"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "creator_correlation",
+            "description": "Xếp hạng KOL/KOC theo độ tương quan giữa nội dung và doanh số cho 1 danh mục.",
+            "parameters": {
+                "type": "object",
+                "properties": {"category": {"type": "string", "enum": ["Thời trang", "Phụ kiện"]}},
+                "required": ["category"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "decision_playbook",
+            "description": "Gợi ý chiến lược từ lịch sử quyết định (ROAS, thời điểm đẩy ads) cho 1 tình huống + danh mục.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "situation": {"type": "string"},
+                    "category": {"type": "string", "enum": ["Thời trang", "Phụ kiện"]},
+                },
+                "required": ["situation", "category"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "daily_briefing",
+            "description": "Danh sách việc cần làm hôm nay trên toàn shop, xếp theo tác động doanh thu.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
 ]
 
 _AGENT_SYSTEM = (
-    "You are the AI Copilot for a Vietnamese e-commerce seller (fashion & cosmetics). "
+    "You are the AI Copilot for one specific Vietnamese e-commerce workspace. "
     "Use the provided tools to fetch the shop's REAL data before answering.\n\n"
     "TOOL BUDGET: call the FEWEST tools needed. A question about ONE topic/product "
     "usually needs exactly ONE tool. Only call several tools when the question clearly "
@@ -420,60 +658,87 @@ _AGENT_SYSTEM = (
 )
 
 
-async def _dispatch(
-    name: str, args: dict, db: AsyncSession
-) -> tuple[dict, str]:
+async def _dispatch(name: str, args: dict, db: AsyncSession) -> tuple[dict, str]:
     """Run a tool; return (compact_result_for_model, human_summary_for_ui)."""
     if name == "product_graph":
-        rg = await graph_svc.explore(
-            db, ProductGraphRequest(query=args.get("product", ""))
-        )
+        rg = await graph_svc.explore(db, ProductGraphRequest(query=args.get("product", "")))
         if not rg.found or rg.product is None:
             return {"found": False}, f"Không tìm thấy sản phẩm '{args.get('product', '')}'"
         return (
-            {"name": rg.product.name, "sku": rg.product.sku,
-             "sales_change_pct": rg.product.sales_change_pct,
-             "revenue_vnd": rg.product.revenue_vnd,
-             "units_sold": rg.product.units_sold,
-             "category_rank": rg.product.category_rank,
-             "similar": [s.name for s in rg.similar_products[:4]]},
+            {
+                "name": rg.product.name,
+                "sku": rg.product.sku,
+                "sales_change_pct": rg.product.sales_change_pct,
+                "revenue_vnd": rg.product.revenue_vnd,
+                "units_sold": rg.product.units_sold,
+                "category_rank": rg.product.category_rank,
+                "similar": [s.name for s in rg.similar_products[:4]],
+            },
             f"Product graph: {rg.product.name} (SKU {rg.product.sku})",
         )
     if name == "market_scan":
-        rm = await market_svc.scan_market(MarketScanRequest(query=args.get("product", "")), narrate=False)
+        rm = await market_svc.scan_market(
+            MarketScanRequest(query=args.get("product", "")), narrate=False
+        )
         return (
-            {"product": rm.product_name, "our_rank": rm.our_rank, "of_total": rm.of_total,
-             "recommended_price_vnd": rm.recommended_price_vnd, "margin_pct": rm.margin_pct_at_recommended},
+            {
+                "product": rm.product_name,
+                "our_rank": rm.our_rank,
+                "of_total": rm.of_total,
+                "recommended_price_vnd": rm.recommended_price_vnd,
+                "margin_pct": rm.margin_pct_at_recommended,
+            },
             f"Market scan: {rm.product_name} (rank {rm.our_rank}/{rm.of_total})",
         )
     if name == "creator_correlation":
         rc = await creator_svc.analyze_correlation(
-            CorrelationRequest(category=cast(Any, args.get("category", "Mỹ phẩm"))), narrate=False)
+            CorrelationRequest(category=cast(Any, args.get("category", "Thời trang"))),
+            narrate=False,
+        )
         return (
-            {"best_creator": rc.best_creator,
-             "ranked": [{"creator": c.creator, "correlation": c.correlation} for c in rc.ranked[:3]]},
+            {
+                "best_creator": rc.best_creator,
+                "ranked": [
+                    {"creator": c.creator, "correlation": c.correlation} for c in rc.ranked[:3]
+                ],
+            },
             f"Creator correlation: best {rc.best_creator}",
         )
     if name == "decision_playbook":
-        rd = await decision_svc.playbook(PlaybookRequest(
-            situation=args.get("situation", "n/a"), category=cast(Any, args.get("category", "Thời trang"))), narrate=False)
+        rd = await decision_svc.playbook(
+            PlaybookRequest(
+                situation=args.get("situation", "n/a"),
+                category=cast(Any, args.get("category", "Thời trang")),
+            ),
+            narrate=False,
+        )
         return (
-            {"best": rd.best.description, "metric": rd.best.metric, "value": rd.best.value,
-             "best_ad_month": rd.best_ad_month},
+            {
+                "best": rd.best.description,
+                "metric": rd.best.metric,
+                "value": rd.best.value,
+                "best_ad_month": rd.best_ad_month,
+            },
             f"Decision playbook: {rd.best.description}",
         )
     if name == "daily_briefing":
         rb = await briefing(narrate=False)
         return (
-            {"total_impact_vnd": rb.total_impact_vnd,
-             "top": [{"title": a.title, "impact_vnd": a.impact_vnd} for a in rb.actions[:3]]},
+            {
+                "total_impact_vnd": rb.total_impact_vnd,
+                "top": [{"title": a.title, "impact_vnd": a.impact_vnd} for a in rb.actions[:3]],
+            },
             f"Briefing: {len(rb.actions)} việc, tổng {rb.total_impact_vnd:,}₫",
         )
     return {"error": "unknown tool"}, f"unknown tool {name}"
 
 
 async def agent_ask(
-    question: str, db: AsyncSession, history: list[dict] | None = None
+    question: str,
+    db: AsyncSession,
+    history: list[dict] | None = None,
+    *,
+    workspace: object | None = None,
 ) -> CopilotAgentResponse:
     client = get_llm_client()
     if not hasattr(client, "chat_tools"):
@@ -487,9 +752,7 @@ async def agent_ask(
         # has no product-graph skill and used to misclassify it as a briefing.
         low = question.lower()
         if any(key in low for key in ("tương tự", "giống", "thay thế", "similar")):
-            result, summary = await _dispatch(
-                "product_graph", {"product": question}, db
-            )
+            result, summary = await _dispatch("product_graph", {"product": question}, db)
             if result.get("found") is False:
                 answer = summary
             else:
@@ -503,26 +766,57 @@ async def agent_ask(
             return CopilotAgentResponse(
                 answer=answer,
                 tools_used=["product_graph"],
-                steps=[AgentStep(
-                    tool="product_graph", args={"product": question}, summary=summary
-                )],
+                steps=[
+                    AgentStep(tool="product_graph", args={"product": question}, summary=summary)
+                ],
                 multi_step=False,
             )
 
         # Other test intents retain their deterministic single-step analysis.
-        r = await ask(question)
+        r = await ask(question, workspace=workspace)
         return CopilotAgentResponse(
-            answer=r.answer, tools_used=[r.skill_used] if r.skill_used else [],
+            answer=r.answer,
+            tools_used=[r.skill_used] if r.skill_used else [],
             steps=[AgentStep(tool=r.skill_used or "router", args={}, summary=r.skill_used or "")],
             multi_step=False,
         )
 
     # Force the answer language from a code-side detection (weak models drift to
     # the tool data's language otherwise).
-    directive = ("\n\nYou MUST write the final answer in ENGLISH ONLY."
-                 if _detect_lang(question) == "en"
-                 else "\n\nBạn PHẢI viết câu trả lời cuối cùng HOÀN TOÀN bằng tiếng Việt.")
-    messages: list[dict] = [{"role": "system", "content": _AGENT_SYSTEM + directive}]
+    directive = (
+        "\n\nYou MUST write the final answer in ENGLISH ONLY."
+        if _detect_lang(question) == "en"
+        else "\n\nBạn PHẢI viết câu trả lời cuối cùng HOÀN TOÀN bằng tiếng Việt."
+    )
+    workspace_context = ""
+    if workspace is not None:
+        industry_labels = {
+            "fashion": "thời trang và phụ kiện",
+            "beauty": "mỹ phẩm",
+            "home_living": "nhà cửa và đời sống",
+            "electronics": "điện tử",
+            "other": "ngành hàng khác",
+        }
+        industry = str(getattr(workspace, "industry", "fashion"))
+        products = store.all_products()
+        workspace_context = (
+            "\n\nWORKSPACE CONTEXT (authoritative tenant scope):\n"
+            f"- Shop: {getattr(workspace, 'name', 'Chưa đặt tên')}\n"
+            f"- Industry: {industry_labels.get(industry, industry)}\n"
+            f"- Description: {getattr(workspace, 'description', None) or 'chưa khai báo'}\n"
+            f"- Target customer: {getattr(workspace, 'target_customer', None) or 'chưa khai báo'}\n"
+            f"- Brand voice: {getattr(workspace, 'brand_voice', None) or 'chưa khai báo'}\n"
+            f"- Available catalogue evidence: {len(products)} SKUs, categories "
+            f"{', '.join(store.categories())}.\n"
+            "Never answer using another industry or claim the shop sells a category "
+            "outside this context. If evidence is missing, say exactly what must be synced."
+        )
+    messages: list[dict] = [
+        {
+            "role": "system",
+            "content": _AGENT_SYSTEM + workspace_context + directive,
+        }
+    ]
     for h in history or []:
         messages.append({"role": h["role"], "content": h["content"]})
     messages.append({"role": "user", "content": question})
@@ -554,15 +848,28 @@ async def agent_ask(
                 log.warning("copilot.tool_error", tool=fn, args=args, error=str(exc))
             tools_used.append(fn)
             steps.append(AgentStep(tool=fn, args=args, summary=summary))
-            messages.append({"role": "tool", "tool_call_id": tc["id"],
-                             "content": json.dumps(result, ensure_ascii=False)})
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tc["id"],
+                    "content": json.dumps(result, ensure_ascii=False),
+                }
+            )
 
     if not answer:
         # Loop hit the cap without a final text — ask once more for a plain answer.
         try:
-            final = await client.chat_tools(messages + [
-                {"role": "user", "content": "Tổng hợp câu trả lời cuối cùng bằng đúng ngôn ngữ của câu hỏi."}],
-                [], max_tokens=420)
+            final = await client.chat_tools(
+                messages
+                + [
+                    {
+                        "role": "user",
+                        "content": "Tổng hợp câu trả lời cuối cùng bằng đúng ngôn ngữ của câu hỏi.",
+                    }
+                ],
+                [],
+                max_tokens=420,
+            )
             answer = (final.get("content") or "").strip()
         except Exception:  # noqa: BLE001
             answer = ""
@@ -572,6 +879,8 @@ async def agent_ask(
             code="LLM_INVALID_RESPONSE",
         )
     return CopilotAgentResponse(
-        answer=answer, tools_used=list(dict.fromkeys(tools_used)), steps=steps,
+        answer=answer,
+        tools_used=list(dict.fromkeys(tools_used)),
+        steps=steps,
         multi_step=len(steps) > 1,
     )

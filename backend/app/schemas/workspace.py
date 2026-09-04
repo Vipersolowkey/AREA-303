@@ -14,6 +14,7 @@ MemberRole = Literal["owner", "manager", "analyst", "viewer"]
 AssignableMemberRole = Literal["manager", "analyst", "viewer"]
 MarketplacePlatform = Literal["shopee", "lazada", "tiktok_shop"]
 MarketplaceConnectionStatus = Literal["connected", "expired", "revoked", "error"]
+WorkspaceIndustry = Literal["fashion", "beauty", "home_living", "electronics", "other"]
 
 _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
@@ -21,6 +22,10 @@ _SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 class WorkspaceCreateRequest(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     slug: str | None = Field(default=None, min_length=3, max_length=80)
+    industry: WorkspaceIndustry = "fashion"
+    description: str | None = Field(default=None, max_length=1000)
+    target_customer: str | None = Field(default=None, max_length=500)
+    brand_voice: str | None = Field(default=None, max_length=500)
 
     @field_validator("name")
     @classmethod
@@ -46,9 +51,21 @@ class WorkspaceOut(BaseModel):
     name: str
     slug: str
     status: WorkspaceStatus
+    industry: WorkspaceIndustry
+    description: str | None
+    target_customer: str | None
+    brand_voice: str | None
     current_role: WorkspaceRole
     created_at: datetime
     updated_at: datetime
+
+
+class WorkspaceProfileUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=120)
+    industry: WorkspaceIndustry | None = None
+    description: str | None = Field(default=None, max_length=1000)
+    target_customer: str | None = Field(default=None, max_length=500)
+    brand_voice: str | None = Field(default=None, max_length=500)
 
 
 class WorkspaceMemberAddRequest(BaseModel):

@@ -42,7 +42,7 @@ async def test_shopper_products_returns_envelope():
 
 
 @pytest.mark.asyncio
-async def test_shopper_respects_explicit_budget_ceiling():
+async def test_shopper_does_not_invent_products_outside_shop_industry():
     _setup()
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
@@ -52,8 +52,7 @@ async def test_shopper_respects_explicit_budget_ceiling():
         )
     assert r.status_code == 200
     products = r.json()["data"]["products"]
-    assert products
-    assert all(product["price_vnd"] <= 400_000 for product in products)
+    assert products == []
 
 
 @pytest.mark.asyncio

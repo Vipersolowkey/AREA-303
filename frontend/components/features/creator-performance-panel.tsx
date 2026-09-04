@@ -10,7 +10,7 @@ import { analyzeCreatorPerformance, type CreatorPerformanceResult, type CreatorI
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
-const CATEGORIES: Category[] = ["Thời trang", "Mỹ phẩm", "Phụ kiện"];
+const CATEGORIES: Category[] = ["Thời trang", "Phụ kiện"];
 const CONTENT_TYPES: CreatorItemInput["content_type"][] = ["video", "livestream", "post"];
 const CONTENT_LABEL: Record<string, string> = { video: "Video", livestream: "Livestream", post: "Bài đăng" };
 

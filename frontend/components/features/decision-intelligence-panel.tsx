@@ -10,7 +10,7 @@ import { analyzeDecisionIntelligence, type DecisionIntelligenceResult, type Deci
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
-const CATEGORIES: Category[] = ["Thời trang", "Mỹ phẩm", "Phụ kiện"];
+const CATEGORIES: Category[] = ["Thời trang", "Phụ kiện"];
 const KINDS: DecisionInput["kind"][] = ["price", "promo", "ad", "inventory"];
 const KIND_LABEL: Record<string, string> = { price: "Giá", promo: "Khuyến mãi", ad: "Quảng cáo", inventory: "Tồn kho" };
 const METRICS: DecisionInput["metric"][] = ["ROAS", "sales_lift_pct", "margin_pct", "sell_through_pct"];

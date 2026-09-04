@@ -8,7 +8,7 @@ import { trackEvent } from "@/lib/journey-track";
 import { addToCart } from "@/lib/cart";
 import { StoreProductCard } from "@/components/store/store-product-card";
 
-const CATEGORIES = ["Tất cả", "Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
+const CATEGORIES = ["Tất cả", "Thời trang", "Phụ kiện"] as const;
 
 export default function StorePage() {
   const [query, setQuery] = useState("");

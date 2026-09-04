@@ -13,6 +13,10 @@ export type SellerWorkspace = {
   name: string;
   slug: string;
   status: "active" | "suspended" | "archived";
+  industry: "fashion" | "beauty" | "home_living" | "electronics" | "other";
+  description: string | null;
+  target_customer: string | null;
+  brand_voice: string | null;
   current_role: WorkspaceRole;
   created_at: string;
   updated_at: string;
@@ -56,9 +60,23 @@ export async function listWorkspaces(signal?: AbortSignal): Promise<SellerWorksp
   return response.data ?? [];
 }
 
-export async function createWorkspace(name: string): Promise<WorkspaceCreateResult> {
-  const response = await api.post<WorkspaceCreateResult>("/workspaces/", { name });
+export type WorkspaceCreateInput = Pick<
+  SellerWorkspace,
+  "name" | "industry" | "description" | "target_customer" | "brand_voice"
+>;
+
+export async function createWorkspace(input: WorkspaceCreateInput): Promise<WorkspaceCreateResult> {
+  const response = await api.post<WorkspaceCreateResult>("/workspaces/", input);
   if (!response.data) throw new Error("Workspace response is empty.");
+  return response.data;
+}
+
+export async function updateWorkspaceProfile(
+  workspaceId: number,
+  input: Partial<WorkspaceCreateInput>,
+): Promise<SellerWorkspace> {
+  const response = await api.patch<SellerWorkspace>(`/workspaces/${workspaceId}`, input);
+  if (!response.data) throw new Error("Workspace profile response is empty.");
   return response.data;
 }
 

@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
 const REGIONS = ["Miền Bắc", "Miền Trung", "Miền Nam"] as const;
-const CATEGORIES = ["Thời trang", "Mỹ phẩm", "Phụ kiện"] as const;
+const CATEGORIES = ["Thời trang", "Phụ kiện"] as const;
 
 const SEVERITY: Record<string, { label: string; cls: string; badge: "success" | "warning" | "danger" }> = {
   low: { label: "Thấp", cls: "text-success", badge: "success" },

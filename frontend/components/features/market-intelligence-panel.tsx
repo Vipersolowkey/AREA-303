@@ -11,7 +11,7 @@ import { CompetitorWatch } from "@/components/features/competitor-watch";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n";
 
-const CATEGORIES: Category[] = ["Thời trang", "Mỹ phẩm", "Phụ kiện"];
+const CATEGORIES: Category[] = ["Thời trang", "Phụ kiện"];
 
 const POSITION: Record<string, { label: string; cls: string }> = {
   cheaper: { label: "Rẻ hơn đối thủ", cls: "text-success" },
@@ -34,7 +34,7 @@ function vnd(n: number) {
 export function MarketIntelligencePanel() {
   const t = useT();
   const [ourProduct, setOurProduct] = useState("Kem chống nắng SPF50 50ml");
-  const [category, setCategory] = useState<Category>("Mỹ phẩm");
+  const [category, setCategory] = useState<Category>("Thời trang");
   const [ourPrice, setOurPrice] = useState(189000);
   const [ourCost, setOurCost] = useState(90000);
   const [competitorName, setCompetitorName] = useState("Shop Beauty Zone");

@@ -26,6 +26,7 @@ import {
   listWorkspaces,
   removeWorkspaceMember,
   updateWorkspaceMemberRole,
+  updateWorkspaceProfile,
   type SellerWorkspace,
   type MarketplaceShop,
   type WorkspaceMember,
@@ -72,6 +73,9 @@ export default function SellerWorkspacePage() {
   const [saving, setSaving] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"manager" | "analyst" | "viewer">("viewer");
+  const [shopDescription, setShopDescription] = useState("");
+  const [targetCustomer, setTargetCustomer] = useState("");
+  const [brandVoice, setBrandVoice] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -89,6 +93,9 @@ export default function SellerWorkspacePage() {
       setActiveWorkspaceId(selected.id);
       setWorkspaces(available);
       setWorkspace(selected);
+      setShopDescription(selected.description ?? "");
+      setTargetCustomer(selected.target_customer ?? "");
+      setBrandVoice(selected.brand_voice ?? "");
       const [memberRows, shopRows] = await Promise.all([
         listWorkspaceMembers(selected.id),
         listMarketplaceShops(selected.id),
@@ -117,6 +124,9 @@ export default function SellerWorkspacePage() {
     if (!selected) return;
     setActiveWorkspaceId(selected.id);
     setWorkspace(selected);
+    setShopDescription(selected.description ?? "");
+    setTargetCustomer(selected.target_customer ?? "");
+    setBrandVoice(selected.brand_voice ?? "");
     setMembers([]);
     setShops([]);
     setLoading(true);
@@ -200,6 +210,27 @@ export default function SellerWorkspacePage() {
 
   if (loading && !workspace) {
     return <WorkspaceLoadingScreen />;
+  }
+
+  async function saveShopProfile(event: React.FormEvent) {
+    event.preventDefault();
+    if (!workspace) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const updated = await updateWorkspaceProfile(workspace.id, {
+        industry: "fashion",
+        description: shopDescription.trim() || null,
+        target_customer: targetCustomer.trim() || null,
+        brand_voice: brandVoice.trim() || null,
+      });
+      setWorkspace(updated);
+      setWorkspaces((current) => current.map((item) => item.id === updated.id ? updated : item));
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (!workspace && error) {
@@ -296,6 +327,30 @@ export default function SellerWorkspacePage() {
             <Link href="/seller/seller-coach">{t("Kiểm tra cửa hàng")}</Link>
           </Button>
         </div>
+
+        <Card className="mb-6">
+          <CardHeader>
+            <div>
+              <CardTitle className="text-base">AI hiểu cửa hàng này</CardTitle>
+              <p className="mt-1 text-xs text-text-muted">
+                Copilot dùng hồ sơ này cùng catalogue và đơn hàng của workspace; không trộn dữ liệu shop khác.
+              </p>
+            </div>
+            <Badge variant="info">Thời trang & phụ kiện</Badge>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={saveShopProfile} className="grid gap-3 md:grid-cols-3">
+              <Input value={shopDescription} onChange={(event) => setShopDescription(event.target.value)} placeholder="Shop bán những dòng sản phẩm nào?" disabled={!canManage || saving} />
+              <Input value={targetCustomer} onChange={(event) => setTargetCustomer(event.target.value)} placeholder="Khách hàng chính là ai?" disabled={!canManage || saving} />
+              <Input value={brandVoice} onChange={(event) => setBrandVoice(event.target.value)} placeholder="Giọng thương hiệu" disabled={!canManage || saving} />
+              {canManage && (
+                <Button type="submit" className="md:col-span-3 md:w-fit" disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />} Lưu hồ sơ cho AI
+                </Button>
+              )}
+            </form>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
           <Card>
