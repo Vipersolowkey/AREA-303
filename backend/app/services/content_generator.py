@@ -6,13 +6,11 @@ import asyncio
 import re
 
 from app.core.config import settings
-from app.core.logging import get_logger
+from app.core.exceptions import UpstreamUnavailableError
 from app.schemas.genai import ContentGeneratorRequest, ContentGeneratorResponse, ContentVariant
 from app.services.genai import CONTENT_GENERATOR_PROMPT, llm_cache
 from app.services.genai.base import LlmMessage
 from app.services.genai.factory import get_llm_client
-
-log = get_logger("app.services.content_generator")
 
 _EMOJI_RE = re.compile(
     "[\U0001F300-\U0001FAFF\U00002600-\U000027BF\U0001F000-\U0001F2FF]",
@@ -23,7 +21,7 @@ _EMOJI_RE = re.compile(
 def _estimate_ctr(platform: str, title: str, body: str) -> float:
     """Cheap heuristic. Replace with a trained model when one is ready.
 
-    Rules (rough, biased toward the demo baselines):
+    Rules (rough, calibrated against the current catalog baselines):
     - TikTok Shop gains the most from emoji + short hook.
     - Shopee rewards concrete shipping/discount mentions.
     - Tiki rewards 'chính hãng' / 'TikiNOW' mentions.
@@ -75,10 +73,10 @@ def _rationale(platform: str, title: str, body: str) -> str:
     return "Hook ngắn, gọn — TikTok Shop ưu tiên dưới 50 ký tự."
 
 
-def _demo_copy(req: ContentGeneratorRequest, platform: str) -> tuple[str, str]:
-    """Ground deterministic fallback copy in the seller's actual input.
+def _test_copy(req: ContentGeneratorRequest, platform: str) -> tuple[str, str]:
+    """Ground deterministic test output in the submitted product facts.
 
-    The old demo always advertised a denim jacket, free shipping, TikiNOW and
+    The old fixture always advertised a denim jacket, free shipping, TikiNOW and
     a seven-day return policy regardless of the submitted product. Those are
     commercial promises the platform cannot safely invent.
     """
@@ -91,8 +89,8 @@ def _demo_copy(req: ContentGeneratorRequest, platform: str) -> tuple[str, str]:
     return f"{product} ✨"[:120], f"Điểm nổi bật: {features}. Xem chi tiết để chọn phiên bản phù hợp."
 
 
-def _fallback_variant(req: ContentGeneratorRequest, platform: str) -> ContentVariant:
-    title, body = _demo_copy(req, platform)
+def _test_variant(req: ContentGeneratorRequest, platform: str) -> ContentVariant:
+    title, body = _test_copy(req, platform)
     return ContentVariant(
         platform=platform,  # type: ignore[arg-type]
         title=title,
@@ -119,16 +117,15 @@ async def _generate_variant(req, platform: str, llm) -> ContentVariant:  # noqa:
         ),
         LlmMessage(role="user", content=prompt),
     ]
-    try:
-        resp = await llm.chat(messages, temperature=0.7, max_tokens=400)
-    except Exception as exc:
-        log.warning("content_generator.variant_fallback", platform=platform, error=str(exc))
-        return _fallback_variant(req, platform)
+    resp = await llm.chat(messages, temperature=0.7, max_tokens=400)
 
     raw_title, _, raw_body = resp.content.partition("\n")
-    fallback_title, fallback_body = _demo_copy(req, platform)
-    final_title = raw_title.strip()[:120] or fallback_title
-    final_body = raw_body.strip()[:600] or fallback_body
+    final_title = raw_title.strip()[:120]
+    final_body = raw_body.strip()[:600]
+    if not final_title or not final_body:
+        raise UpstreamUnavailableError(
+            "LLM trả về nội dung không đầy đủ.", code="LLM_INVALID_RESPONSE"
+        )
     return ContentVariant(
         platform=platform,  # type: ignore[arg-type]
         title=final_title,
@@ -140,15 +137,11 @@ async def _generate_variant(req, platform: str, llm) -> ContentVariant:  # noqa:
 
 @llm_cache(prefix="content_generator")
 async def generate(req: ContentGeneratorRequest) -> ContentGeneratorResponse:
-    if settings.DEMO_MODE or not (
-        settings.GEMINI_API_KEY or settings.OPENAI_API_KEY or settings.OLLAMA_API_KEY
-    ):
-        log.info("content_generator.demo_mode")
-        variants = [_fallback_variant(req, platform) for platform in req.platforms]
+    if settings.APP_ENV == "test":
+        variants = [_test_variant(req, platform) for platform in req.platforms]
         return ContentGeneratorResponse(
             variants=variants,
-            model="mock-demo",
-            demo_mode=True,
+            model="test-double",
         )
 
     llm = get_llm_client()
@@ -161,5 +154,4 @@ async def generate(req: ContentGeneratorRequest) -> ContentGeneratorResponse:
     return ContentGeneratorResponse(
         variants=out,
         model=llm.model,
-        demo_mode=False,
     )

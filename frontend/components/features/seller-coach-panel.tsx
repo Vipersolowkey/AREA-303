@@ -6,8 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { ScoreGauge, AuditRadar } from "@/components/genai/score-gauge";
 import {
-  SELLER_AUDIT,
-  SELLER_ROADMAP,
   type AuditStep,
   type RoadmapWeek,
 } from "@/lib/mock-data";
@@ -51,22 +49,24 @@ function AuditRow({ step, index }: { step: AuditStep; index: number }) {
 
 export function SellerCoachPanel() {
   const t = useT();
-  const [audit, setAudit] = useState<AuditStep[]>(SELLER_AUDIT);
-  const [roadmap, setRoadmap] = useState<RoadmapWeek[]>(SELLER_ROADMAP);
+  const [audit, setAudit] = useState<AuditStep[]>([]);
+  const [roadmap, setRoadmap] = useState<RoadmapWeek[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     setError(false);
-    sellerCoach({ overall: 0, audit: SELLER_AUDIT, roadmap: SELLER_ROADMAP })
+    sellerCoach()
       .then((r) => {
         setAudit(r.audit);
         setRoadmap(r.roadmap);
       })
-      .catch(() => setError(true));
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, []);
 
   const overall = Math.round(
-    audit.reduce((sum, s) => sum + s.score, 0) / audit.length,
+    audit.length ? audit.reduce((sum, s) => sum + s.score, 0) / audit.length : 0,
   );
 
   const radarData = audit.map((s) => ({
@@ -79,6 +79,9 @@ export function SellerCoachPanel() {
       {error && (
         <p className="col-span-full text-sm text-danger">{t("Không lấy được dữ liệu. Kiểm tra kết nối backend rồi thử lại.")}</p>
       )}
+      {loading && (
+        <p className="col-span-full text-sm text-text-muted">Đang nạp dữ liệu cửa hàng…</p>
+      )}
 
       {/* Audit summary */}
       <Card className="lg:col-span-4">
@@ -86,10 +89,10 @@ export function SellerCoachPanel() {
           <div>
             <CardTitle>Điểm sức khỏe cửa hàng</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
-              {t("Tính từ cùng snapshot 60 SKU, đơn hàng, đánh giá và tồn kho của Mây House demo.")}
+              {t("Tính từ snapshot sản phẩm, đơn hàng, đánh giá và tồn kho của workspace hiện tại.")}
             </p>
           </div>
-          <Badge variant="muted">shop demo thống nhất</Badge>
+          <Badge variant="live">Workspace hiện tại</Badge>
         </CardHeader>
         <CardContent className="flex justify-center pb-6">
           <ScoreGauge score={overall} label="Điểm tổng" />

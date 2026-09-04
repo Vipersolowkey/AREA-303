@@ -6,8 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/genai/product-card";
 import { cn } from "@/lib/utils";
 import {
-  RECSYS_TRADITIONAL,
-  RECSYS_AI,
   type Recommendation,
 } from "@/lib/mock-data";
 import { recsysRecommend } from "@/lib/features";
@@ -17,9 +15,9 @@ type Mode = "traditional" | "ai";
 
 /** Signals shown to shoppers — Vietnamese labels, not raw feature keys. */
 const PROFILE_CHIPS = [
-  { label: "Khách mẫu", value: "C001" },
+  { label: "Hồ sơ", value: "Khách đang hoạt động" },
   { label: "Kênh ưa thích", value: "Shopee" },
-  { label: "Đã mua", value: "lịch sử đơn Mây House" },
+  { label: "Nguồn", value: "Catalog và lịch sử đơn" },
   { label: "Quan tâm", value: "serum, dưỡng ẩm" },
 ];
 
@@ -39,17 +37,26 @@ const VND = new Intl.NumberFormat("vi-VN", {
 export function RecsysPanel() {
   const t = useT();
   const [mode, setMode] = useState<Mode>("ai");
-  const [aiItems, setAiItems] = useState<Recommendation[]>(RECSYS_AI);
+  const [aiItems, setAiItems] = useState<Recommendation[]>([]);
+  const [traditionalItems, setTraditionalItems] = useState<Recommendation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     setError(false);
-    recsysRecommend(SIGNAL_PAYLOAD, 8, RECSYS_AI)
-      .then((r) => setAiItems(r.items))
-      .catch(() => setError(true));
+    Promise.all([
+      recsysRecommend(SIGNAL_PAYLOAD, 8, "C001"),
+      recsysRecommend(SIGNAL_PAYLOAD, 8, "cf:C001"),
+    ])
+      .then(([ai, traditional]) => {
+        setAiItems(ai.items);
+        setTraditionalItems(traditional.items);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
   }, []);
 
-  const items: Recommendation[] = mode === "ai" ? aiItems : RECSYS_TRADITIONAL;
+  const items: Recommendation[] = mode === "ai" ? aiItems : traditionalItems;
 
   const insights = useMemo(() => {
     if (!items.length) {
@@ -110,7 +117,7 @@ export function RecsysPanel() {
 
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-2xs font-medium uppercase tracking-wider text-text-dim">
-            Hồ sơ mẫu
+            Tín hiệu đang dùng
           </span>
           {PROFILE_CHIPS.map((s) => (
             <Badge key={s.label} variant="muted">
@@ -133,20 +140,26 @@ export function RecsysPanel() {
           <div>
             <CardTitle>
               {mode === "ai"
-                ? t("Gợi ý theo hồ sơ minh hoạ")
-                : t("Sản phẩm mua cùng minh hoạ")}
+                ? t("Gợi ý theo hồ sơ hiện tại")
+                : t("Sản phẩm thường được mua cùng")}
             </CardTitle>
             <p className="mt-1 text-xs text-text-muted">
               {mode === "ai"
-                ? t("Dữ liệu mẫu để minh hoạ luồng cá nhân hoá; chưa lấy lịch sử thật của tài khoản.")
-                : t("Dữ liệu mẫu; chưa có ma trận đồng mua thật từ cửa hàng.")}
+                ? t("Xếp hạng từ tín hiệu phiên hiện tại và catalog backend.")
+                : t("Xếp hạng từ lịch sử đồng mua trong dữ liệu cửa hàng.")}
             </p>
           </div>
           <Badge variant={mode === "ai" ? "live" : "muted"}>
-            {mode === "ai" ? t("Hồ sơ demo") : t("Dữ liệu demo")}
+            {mode === "ai" ? t("AI đang hoạt động") : t("Dữ liệu cửa hàng")}
           </Badge>
         </CardHeader>
       </Card>
+
+      {loading && (
+        <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
+          Đang nạp gợi ý sản phẩm…
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {items.map((p, i) => (

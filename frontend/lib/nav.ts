@@ -116,7 +116,7 @@ export const READY_NAV_ITEMS = NAV_ITEMS.filter(
 );
 
 /** Tenant-safe tools available to a normal seller before legacy APIs are scoped. */
-export const SELLER_SELF_SERVICE_SLUGS = new Set(["autopilot", "voucher-booster", "orders", "copilot"]);
+export const SELLER_SELF_SERVICE_SLUGS = new Set(["autopilot", "voucher-booster"]);
 
 export function navForApp(app: AppKind): NavItem[] {
   return READY_NAV_ITEMS.filter((item) => item.app === app);

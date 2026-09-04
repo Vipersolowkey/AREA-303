@@ -181,7 +181,6 @@ async def test_recsys_returns_only_live_catalog_items_and_filters_stockouts() ->
 async def test_seller_coach_scores_are_calculated_from_the_same_shop() -> None:
     result = await seller_coach.coach(SellerCoachRequest(seller_id="shop-may-001"))
 
-    assert result.demo_mode is True
     assert len(result.audit) == 5
     assert any("60" in step.tip for step in result.audit)
-    assert any("review" in step.tip.lower() for step in result.audit)
+    assert any("đánh giá" in step.tip.lower() for step in result.audit)

@@ -3,9 +3,8 @@
  * {success, data, meta, error} envelope defined in
  * backend/app/core/responses.py.
  *
- * Demo-mode fallback: when no backend is reachable (no NEXT_PUBLIC_API_URL
- * or network error) the caller can opt into demo data via the `fallback`
- * argument. This is the contract D2 uses for `scripts/prepare_demo_data.py`.
+ * Requests either return the backend envelope or throw ``ApiClientError``.
+ * Network/configuration errors are never replaced with canned product data.
  */
 
 import { clearTokenCookie, readTokenCookie } from "@/lib/auth-token";
@@ -19,7 +18,6 @@ export type ApiError = {
   message: string;
   details?: Record<string, unknown>;
 };
-
 export type ApiEnvelope<T> = {
   success: boolean;
   data: T | null;
@@ -130,24 +128,3 @@ export const api = {
     return request<T>(path, { method: "DELETE" }, signal);
   },
 };
-
-/**
- * Convenience helper that returns `data` from the envelope,
- * or the supplied `fallback` when the call fails / demo mode is on.
- */
-export async function fetchWithFallback<T>(
-  path: string,
-  fallback: T,
-  init?: RequestInit,
-  signal?: AbortSignal,
-): Promise<{ data: T; fromFallback: boolean }> {
-  if (process.env.NEXT_PUBLIC_DEMO_MODE === "true") {
-    return { data: fallback, fromFallback: true };
-  }
-  try {
-    const env = await api.get<T>(path, signal);
-    return { data: env.data as T, fromFallback: false };
-  } catch {
-    return { data: fallback, fromFallback: true };
-  }
-}

@@ -52,7 +52,7 @@ def test_decision_history_normalizes_incomparable_metrics() -> None:
     assert best_month == 11
 
 
-def test_content_fallback_is_grounded_in_submitted_product() -> None:
+def test_content_test_double_is_grounded_in_submitted_product() -> None:
     request = ContentGeneratorRequest(
         product_name="Serum B5",
         features="30 ml, không hương liệu",
@@ -60,7 +60,7 @@ def test_content_fallback_is_grounded_in_submitted_product() -> None:
     )
 
     variants = [
-        content_generator._fallback_variant(request, platform)  # noqa: SLF001
+        content_generator._test_variant(request, platform)  # noqa: SLF001
         for platform in request.platforms
     ]
 

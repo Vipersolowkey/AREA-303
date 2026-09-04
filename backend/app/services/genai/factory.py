@@ -1,11 +1,7 @@
 """LLM + RAG client factories.
 
-Resolution order:
-
-1. If ``settings.DEMO_MODE=true`` → :class:`MockLlmClient`. Always.
-2. Else pick the provider named in ``settings.LLM_PROVIDER``.
-3. If that provider has no API key, fall back to mock (log a warning).
-   This keeps the demo alive even when keys are absent at runtime.
+Tests use a deterministic client. Runtime always uses the configured provider
+and reports missing credentials instead of substituting canned output.
 """
 
 from __future__ import annotations
@@ -13,17 +9,14 @@ from __future__ import annotations
 from functools import lru_cache
 
 from app.core.config import settings
-from app.core.logging import get_logger
+from app.core.exceptions import UpstreamUnavailableError
 from app.services.genai.base import LlmClient
 from app.services.genai.rag import BaseRetriever, InMemoryRetriever
-
-log = get_logger("app.services.genai.factory")
 
 
 @lru_cache(maxsize=1)
 def get_llm_client() -> LlmClient:
-    if settings.DEMO_MODE:
-        log.info("llm_client.demo_mode")
+    if settings.APP_ENV == "test":
         from app.services.genai.mock_client import MockLlmClient
 
         return MockLlmClient()
@@ -31,10 +24,9 @@ def get_llm_client() -> LlmClient:
     provider = settings.LLM_PROVIDER.lower()
     if provider == "gemini":
         if not settings.GEMINI_API_KEY:
-            log.warning("llm_client.gemini.no_key_fallback_mock")
-            from app.services.genai.mock_client import MockLlmClient
-
-            return MockLlmClient()
+            raise UpstreamUnavailableError(
+                "Chưa cấu hình GEMINI_API_KEY.", code="LLM_NOT_CONFIGURED"
+            )
         from app.services.genai.gemini_client import GeminiClient
 
         return GeminiClient()
@@ -43,19 +35,16 @@ def get_llm_client() -> LlmClient:
             settings.OLLAMA_API_KEY if provider == "ollama" else settings.OPENAI_API_KEY
         )
         if not provider_key:
-            log.warning("llm_client.provider.no_key_fallback_mock", provider=provider)
-            from app.services.genai.mock_client import MockLlmClient
-
-            return MockLlmClient()
+            raise UpstreamUnavailableError(
+                f"Chưa cấu hình API key cho {provider}.", code="LLM_NOT_CONFIGURED"
+            )
         from app.services.genai.openai_client import OpenAIClient
 
         return OpenAIClient()
 
-    # Default = mock — never throw at import time.
-    log.info("llm_client.default_mock", provider=provider)
-    from app.services.genai.mock_client import MockLlmClient
-
-    return MockLlmClient()
+    raise UpstreamUnavailableError(
+        f"LLM provider không được hỗ trợ: {provider}.", code="LLM_PROVIDER_INVALID"
+    )
 
 
 async def close_llm_client() -> None:
@@ -73,21 +62,21 @@ async def close_llm_client() -> None:
 def get_rag() -> BaseRetriever:
     """Return the configured retriever.
 
-    For the demo we ship an in-memory retriever seeded with a small
-    Tiki catalog slice.  Swap to Pinecone when ``VECTOR_BACKEND=pinecone``
-    and a key is configured.
+    ``memory`` is an explicit local catalog index. ``pinecone`` requires its
+    own credentials and never silently changes backend.
     """
     backend = settings.VECTOR_BACKEND.lower()
     if backend == "memory":
         return InMemoryRetriever()
     if backend == "pinecone":
         if not settings.PINECONE_API_KEY:
-            log.warning("rag.pinecone.no_key_fallback_memory")
-            return InMemoryRetriever()
+            raise UpstreamUnavailableError(
+                "Chưa cấu hình PINECONE_API_KEY.", code="RAG_NOT_CONFIGURED"
+            )
         # Lazily imported so the dep is optional.
         from app.services.genai.pinecone_retriever import PineconeRetriever
 
         return PineconeRetriever()
-    # "faiss" is a follow-up; fall back to memory for now.
-    log.warning("rag.backend_fallback_memory", backend=backend)
-    return InMemoryRetriever()
+    raise UpstreamUnavailableError(
+        f"Vector backend chưa được hỗ trợ: {backend}.", code="RAG_PROVIDER_INVALID"
+    )

@@ -109,7 +109,7 @@ export default function LandingPage() {
             </Link>
           </Button>
           <Button asChild size="lg" variant="secondary">
-            <Link href="/shop/store">{t("Xem cửa hàng demo")}</Link>
+            <Link href="/shop/store">{t("Xem cửa hàng")}</Link>
           </Button>
         </div>
 
@@ -180,7 +180,7 @@ export default function LandingPage() {
             {t("Thử toàn bộ hệ thống ngay")}
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-bg/70">
-            {t("Tạo tài khoản người mua trong vài giây, hoặc mở cửa hàng demo để xem sản phẩm, đánh giá và giỏ hàng hoạt động thật.")}
+            {t("Tạo tài khoản người mua trong vài giây, hoặc mở cửa hàng để xem sản phẩm, đánh giá và giỏ hàng hoạt động.")}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Button

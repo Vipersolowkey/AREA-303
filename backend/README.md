@@ -58,10 +58,9 @@ The 4 features owned by the fullstack role live under `/api/v1/`:
 | 11 | `/recsys/` | POST | — | Traditional CF or AI reasoning |
 | 17 | `/seller-coach/` | POST | — | 5-axis audit + 4-week roadmap |
 
-All endpoints honor `DEMO_MODE=true` (default) — they return
-pre-generated fixtures from `app/services/genai/demo_data.py` and
-never touch an upstream LLM. This is the project's mandatory safety
-net (project plan, Day 8 risk register).
+Runtime endpoints use the provider selected by `LLM_PROVIDER`. Missing keys,
+unsupported providers, invalid responses, and upstream failures return an
+explicit API error; they are not replaced with generated-looking fixtures.
 
 ### Examples
 
@@ -106,20 +105,18 @@ data: {"done": true, "last": {...}, "meta": {...}}\n\n
 Idle connections receive a `: ping\n\n` heartbeat comment every
 `SSE_HEARTBEAT_SECONDS` (default 15s) so proxies don't reap them.
 
-### Going live with real LLMs
+### Configure an LLM
 
-1. Set `DEMO_MODE=false` in `.env`.
-2. Pick a provider in `LLM_PROVIDER` (`gemini` or `openai`).
-3. Provide the corresponding API key. Without a key the factory
-   falls back to the mock client and logs `llm_client.*.no_key_fallback_mock`.
-4. To enable RAG over the Tiki catalog, set:
+1. Pick a provider in `LLM_PROVIDER` (`ollama`, `gemini`, or `openai`).
+2. Provide its API key. Missing credentials return `LLM_NOT_CONFIGURED`.
+3. To enable RAG over a Pinecone index, set:
    ```
    VECTOR_BACKEND=pinecone
    PINECONE_API_KEY=...
    PINECONE_INDEX=area303-tiki-catalog
    ```
-   and `pip install pinecone`. With no key the in-memory retriever
-   (seeded from `DEMO_CATALOG`) is used.
+   and `pip install pinecone`. Use `VECTOR_BACKEND=memory` explicitly for the
+   local catalog index.
 
 ### Rate limiting
 

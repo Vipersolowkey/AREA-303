@@ -2,10 +2,9 @@
 before it's persisted/published (mentor feedback: real user data needs a
 filter layer before it hits the DB).
 
-Pure orchestration over the EXISTING scorers in :mod:`app.services.insights`
-(``detect_fake`` / ``analyze_sentiment`` — #05 / #01) — no changes to that
-module. Both already fall back to deterministic heuristics when no LLM is
-configured (DEMO_MODE / no API key), so this works out of the box.
+Pure orchestration over the scorers in :mod:`app.services.insights`
+(``detect_fake`` / ``analyze_sentiment`` — #05 / #01). Runtime LLM errors are
+surfaced explicitly, so an unmoderated review is never silently accepted.
 """
 
 from __future__ import annotations

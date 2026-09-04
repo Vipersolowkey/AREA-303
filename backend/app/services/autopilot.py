@@ -10,7 +10,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.core.exceptions import (
+    ConflictError,
+    NotFoundError,
+    UpstreamUnavailableError,
+    ValidationError,
+)
 from app.models.autopilot import AutopilotAuditEvent, AutopilotOpportunity
 from app.services import commerce_store as store
 
@@ -26,7 +31,7 @@ def _candidates() -> list[dict]:
 
     if low["stock_status"] == "out":
         inventory_title = f"{low['name']} đã hết hàng"
-        inventory_fallback = (
+        inventory_baseline = (
             "Tồn kho đã về 0. Ưu tiên bổ sung hàng hoặc tạm dừng khuyến mãi; "
             "không tăng giá một sản phẩm hiện không thể bán."
         )
@@ -52,7 +57,7 @@ def _candidates() -> list[dict]:
         ]
     else:
         inventory_title = f"{low['name']} có nguy cơ hết hàng"
-        inventory_fallback = (
+        inventory_baseline = (
             f"Tồn kho chỉ đủ khoảng {runway} ngày; nếu không xử lý, doanh thu "
             "14 ngày có thể bị ảnh hưởng."
         )
@@ -105,14 +110,14 @@ def _candidates() -> list[dict]:
             "evidence": {"product_id": low["id"], "product_name": low["name"],
                          "stock": low["stock"], "daily_sales": low["daily_sales"],
                          "runway_days": runway, "revenue_at_risk_vnd": lost},
-            "fallback": inventory_fallback,
+            "baseline_explanation": inventory_baseline,
             "options": inventory_options,
         },
         {
             "fingerprint": "reviews:negative-30d:v2", "kind": "reviews", "severity": "warning",
             "title": f"{negatives} review thấp cần xử lý",
             "evidence": {"negative_reviews_30d": negatives, "products_reviewed": len(products)},
-            "fallback": f"Có {negatives} đánh giá từ 3 sao trở xuống trong 30 ngày; nên xử lý chủ đề lặp lại trước khi ảnh hưởng chuyển đổi.",
+            "baseline_explanation": f"Có {negatives} đánh giá từ 3 sao trở xuống trong 30 ngày; nên xử lý chủ đề lặp lại trước khi ảnh hưởng chuyển đổi.",
             "options": [
                 {"id": "review-triage", "label": "Tạo hàng đợi phân loại review", "risk": "low",
                  "impact": {"reviews_prioritized": negatives, "response_sla_hours": 24}},
@@ -124,7 +129,7 @@ def _candidates() -> list[dict]:
             "fingerprint": "customers:winback:v2", "kind": "customer_risk", "severity": "info",
             "title": f"{len(at_risk)} khách nên được win-back",
             "evidence": {"customers_at_risk": len(at_risk), "ltv_at_risk_vnd": risk_ltv},
-            "fallback": f"Nhóm {len(at_risk)} khách có recency cao hoặc bỏ giỏ nhiều đang mang {risk_ltv:,}₫ LTV lịch sử.",
+            "baseline_explanation": f"Nhóm {len(at_risk)} khách có recency cao hoặc bỏ giỏ nhiều đang mang {risk_ltv:,}₫ LTV lịch sử.",
             "options": [
                 {"id": "voucher-draft", "label": "Lập voucher 8% chờ duyệt", "risk": "medium",
                  "impact": {"customers_targeted": len(at_risk), "expected_reactivation_pct": 12}},
@@ -138,8 +143,13 @@ def _candidates() -> list[dict]:
 async def _ollama_explain(candidates: list[dict]) -> tuple[dict[str, str], bool, str]:
     model = settings.AUTOPILOT_OLLAMA_MODEL
     api_key = settings.OLLAMA_API_KEY
-    if settings.APP_ENV == "test" or settings.DEMO_MODE or not api_key:
+    if settings.APP_ENV == "test":
         return {}, False, model
+    if not api_key:
+        raise UpstreamUnavailableError(
+            "Chưa cấu hình OLLAMA_API_KEY cho Seller Autopilot.",
+            code="LLM_NOT_CONFIGURED",
+        )
     evidence = [
         {"fingerprint": c["fingerprint"], "title": c["title"], "evidence": c["evidence"],
          "options": [{"id": o["id"], "label": o["label"], "impact": o["impact"]} for o in c["options"]]}
@@ -177,9 +187,14 @@ async def _ollama_explain(candidates: list[dict]) -> tuple[dict[str, str], bool,
                 str(item["fingerprint"]): _concise(str(item["explanation"]))
                 for item in items if item.get("fingerprint") and item.get("explanation")
             }
+            expected = {item["fingerprint"] for item in candidates}
+            if set(result) != expected:
+                raise ValueError("Ollama response is missing opportunity explanations")
             return result, bool(result), model
-    except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError):
-        return {}, False, model
+    except (httpx.HTTPError, KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise UpstreamUnavailableError(
+            "Không thể lấy giải thích từ Ollama.", code="LLM_UPSTREAM_ERROR"
+        ) from exc
 
 
 def _concise(value: str, limit: int = 240) -> str:
@@ -198,7 +213,7 @@ def serialize(row: AutopilotOpportunity) -> dict:
         "severity": row.severity, "status": row.status, "title": row.title,
         "explanation": row.explanation, "evidence": row.evidence,
         "options": row.options, "model": row.model_name, "llm_used": row.llm_used,
-        "provider": "ollama_cloud" if row.llm_used else "deterministic_fallback",
+        "provider": "ollama_cloud" if row.llm_used else "test_rules",
         "selected_option_id": row.selected_option_id,
         "created_at": row.created_at, "updated_at": row.updated_at,
         "applied_at": row.applied_at,
@@ -223,7 +238,9 @@ async def refresh(db: AsyncSession, *, workspace_id: int, actor_user_id: int) ->
             row.severity = candidate["severity"]
             row.status = "detected"
             row.title = candidate["title"]
-            row.explanation = explanations.get(candidate["fingerprint"], candidate["fallback"])
+            row.explanation = explanations.get(
+                candidate["fingerprint"], candidate["baseline_explanation"]
+            )
             row.evidence = candidate["evidence"]
             row.options = candidate["options"]
             row.model_name = model

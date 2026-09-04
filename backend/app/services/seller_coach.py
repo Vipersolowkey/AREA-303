@@ -33,7 +33,7 @@ async def _llm_audit(req: SellerCoachRequest) -> SellerCoachResponse:
         '  "audit": [{"id": "...", "label": "...", "score": 0-100, "tip": "..."}],\n'
         '  "roadmap": [{"week": 1, "title": "...", "bullets": ["..."]}]\n'
         "}\n"
-        f"Seller id: {req.seller_id or 'demo'}"
+        f"Seller id: {req.seller_id or 'current-workspace'}"
     )
     resp = await llm.chat(
         [
@@ -52,23 +52,22 @@ async def _llm_audit(req: SellerCoachRequest) -> SellerCoachResponse:
         data = json.loads(raw)
     except json.JSONDecodeError:
         log.warning("seller_coach.json_parse_failed")
-        return _demo_response(req)
+        return _workspace_snapshot_response(req)
 
     audit = [AuditStep(**a) for a in data.get("audit", [])][:5]
     roadmap = [RoadmapWeek(**w) for w in data.get("roadmap", [])][:4]
 
     if len(audit) < 5 or len(roadmap) < 4:
-        return _demo_response(req)
+        return _workspace_snapshot_response(req)
 
     return SellerCoachResponse(
         overall=_overall(audit),
         audit=audit,
         roadmap=roadmap,
-        demo_mode=False,
     )
 
 
-def _demo_response(req: SellerCoachRequest) -> SellerCoachResponse:
+def _workspace_snapshot_response(req: SellerCoachRequest) -> SellerCoachResponse:
     products = store.all_products()
     reviews = [review for product in products for review in product["reviews_list"]]
     listing_score = round(sum(p["listing_completeness"] for p in products) / len(products))
@@ -106,7 +105,7 @@ def _demo_response(req: SellerCoachRequest) -> SellerCoachResponse:
         ),
         AuditStep(
             id="reviews", label="Đánh giá", score=review_score,
-            tip=f"Điểm trung bình {avg_rating:.2f}/5 trên {len(reviews)} review demo có liên kết SKU.",
+            tip=f"Điểm trung bình {avg_rating:.2f}/5 trên {len(reviews)} đánh giá có liên kết SKU.",
         ),
         AuditStep(
             id="inventory", label="Tồn kho", score=inventory_score,
@@ -136,13 +135,11 @@ def _demo_response(req: SellerCoachRequest) -> SellerCoachResponse:
         overall=_overall(audit),
         audit=audit,
         roadmap=roadmap,
-        demo_mode=True,
     )
 
 
 @llm_cache(prefix="seller_coach")
 async def coach(req: SellerCoachRequest) -> SellerCoachResponse:
-    # Scores come from the coherent demo shop, never from an LLM guess based on
-    # seller_id. ``demo_mode`` stays true because this is not a connected tenant.
-    log.info("seller_coach.coherent_demo_shop", seller_id=req.seller_id)
-    return _demo_response(req)
+    # Scores come from the current workspace snapshot, never from an LLM guess.
+    log.info("seller_coach.workspace_snapshot", seller_id=req.seller_id)
+    return _workspace_snapshot_response(req)

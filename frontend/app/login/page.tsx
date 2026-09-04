@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AuthCard } from "@/components/auth/auth-card";
+import { WorkspaceLoadingScreen } from "@/components/auth/workspace-loading-screen";
 import { useAuth } from "@/lib/auth-context";
 import { ApiClientError } from "@/lib/api";
 import { readActiveWorkspaceId, setActiveWorkspaceId } from "@/lib/active-workspace";
@@ -22,6 +23,7 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [preparingWorkspace, setPreparingWorkspace] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,20 +36,16 @@ function LoginForm() {
       // dead-end. Resolve the first accessible workspace immediately after
       // authentication so every scoped API request carries X-Workspace-ID.
       if (user.role === "admin" || user.role === "seller") {
-        try {
-          const workspaces = await listWorkspaces();
-          const requestedId = readActiveWorkspaceId();
-          const active =
-            workspaces.find((workspace) => workspace.id === requestedId) ??
-            workspaces.find((workspace) => workspace.status === "active") ??
-            workspaces[0];
-          if (active) {
-            setActiveWorkspaceId(active.id);
-            sellerDestination = user.role === "admin" ? "/seller" : "/seller/workspace";
-          }
-        } catch {
-          // Authentication still succeeded. Onboarding can retry workspace
-          // discovery and gives the user a useful recovery path.
+        setPreparingWorkspace(true);
+        const workspaces = await listWorkspaces();
+        const requestedId = readActiveWorkspaceId();
+        const active =
+          workspaces.find((workspace) => workspace.id === requestedId) ??
+          workspaces.find((workspace) => workspace.status === "active") ??
+          workspaces[0];
+        if (active) {
+          setActiveWorkspaceId(active.id);
+          sellerDestination = user.role === "admin" ? "/seller" : "/seller/workspace";
         }
       }
       // Honour ?next= when the middleware bounced them here, else send admins
@@ -64,12 +62,17 @@ function LoginForm() {
             : "/shop"),
       );
     } catch (err) {
+      setPreparingWorkspace(false);
       setError(
         err instanceof ApiClientError
           ? (err.envelope.error?.message ?? "Đăng nhập không thành công.")
           : "Không kết nối được máy chủ. Hãy thử lại.",
       );
     }
+  }
+
+  if (preparingWorkspace) {
+    return <WorkspaceLoadingScreen />;
   }
 
   return (

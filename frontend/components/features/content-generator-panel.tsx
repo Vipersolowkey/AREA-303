@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CONTENT_DEMO, type ContentVariant } from "@/lib/mock-data";
+import type { ContentVariant } from "@/lib/mock-data";
 import { contentGenerate } from "@/lib/features";
 import { useT } from "@/lib/i18n";
 
@@ -50,7 +50,7 @@ export function ContentGeneratorPanel() {
   const [activePlatform, setActivePlatform] = useState<Platform>("Shopee");
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [variants, setVariants] = useState<ContentVariant[]>(CONTENT_DEMO);
+  const [variants, setVariants] = useState<ContentVariant[]>([]);
   const [error, setError] = useState(false);
 
   function copy(text: string) {
@@ -66,7 +66,7 @@ export function ContentGeneratorPanel() {
     setError(false);
     try {
       const { variants: v } = await contentGenerate(
-        productName, features, [...PLATFORMS], CONTENT_DEMO,
+        productName, features, [...PLATFORMS],
       );
       setVariants(v);
     } catch {
@@ -126,7 +126,7 @@ export function ContentGeneratorPanel() {
             </div>
           </Field>
 
-          <Button onClick={generate} disabled={generating} className="w-full">
+          <Button onClick={generate} disabled={generating || !productName.trim() || !features.trim()} className="w-full">
             {generating ? (
               <>
                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -162,6 +162,11 @@ export function ContentGeneratorPanel() {
           <p className="text-sm text-danger">{t("Không tạo được nội dung. Kiểm tra kết nối backend rồi thử lại.")}</p>
         )}
 
+        {!generating && variants.length === 0 && !error && (
+          <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-text-muted">
+            Nhập thông tin sản phẩm rồi bấm “Tạo 3 phiên bản”.
+          </div>
+        )}
         <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
           {variants.map((v) => (
             <ContentCard

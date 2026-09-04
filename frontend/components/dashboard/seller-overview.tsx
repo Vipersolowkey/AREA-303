@@ -22,7 +22,7 @@ import {
 import { useT, useTf } from "@/lib/i18n";
 
 type Summary = {
-  shop: { name: string; channels: string[]; data_as_of: string; demo_mode: boolean };
+  shop: { name: string; channels: string[]; data_as_of: string };
   counts: { products: number; customers: number; orders: number; reviews: number };
   period_summary: {
     days: number;
@@ -41,7 +41,6 @@ type Summary = {
   timeseries: typeof TIMESERIES;
   alerts: Alert[];
   provinces: ProvinceNode[];
-  demo_mode: boolean;
 };
 
 const COMPACT_VND = new Intl.NumberFormat("vi-VN", {

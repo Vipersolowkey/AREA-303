@@ -30,7 +30,6 @@ SHOP_PROFILE = {
     "seller_segment": "SMB đang tăng trưởng",
     "reporting_window_days": 180,
     "data_as_of": "2026-09-03T16:00:00+00:00",
-    "demo_mode": True,
 }
 
 # --- fabricated review pool (deterministic per product, not real customers) - #

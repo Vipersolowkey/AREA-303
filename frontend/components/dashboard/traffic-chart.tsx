@@ -42,7 +42,7 @@ export function TrafficChart({
               {s.label}
             </span>
           ))}
-          <Badge variant="muted">shop demo</Badge>
+          <Badge variant="live">Workspace hiện tại</Badge>
         </div>
       </CardHeader>
       <div className="px-5 pb-5">

@@ -39,7 +39,6 @@ class ShopperRequest(BaseModel):
 class ShopperProductsResponse(BaseModel):
     products: list[ProductCard]
     sources: list[dict]  # retrieved docs metadata
-    demo_mode: bool = True
 
 
 # --------------------------------------------------------------------- #
@@ -68,7 +67,6 @@ class ContentVariant(BaseModel):
 class ContentGeneratorResponse(BaseModel):
     variants: list[ContentVariant]
     model: str
-    demo_mode: bool
 
 
 # --------------------------------------------------------------------- #
@@ -102,7 +100,6 @@ class RecsysResponse(BaseModel):
     items: list[Recommendation]
     metrics: dict[str, float]
     model: str
-    demo_mode: bool = True
 
 
 # --------------------------------------------------------------------- #
@@ -131,4 +128,3 @@ class SellerCoachResponse(BaseModel):
     overall: int
     audit: list[AuditStep]
     roadmap: list[RoadmapWeek]
-    demo_mode: bool

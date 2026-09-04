@@ -7,6 +7,7 @@ import json
 import pytest
 
 from app.core.config import settings
+from app.core.exceptions import UpstreamUnavailableError
 from app.services import autopilot
 
 
@@ -74,7 +75,6 @@ async def test_ollama_cloud_request_uses_bearer_key_and_real_response(monkeypatc
             return _Response()
 
     monkeypatch.setattr(settings, "APP_ENV", "development")
-    monkeypatch.setattr(settings, "DEMO_MODE", False)
     monkeypatch.setattr(settings, "OLLAMA_API_KEY", "ollama-test-key")
     monkeypatch.setattr(settings, "AUTOPILOT_OLLAMA_URL", "https://ollama.com")
     monkeypatch.setattr(settings, "AUTOPILOT_OLLAMA_MODEL", "gpt-oss:120b")
@@ -99,14 +99,12 @@ async def test_ollama_cloud_request_uses_bearer_key_and_real_response(monkeypatc
 
 
 @pytest.mark.asyncio
-async def test_missing_key_uses_grounded_fallback_without_network(monkeypatch) -> None:
+async def test_missing_key_returns_explicit_configuration_error(monkeypatch) -> None:
     monkeypatch.setattr(settings, "APP_ENV", "development")
-    monkeypatch.setattr(settings, "DEMO_MODE", False)
     monkeypatch.setattr(settings, "OLLAMA_API_KEY", None)
     monkeypatch.setattr(settings, "OPENAI_API_KEY", None)
 
-    explanations, used, model = await autopilot._ollama_explain([])  # noqa: SLF001
+    with pytest.raises(UpstreamUnavailableError) as exc_info:
+        await autopilot._ollama_explain([])  # noqa: SLF001
 
-    assert explanations == {}
-    assert used is False
-    assert model == settings.AUTOPILOT_OLLAMA_MODEL
+    assert exc_info.value.code == "LLM_NOT_CONFIGURED"

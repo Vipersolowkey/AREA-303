@@ -1,8 +1,8 @@
 /**
  * Feature API layer — connects the GenAI panels to the FastAPI backend
  * (endpoints under /api/v1). Every call maps the backend snake_case shapes to
- * the frontend camelCase types and falls back to the supplied mock data when the
- * backend is unreachable or NEXT_PUBLIC_DEMO_MODE=true — so the UI never breaks.
+ * the frontend camelCase types. Errors propagate so the UI cannot present
+ * canned data as a successful backend response.
  */
 import { api, ApiClientError } from "@/lib/api";
 import type {
@@ -12,8 +12,6 @@ import type {
   AuditStep,
   RoadmapWeek,
 } from "@/lib/mock-data";
-
-const DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 // --- backend wire shapes -------------------------------------------------
 type BackendProduct = {
@@ -37,64 +35,51 @@ function mapProduct(p: BackendProduct): Product {
   };
 }
 
-async function post<T>(path: string, body: unknown): Promise<T | null> {
-  if (DEMO) return null;
-  try {
-    const env = await api.post<T>(path, body);
-    return env.data as T;
-  } catch {
-    return null;
-  }
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const env = await api.post<T>(path, body);
+  return env.data as T;
 }
 
-async function get<T>(path: string): Promise<T | null> {
-  if (DEMO) return null;
-  try {
-    const env = await api.get<T>(path);
-    return env.data as T;
-  } catch {
-    return null;
-  }
+async function get<T>(path: string): Promise<T> {
+  const env = await api.get<T>(path);
+  return env.data as T;
 }
 
 // --- #03 Personal Shopper -------------------------------------------------
 export async function shopperProducts(
-  query: string, topK: number, fallback: Product[],
-): Promise<{ products: Product[]; live: boolean }> {
-  const data = await get<{ products: BackendProduct[]; demo_mode?: boolean }>(
+  query: string, topK: number,
+): Promise<{ products: Product[] }> {
+  const data = await get<{ products: BackendProduct[] }>(
     `/personal-shopper/products?query=${encodeURIComponent(query)}&top_k=${topK}`,
   );
-  if (!data?.products?.length) return { products: fallback, live: false };
-  return { products: data.products.map(mapProduct), live: !data.demo_mode };
+  return { products: data.products.map(mapProduct) };
 }
 
 // --- #11 Recsys -----------------------------------------------------------
 export async function recsysRecommend(
-  signals: Record<string, string>, topK: number, fallback: Recommendation[], userId = "C001",
-): Promise<{ items: Recommendation[]; live: boolean; model?: string }> {
-  const data = await post<{ items: BackendRec[]; model: string; demo_mode?: boolean }>(
+  signals: Record<string, string>, topK: number, userId = "C001",
+): Promise<{ items: Recommendation[]; model?: string }> {
+  const data = await post<{ items: BackendRec[]; model: string }>(
     "/recsys/", { user_id: userId, signals, top_k: topK },
   );
-  if (!data?.items?.length) return { items: fallback, live: false };
   const items = data.items.map((r) => ({
     ...mapProduct({ ...r, id: r.product_id }), reason: r.reason,
   }));
-  return { items, live: !data.demo_mode, model: data.model };
+  return { items, model: data.model };
 }
 
 // --- #09 Content Generator ------------------------------------------------
 export async function contentGenerate(
-  productName: string, features: string, platforms: string[], fallback: ContentVariant[],
-): Promise<{ variants: ContentVariant[]; live: boolean }> {
-  const data = await post<{ variants: BackendVariant[]; demo_mode?: boolean }>(
+  productName: string, features: string, platforms: string[],
+): Promise<{ variants: ContentVariant[] }> {
+  const data = await post<{ variants: BackendVariant[] }>(
     "/content-generator/", { product_name: productName, features, platforms },
   );
-  if (!data?.variants?.length) return { variants: fallback, live: false };
   const variants = data.variants.map((v) => ({
     platform: v.platform as ContentVariant["platform"],
     title: v.title, body: v.body, predictedCtr: v.predicted_ctr, rationale: v.rationale,
   }));
-  return { variants, live: !data.demo_mode };
+  return { variants };
 }
 
 // --- #01 Review Sentiment -------------------------------------------------
@@ -137,14 +122,13 @@ export async function detectFake(text: string, rating?: number, category?: strin
 }
 
 // --- #17 Seller Coach -----------------------------------------------------
-export async function sellerCoach(
-  fallback: { overall: number; audit: AuditStep[]; roadmap: RoadmapWeek[] },
-): Promise<{ overall: number; audit: AuditStep[]; roadmap: RoadmapWeek[]; live: boolean }> {
-  const data = await post<{ overall: number; audit: AuditStep[]; roadmap: RoadmapWeek[]; demo_mode?: boolean }>(
+export async function sellerCoach(): Promise<{
+  overall: number; audit: AuditStep[]; roadmap: RoadmapWeek[];
+}> {
+  const data = await post<{ overall: number; audit: AuditStep[]; roadmap: RoadmapWeek[] }>(
     "/seller-coach/", {},
   );
-  if (!data?.audit?.length) return { ...fallback, live: false };
-  return { overall: data.overall, audit: data.audit, roadmap: data.roadmap, live: !data.demo_mode };
+  return { overall: data.overall, audit: data.audit, roadmap: data.roadmap };
 }
 
 // --- #19 Customer Segmentation ---------------------------------------------
@@ -254,9 +238,6 @@ export type PricingCost = {
 export async function recommendPrice(
   productName: string, category: string, currentPrice?: number, cost?: PricingCost,
 ): Promise<PricingResponse> {
-  if (DEMO) {
-    return { ok: false, message: "Chế độ demo đang bật nên chưa thể gọi dịch vụ định giá." };
-  }
   try {
     const response = await api.post<PricingResult>("/dynamic-pricing/", {
       product_name: productName, category, current_price: currentPrice ?? null,
@@ -320,9 +301,7 @@ export async function analyzeJourney(events: JourneyEventInput[]): Promise<Journ
   return { ...data, recommended_products: data.recommended_products.map(mapProduct) };
 }
 
-/** Best-effort persistence of real tracked events (separate from analysis —
- * never blocks or fails the analyze flow). Returns the count persisted, or
- * null if unreachable/DEMO_MODE. */
+/** Persist tracked events separately from analysis. Returns the count persisted. */
 export async function trackJourneyEvents(sessionId: string, events: JourneyEventInput[]): Promise<number | null> {
   const r = await post<{ persisted: number }>("/journey/events", { session_id: sessionId, events });
   return r?.persisted ?? null;
@@ -421,10 +400,6 @@ export type RiskPortfolioResponse =
   | { ok: false; message: string; status?: number };
 
 export async function getRiskPortfolio(): Promise<RiskPortfolioResponse> {
-  if (DEMO) {
-    return { ok: false, message: "Chế độ demo đang bật nên chưa thể tải dữ liệu rủi ro khách hàng." };
-  }
-
   try {
     const response = await api.get<RiskPortfolio>("/risk-portfolio/");
     return { ok: true, data: response.data as RiskPortfolio };
@@ -847,8 +822,7 @@ export type RestockPlan = {
 export type RestockFailure =
   | { kind: "rate_limited"; message: string; retryAfterS: number }
   | { kind: "validation"; message: string }
-  | { kind: "offline"; message: string }
-  | { kind: "demo"; message: string };
+  | { kind: "offline"; message: string };
 
 export type RestockResult =
   | { ok: true; plan: RestockPlan }
@@ -862,16 +836,6 @@ export async function planRestock(input: {
   scenario_pressure?: number | null;
   refresh_live?: boolean;
 }): Promise<RestockResult> {
-  if (DEMO) {
-    return {
-      ok: false,
-      failure: {
-        kind: "demo",
-        message:
-          "Đang ở chế độ demo (NEXT_PUBLIC_DEMO_MODE=true) nên không gọi backend. Đặt lại thành false trong frontend/.env.local.",
-      },
-    };
-  }
   try {
     const env = await api.post<RestockPlan>("/restock-planner/", input);
     return { ok: true, plan: env.data as RestockPlan };
@@ -1305,7 +1269,6 @@ export type Order = {
   email: string | null; total_vnd: number; created_at: string;
   items: OrderItemOut[];
   channel?: string;
-  demo_order?: boolean;
 };
 
 /**

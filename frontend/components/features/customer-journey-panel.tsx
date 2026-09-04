@@ -166,11 +166,11 @@ export function CustomerJourneyPanel() {
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>{t("Phiên demo dựng trước")}</CardTitle>
+            <CardTitle>{t("Hành trình tham khảo")}</CardTitle>
             <p className="mt-1 text-xs text-text-muted">
               {sessions
-                ? `${sessions.total} hành trình mẫu có video demo replay để xem lại.`
-                : t("Chọn một hành trình mẫu để xem video demo replay.")}
+                ? `${sessions.total} hành trình đã ghi nhận để xem lại.`
+                : t("Chọn một hành trình để xem lại.")}
             </p>
           </div>
           <Button variant="secondary" size="sm" onClick={loadSessions} disabled={sessionsLoading}>
@@ -227,13 +227,13 @@ export function CustomerJourneyPanel() {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle>{t("Video demo dựng trước")}</CardTitle>
+              <CardTitle>{t("Video hành trình")}</CardTitle>
               <p className="mt-1 text-xs text-text-muted">
-                {t("Demo replay minh hoạ đúng chuỗi hành động của phiên, không phải ghi hình thời gian thực.")}
+                {t("Video tái hiện chuỗi hành động của phiên, không phải ghi màn hình thời gian thực.")}
               </p>
             </div>
             <Badge variant="muted">
-              <Video className="h-3 w-3" /> demo replay
+              <Video className="h-3 w-3" /> journey replay
             </Badge>
           </CardHeader>
           <CardContent>

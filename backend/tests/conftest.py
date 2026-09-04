@@ -6,8 +6,7 @@ import os
 os.environ["APP_ENV"] = "test"
 os.environ["AREA303_DEBUG"] = "false"
 os.environ["JWT_SECRET"] = "test-secret"
-os.environ["DEMO_MODE"] = "true"
-os.environ["LLM_PROVIDER"] = "mock"
+os.environ["LLM_PROVIDER"] = "ollama"
 # The organisers' dataset lives on someone else's RDS. A developer with it in
 # .env must not have unit tests reach across the network, so the suite runs
 # against the demo catalogue unless a test opts in explicitly.

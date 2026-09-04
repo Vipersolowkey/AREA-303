@@ -46,6 +46,10 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
+  if (path === "/seller/autopilot" || path === "/seller/voucher-booster") {
+    return NextResponse.next();
+  }
+
   if (role !== "admin") {
     const url = req.nextUrl.clone();
     url.pathname = "/seller/workspace";

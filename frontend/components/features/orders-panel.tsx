@@ -122,7 +122,6 @@ export function OrdersPanel() {
                     </span>
                     <span className="text-xs text-text-muted">{o.customer_name}</span>
                     {o.channel && <Badge variant="muted">{o.channel}</Badge>}
-                    {o.demo_order && <Badge variant="muted">đơn mẫu</Badge>}
                     <span className="text-xs text-text-dim">
                       {new Date(o.created_at).toLocaleString("vi-VN")}
                     </span>
@@ -137,7 +136,7 @@ export function OrdersPanel() {
                       .join(" · ")}
                   </div>
 
-                  {!o.demo_order && NEXT[o.status].length > 0 && (
+                  {NEXT[o.status].length > 0 && (
                     <div className="mt-3 flex gap-2">
                       {NEXT[o.status].map((next) => (
                         <Button

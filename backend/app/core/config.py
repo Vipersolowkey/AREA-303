@@ -98,11 +98,10 @@ class Settings(BaseSettings):
     # Demo mode: when true, all LLM/RAG calls return pre-generated
     # fixtures from `app/services/demo_data.py`. Mandatory for the
     # AREA-303 build so demos never break on quota / network issues.
-    DEMO_MODE: bool = True
 
     # LLM provider — Gemini is primary per the project AI_BRIEFs,
     # OpenAI is the secondary fallback.
-    LLM_PROVIDER: Literal["gemini", "openai", "ollama", "mock"] = "mock"
+    LLM_PROVIDER: Literal["gemini", "openai", "ollama"] = "ollama"
     GEMINI_API_KEY: str | None = None
     GEMINI_MODEL: str = "gemini-1.5-pro"
     OPENAI_API_KEY: str | None = None

@@ -7,9 +7,8 @@ Public surface (re-exported from :mod:`app.services.genai`):
 * :func:`get_rag` — retrieval helper (Pinecone / FAISS / in-memory)
 * :func:`llm_cache` — Redis-backed decorator w/ TTL
 
-The :class:`MockLlmClient` is wired when ``DEMO_MODE=true`` or
-``LLM_PROVIDER=mock``. This is the safety net the project plan requires:
-demo mode must always succeed even with no API keys / no quota.
+The :class:`MockLlmClient` is restricted to ``APP_ENV=test``. Runtime provider
+or credential problems are surfaced through the standard API error envelope.
 """
 
 from __future__ import annotations

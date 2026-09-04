@@ -217,6 +217,5 @@ def summary() -> dict:
         "timeseries": _hourly_series(),
         "alerts": _alerts(),
         "provinces": _province_nodes(),
-        "demo_mode": True,
         "provenance": "commerce_store: products ↔ customers ↔ orders ↔ reviews ↔ creators",
     }

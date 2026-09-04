@@ -1,10 +1,10 @@
-"""Seller Copilot — conversational AI agent over a demo seller knowledge base.
+"""Seller Copilot — conversational AI agent over the active workspace snapshot.
 
 Flow: an OpenAI *router* classifies the question into a skill + target product;
 we pull that product's structured data from the KB and call the SAME service
 functions the feature endpoints use (product-knowledge / market / creator /
 decision); an OpenAI *synthesis* step writes the business answer, with a
-deterministic templated fallback if the LLM is unavailable. The briefing engine
+explicit upstream errors if the LLM is unavailable. The briefing engine
 scans the whole KB and ranks today's actions by estimated VND impact.
 """
 
@@ -15,6 +15,8 @@ from typing import Any, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
+from app.core.exceptions import UpstreamUnavailableError
 from app.core.logging import get_logger
 from app.schemas.copilot import (
     AgentStep,
@@ -34,12 +36,12 @@ from app.services import decision as decision_svc
 from app.services import knowledge as knowledge_svc
 from app.services import market as market_svc
 from app.services import product_graph as graph_svc
-from app.services.llm_reasoning import get_llm_client, llm_ready, reason_json
+from app.services.llm_reasoning import get_llm_client, reason_json
 
 log = get_logger("app.services.copilot")
 
 # --------------------------------------------------------------------------- #
-# Demo seller knowledge base — a small/medium fashion+cosmetics shop. Each
+# Active workspace snapshot — a small/medium fashion+cosmetics shop. Each
 # product carries the fields the analytical services need, plus inventory
 # signals for the briefing. (In production this would be the seller's DB.)
 # --------------------------------------------------------------------------- #
@@ -474,8 +476,13 @@ async def agent_ask(
     question: str, db: AsyncSession, history: list[dict] | None = None
 ) -> CopilotAgentResponse:
     client = get_llm_client()
-    if not llm_ready() or not hasattr(client, "chat_tools"):
-        # Keep the no-LLM path useful and honest. Product-similarity is one of
+    if not hasattr(client, "chat_tools"):
+        if settings.APP_ENV != "test":
+            raise UpstreamUnavailableError(
+                "LLM hiện tại không hỗ trợ tool calling cho Seller Copilot.",
+                code="LLM_TOOLS_UNAVAILABLE",
+            )
+        # Tests use the deterministic single-step router. Product-similarity is one of
         # the suggested questions in the UI, but the legacy single-step router
         # has no product-graph skill and used to misclassify it as a briefing.
         low = question.lower()
@@ -502,8 +509,7 @@ async def agent_ask(
                 multi_step=False,
             )
 
-        # Other supported intents retain their deterministic single-step
-        # analysis instead of failing when no paid model is configured.
+        # Other test intents retain their deterministic single-step analysis.
         r = await ask(question)
         return CopilotAgentResponse(
             answer=r.answer, tools_used=[r.skill_used] if r.skill_used else [],
@@ -561,7 +567,10 @@ async def agent_ask(
         except Exception:  # noqa: BLE001
             answer = ""
     if not answer:
-        answer = "Mình đã thu thập dữ liệu nhưng chưa tổng hợp được câu trả lời — thử lại nhé."
+        raise UpstreamUnavailableError(
+            "LLM chưa tổng hợp được câu trả lời sau khi chạy công cụ.",
+            code="LLM_INVALID_RESPONSE",
+        )
     return CopilotAgentResponse(
         answer=answer, tools_used=list(dict.fromkeys(tools_used)), steps=steps,
         multi_step=len(steps) > 1,

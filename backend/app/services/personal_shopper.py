@@ -6,7 +6,8 @@ import re
 import unicodedata
 from functools import lru_cache
 
-from app.core.exceptions import ValidationError
+from app.core.config import settings
+from app.core.exceptions import UpstreamUnavailableError, ValidationError
 from app.core.logging import get_logger
 from app.schemas.genai import ProductCard, ShopperProductsResponse
 from app.services import commerce_store as store
@@ -16,11 +17,7 @@ from app.services.genai import (
     llm_cache,
 )
 from app.services.genai.base import LlmMessage
-from app.services.genai.demo_data import (
-    SHOPPER_DEMO_REPLY,
-    get_product_image_url,
-    image_urls_for_type,
-)
+from app.services.genai.demo_data import get_product_image_url, image_urls_for_type
 from app.services.genai.factory import get_llm_client, get_rag
 
 log = get_logger("app.services.shopper")
@@ -224,7 +221,7 @@ def _classify_intent_fast(query: str) -> str | None:
 
 
 async def _classify_intent_llm(query: str) -> str:
-    """Classify intent using LLM (with keyword-based fallback).
+    """Classify ambiguous intent using the configured LLM.
     
     Returns:
         - "cosmetic": user wants cosmetics only
@@ -236,6 +233,8 @@ async def _classify_intent_llm(query: str) -> str:
     if fast_result:
         log.debug(f"Intent fast-classified as: {fast_result}")
         return fast_result
+    if settings.APP_ENV == "test":
+        return "both"
     
     # Need LLM for ambiguous queries
     llm = get_llm_client()
@@ -246,21 +245,16 @@ async def _classify_intent_llm(query: str) -> str:
         LlmMessage(role="user", content=prompt),
     ]
     
-    try:
-        response = await llm.chat(messages, temperature=0.1, max_tokens=20)
-        result = response.content.strip().lower()
-        
-        # Validate response
-        if result in ("cosmetic", "fashion", "both"):
-            log.debug(f"Intent LLM-classified as: {result}")
-            return result
-        
-        # Fallback if LLM returns unexpected format
-        log.warning(f"Unexpected LLM intent response: {result}, falling back to 'both'")
-        return "both"
-    except Exception as e:
-        log.error(f"LLM intent classification failed: {e}, falling back to 'both'")
-        return "both"
+    response = await llm.chat(messages, temperature=0.1, max_tokens=20)
+    result = response.content.strip().lower()
+
+    if result in ("cosmetic", "fashion", "both"):
+        log.debug(f"Intent LLM-classified as: {result}")
+        return result
+    raise UpstreamUnavailableError(
+        "LLM trả về phân loại nhu cầu không hợp lệ.",
+        code="LLM_INVALID_RESPONSE",
+    )
 
 
 def _get_categories_for_intent(intent: str) -> tuple[list[str], list[str]]:
@@ -363,14 +357,14 @@ async def _retrieve_products(query: str, top_k: int) -> ShopperProductsResponse:
     1. Classify intent (fast-path keywords OR LLM)
     2. Retrieve products using RAG/semantic search
     3. Filter by intent category
-    4. Fallback to keyword matching if no semantic results
+    4. Use category scoring if semantic search has no result
     """
     q = query.lower()
     qtokens = _tokens(query)
     cos = any(h in q for h in _COSMETICS_HINTS)
     fas = any(h in q for h in _FASHION_HINTS)
 
-    # Step 1: Intent classification (hybrid - fast path + LLM fallback)
+    # Step 1: Intent classification (keyword fast path, LLM for ambiguity)
     intent = await _classify_intent_cached(query)
     allowed_categories, _ = _get_categories_for_intent(intent)
 
@@ -411,7 +405,7 @@ async def _retrieve_products(query: str, top_k: int) -> ShopperProductsResponse:
         rag_scores = {d.id: d.score for d in rag_docs}
         scored.sort(key=lambda it: rag_scores.get(it["id"], 0), reverse=True)
         
-        # Fallback to category-based scoring if RAG returned nothing useful
+        # Category scoring is the deterministic ranking method for an empty RAG result.
         if not scored:
             scored = sorted(
                 catalog,
@@ -468,7 +462,7 @@ async def _retrieve_products(query: str, top_k: int) -> ShopperProductsResponse:
                 return 0.55 + (rel / max_rel) * 0.43
             return max(0.55, min(0.98, 0.6 + rel * 0.05))
         else:
-            return 0.75  # Default cho RAG fallback
+            return 0.75  # Neutral semantic score when RAG has no comparable score.
 
     products = [_card(it, _calc_score(it)) for it in picks]
     return ShopperProductsResponse(
@@ -500,9 +494,3 @@ async def stream_reply(query: str, top_k: int = 4):
 
 async def products_for(query: str, top_k: int = 4) -> ShopperProductsResponse:
     return await _retrieve_products(query, top_k)
-
-
-def demo_reply() -> tuple[str, list[str]]:
-    """Pure fallback for the absolute worst case (LLM disabled, cache empty)."""
-    product_ids = [item["id"] for item in _catalog() if item["metadata"]["stock"] > 0][:4]
-    return SHOPPER_DEMO_REPLY, product_ids

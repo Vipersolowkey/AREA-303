@@ -1,12 +1,10 @@
-"""Pre-generated fixtures for the GenAI services.
+"""Shared catalog snapshot and image metadata.
 
 Used in two places:
 
-1. :class:`InMemoryRetriever` — the catalog rows serve as the RAG
-   knowledge base in demo mode.
-2. Canned outputs for the 4 fullstack endpoints (#03, #09, #11, #17).
-   The frontend reads the same shape; when DEMO_MODE is on, the backend
-   never calls an LLM.
+The in-memory retriever uses these catalog rows when ``VECTOR_BACKEND=memory``.
+Legacy constants at the end are retained for offline fixtures only and are not
+selected by runtime feature services.
 """
 
 from __future__ import annotations
@@ -1042,8 +1040,7 @@ DEMO_CATALOG: list[dict] = [
 
 
 # --------------------------------------------------------------------- #
-# Canned outputs per feature — used when demo_mode=true and the LLM
-# cannot be reached.  The shape MUST match the typed endpoint schema.
+# Legacy offline fixture outputs. Runtime feature services do not import them.
 # --------------------------------------------------------------------- #
 
 

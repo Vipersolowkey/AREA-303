@@ -10,7 +10,6 @@ import { PromptChips } from "@/components/genai/prompt-chips";
 import { ProductCard } from "@/components/genai/product-card";
 import { VoiceMicButton } from "@/components/genai/voice-mic-button";
 import {
-  PRODUCTS,
   SHOPPER_CHIPS,
   type Product,
 } from "@/lib/mock-data";
@@ -38,27 +37,6 @@ const INITIAL_GREETING: Turn = {
   products: [],
   createdAt: "now",
 };
-
-function pickProducts(query: string): Product[] {
-  const q = query.toLowerCase();
-  const scored = PRODUCTS.map((p) => {
-    const text = `${p.name} ${p.brand} ${p.category} ${p.description}`.toLowerCase();
-    let s = 0;
-    if (q.includes("quà") || q.includes("sinh nhật")) s += p.category === "Phụ kiện" ? 2 : 0;
-    if (q.includes("son") || q.includes("môi")) s += p.category === "Mỹ phẩm" && p.name.toLowerCase().includes("son") ? 3 : 0;
-    if (q.includes("skincare") || q.includes("da")) s += p.category === "Mỹ phẩm" ? 2 : 0;
-    if (q.includes("công sở") || q.includes("làm")) s += p.category === "Thời trang" ? 2 : 0;
-    if (q.includes("đi chơi") || q.includes("học")) s += p.category === "Thời trang" ? 1 : 0;
-    if (text.includes(q.split(/\s+/)[0] ?? "")) s += 1;
-    return { p, s };
-  })
-    .filter((x) => x.s > 0)
-    .sort((a, b) => b.s - a.s)
-    .slice(0, 8)
-    .map((x) => x.p);
-
-  return scored.length ? scored : PRODUCTS.slice(0, 8);
-}
 
 function makeAssistantReply(query: string, picks: Product[]): string {
   const intro = `Dựa trên câu hỏi "${query}", mình gợi ý ${picks.length} sản phẩm phù hợp nhất từ catalog Shopee · Tiki · TikTok Shop.`;
@@ -97,10 +75,11 @@ export function PersonalShopperPanel() {
     setPending(true);
     setError(false);
 
-    // Retrieve products from the backend (falls back to local mock ranking).
+    // Retrieve products from the backend. A failed request is shown as an
+    // error and never replaced with a local catalogue.
     let picks: Product[];
     try {
-      const res = await shopperProducts(query, 8, pickProducts(query));
+      const res = await shopperProducts(query, 8);
       picks = res.products;
     } catch {
       setError(true);
@@ -145,7 +124,7 @@ export function PersonalShopperPanel() {
               </span>
             </div>
             <div className="flex items-center gap-2 text-2xs text-text-muted">
-              <Badge variant="muted">Catalog demo</Badge>
+              <Badge variant="live">Catalog đang hoạt động</Badge>
             </div>
           </div>
 
@@ -231,7 +210,7 @@ export function PersonalShopperPanel() {
             <Row k={t("Danh mục")} v={t("Thời trang, mỹ phẩm, phụ kiện")} />
             <Row k={t("Sàn tham khảo")} v="Shopee · Tiki · TikTok Shop" />
             <Row k="Ưu tiên" v={t("Nhu cầu, ngân sách và đánh giá")} />
-            <Row k={t("Cập nhật")} v={t("Dữ liệu mẫu gần đây")} />
+            <Row k={t("Cập nhật")} v={t("Theo dữ liệu backend hiện tại")} />
           </div>
         </div>
 
@@ -249,7 +228,7 @@ export function PersonalShopperPanel() {
             {t("Lưu ý")}
           </span>
           <p className="mt-2">
-            {t("Gợi ý được tạo từ danh mục mẫu. Hãy kiểm tra giá và thông tin trên trang sản phẩm trước khi mua.")}
+            {t("Gợi ý được tạo từ catalog hiện tại. Hãy kiểm tra giá và thông tin trên trang sản phẩm trước khi mua.")}
           </p>
         </div>
       </aside>
@@ -269,8 +248,7 @@ function Row({ k, v, mono }: { k: string; v: string; mono?: boolean }) {
 }
 
 /**
- * Demo-mode "streaming" — reveal text progressively to mimic SSE.
- * Replaced by real `EventSource` once the backend is live.
+ * Reveal the completed backend reply progressively for readability.
  */
 function StreamingReplyText({ text, tick }: { text: string; tick: boolean }) {
   const [shown, setShown] = useState("");

@@ -18,7 +18,7 @@ The `dataset/` folder already shipped; see `dataset/by_idea/idea_*` for the 17 i
 
 An LLM-first modeling layer (no model training) for the first five ideas: review
 sentiment, fake-review detection, dynamic pricing, personal shopper, customer churn.
-Inference runs on OpenAI `gpt-4o-mini` by default or a local Ollama fallback; labelled
+Inference runs on the explicitly configured OpenAI, Gemini, or Ollama provider; labelled
 data is used for evaluation only, and all datasets are free (no Kaggle required).
 See **[`MODELING.md`](MODELING.md)**. Quick look: `python demo.py`.
 

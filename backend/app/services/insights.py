@@ -1,9 +1,8 @@
 """Scorers for #01 Review Sentiment, #05 Fake Review, #02 Dynamic Pricing,
 #04 Churn, #10 Return, #15 Regret, #08 Inventory Alert.
 
-#01 and #05 are genuine language tasks, so they run on the real LLM
-(OpenAI when configured — see factory.get_llm_client) with a deterministic
-heuristic fallback if the LLM is unavailable/errors, so the demo never breaks.
+#01 and #05 are genuine language tasks, so they run on the configured LLM.
+Runtime failures are surfaced explicitly; tests use deterministic scorers.
 The numeric scorers (pricing/churn/return/regret/inventory) stay heuristic —
 they are formula-based, not language tasks; the offline modeling layer
 (dynamic_pricing/, customer_churn/) uses the same formulas.
@@ -53,20 +52,6 @@ log = get_logger("app.services.insights")
 _SentimentLit = Literal["positive", "neutral", "negative"]
 _RiskBandLit = Literal["low", "medium", "high"]
 _AlertLevelLit = Literal["none", "watch", "urgent"]
-
-
-def _llm_ready() -> bool:
-    """True if a real (non-mock) LLM is configured."""
-    provider_keys = {
-        "gemini": settings.GEMINI_API_KEY,
-        "openai": settings.OPENAI_API_KEY,
-        "ollama": settings.OLLAMA_API_KEY,
-    }
-    return (
-        not settings.DEMO_MODE
-        and settings.LLM_PROVIDER != "mock"
-        and bool(provider_keys.get(settings.LLM_PROVIDER))
-    )
 
 
 def _parse_json(raw: str) -> dict:
@@ -156,10 +141,7 @@ def _detect_fake_heuristic(req: FakeReviewRequest) -> FakeReviewResponse:
 
 
 # ---------------------------------------------------------------------------
-# #01 / #05 — LLM-primary (OpenAI), heuristic fallback.
-# These are language-understanding tasks, so the real model leads; if it is
-# unavailable (DEMO_MODE, no key, timeout, bad JSON) we fall back to the
-# deterministic scorers above so the seller app always gets a live answer.
+# #01 / #05 — LLM-primary in runtime; deterministic scorers only in tests.
 # ---------------------------------------------------------------------------
 _SENTIMENT_SYSTEM = (
     "You are a precise product-review sentiment classifier for an e-commerce "
@@ -187,61 +169,53 @@ _FAKE_SYSTEM = (
 
 
 async def analyze_sentiment(req: SentimentRequest) -> SentimentResponse:
-    """#01 — OpenAI-backed sentiment with heuristic fallback."""
-    if not _llm_ready():
+    """#01 — LLM-backed sentiment with a deterministic test double."""
+    if settings.APP_ENV == "test":
         return _analyze_sentiment_heuristic(req)
-    try:
-        rating = f"Star rating: {req.rating}/5.\n" if req.rating is not None else ""
-        resp = await get_llm_client().chat(
-            [
-                LlmMessage(role="system", content=_SENTIMENT_SYSTEM),
-                LlmMessage(role="user", content=f"{rating}Review: {req.text}"),
-            ],
-            temperature=0.0,
-            max_tokens=200,
-        )
-        data = _parse_json(resp.content)
-        sentiment = str(data.get("sentiment", "")).lower()
-        if sentiment not in {"positive", "neutral", "negative"}:
-            raise ValueError(f"bad sentiment: {sentiment!r}")
-        conf = float(data.get("confidence", 0.7))
-        return SentimentResponse(
-            sentiment=cast(_SentimentLit, sentiment),
-            confidence=round(min(0.99, max(0.0, conf)), 2),
-            reason=str(data.get("reason", "")).strip() or "Đã phân loại nội dung đánh giá.",
-        )
-    except Exception as exc:  # noqa: BLE001 — any LLM failure falls back
-        log.warning("insights.sentiment.llm_fallback", error=str(exc))
-        return _analyze_sentiment_heuristic(req)
+    rating = f"Star rating: {req.rating}/5.\n" if req.rating is not None else ""
+    resp = await get_llm_client().chat(
+        [
+            LlmMessage(role="system", content=_SENTIMENT_SYSTEM),
+            LlmMessage(role="user", content=f"{rating}Review: {req.text}"),
+        ],
+        temperature=0.0,
+        max_tokens=200,
+    )
+    data = _parse_json(resp.content)
+    sentiment = str(data.get("sentiment", "")).lower()
+    if sentiment not in {"positive", "neutral", "negative"}:
+        raise ValueError(f"bad sentiment: {sentiment!r}")
+    conf = float(data.get("confidence", 0.7))
+    return SentimentResponse(
+        sentiment=cast(_SentimentLit, sentiment),
+        confidence=round(min(0.99, max(0.0, conf)), 2),
+        reason=str(data.get("reason", "")).strip() or "Đã phân loại nội dung đánh giá.",
+    )
 
 
 async def detect_fake(req: FakeReviewRequest) -> FakeReviewResponse:
-    """#05 — OpenAI-backed fake-review detection with heuristic fallback."""
-    if not _llm_ready():
+    """#05 — LLM-backed fake-review detection with a deterministic test double."""
+    if settings.APP_ENV == "test":
         return _detect_fake_heuristic(req)
-    try:
-        rating = f"Star rating: {req.rating}/5.\n" if req.rating is not None else ""
-        resp = await get_llm_client().chat(
-            [
-                LlmMessage(role="system", content=_FAKE_SYSTEM),
-                LlmMessage(role="user", content=f"{rating}Review: {req.text}"),
-            ],
-            temperature=0.0,
-            max_tokens=250,
-        )
-        data = _parse_json(resp.content)
-        is_fake = bool(data.get("is_fake", False))
-        conf = float(data.get("confidence", 0.7))
-        signals = [str(s).strip() for s in data.get("signals", []) if str(s).strip()]
-        return FakeReviewResponse(
-            is_fake=is_fake,
-            confidence=round(min(0.99, max(0.5, conf)), 2),
-            signals=signals or (["Có dấu hiệu nội dung được tạo tự động"] if is_fake else ["Nội dung có vẻ tự nhiên"]),
-            reason=str(data.get("reason", "")).strip() or "Đã kiểm tra độ đáng tin của đánh giá.",
-        )
-    except Exception as exc:  # noqa: BLE001 — any LLM failure falls back
-        log.warning("insights.fake.llm_fallback", error=str(exc))
-        return _detect_fake_heuristic(req)
+    rating = f"Star rating: {req.rating}/5.\n" if req.rating is not None else ""
+    resp = await get_llm_client().chat(
+        [
+            LlmMessage(role="system", content=_FAKE_SYSTEM),
+            LlmMessage(role="user", content=f"{rating}Review: {req.text}"),
+        ],
+        temperature=0.0,
+        max_tokens=250,
+    )
+    data = _parse_json(resp.content)
+    is_fake = bool(data.get("is_fake", False))
+    conf = float(data.get("confidence", 0.7))
+    signals = [str(s).strip() for s in data.get("signals", []) if str(s).strip()]
+    return FakeReviewResponse(
+        is_fake=is_fake,
+        confidence=round(min(0.99, max(0.5, conf)), 2),
+        signals=signals or (["Có dấu hiệu nội dung được tạo tự động"] if is_fake else ["Nội dung có vẻ tự nhiên"]),
+        reason=str(data.get("reason", "")).strip() or "Đã kiểm tra độ đáng tin của đánh giá.",
+    )
 
 
 # ---------------------------------------------------------------------------
