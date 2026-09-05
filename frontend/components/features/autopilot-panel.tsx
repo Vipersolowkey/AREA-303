@@ -241,6 +241,31 @@ export function AutopilotPanel() {
                         </div>
                       ))}
                     </div>
+                    {item.status === "simulated" && (
+                      <div role="status" className="mt-4 rounded-lg border-2 border-success/40 bg-success/10 p-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-success">
+                          <FlaskConical className="h-4 w-4" /> Kết quả mô phỏng
+                        </div>
+                        <p className="mt-2 text-sm text-text">
+                          Nếu duyệt <b>{selected.label.toLowerCase()}</b>, hệ thống dự kiến:
+                        </p>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {Object.entries(selected.impact).map(([key, value]) => (
+                            <div key={key} className="rounded-md border border-success/20 bg-surface px-3 py-2 text-xs text-text-muted">
+                              {impactLabels[key] ? t(impactLabels[key]) : key.replaceAll("_", " ")}
+                              <div className="mono mt-1 text-base font-bold text-text">{showValue(key, value)}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
+                          <span>Rủi ro: <b className="text-text">{riskLabels[selected.risk] ? t(riskLabels[selected.risk]) : selected.risk}</b></span>
+                          <span>Giả định: dữ liệu snapshot hiện tại không đổi trong thời gian chạy.</span>
+                        </div>
+                        <p className="mt-2 text-xs font-medium text-warning">
+                          Đây là ước tính kịch bản. Chưa có hành động nào được thực thi hoặc gửi sang nền tảng.
+                        </p>
+                      </div>
+                    )}
                     {!terminal && <div className="mt-4 flex flex-wrap gap-2">
                       {item.status !== "simulated" ? (
                         <Button size="sm" variant="secondary" disabled={busy !== null} onClick={() => act(item, selected)}>
