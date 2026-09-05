@@ -22,6 +22,13 @@ async def opportunities(access: WorkspaceAccess = Depends(get_workspace_access),
     return _ok(await service.list_opportunities(db, access.workspace_id))
 
 
+@router.get("/state", response_model=ApiResponse[dict])
+async def state(access: WorkspaceAccess = Depends(get_workspace_access),
+                db: AsyncSession = Depends(get_db_dep)) -> ApiResponse:
+    """Workspace-scoped data and decision state machine for the center header."""
+    return _ok(await service.center_state(db, access.workspace_id))
+
+
 @router.post("/refresh", response_model=ApiResponse[list[dict]])
 async def refresh(access: WorkspaceAccess = Depends(_MANAGER),
                   db: AsyncSession = Depends(get_db_dep)) -> ApiResponse:

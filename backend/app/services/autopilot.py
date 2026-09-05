@@ -6,7 +6,7 @@ import json
 from datetime import UTC, datetime
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -19,6 +19,7 @@ from app.core.exceptions import (
 from app.models.autopilot import AutopilotAuditEvent, AutopilotOpportunity
 from app.models.onboarding_data import WorkspaceDataRecord
 from app.services import commerce_store as store
+from app.services import onboarding_data
 
 
 def _candidates() -> list[dict]:
@@ -233,7 +234,17 @@ async def _workspace_candidates(db: AsyncSession, workspace_id: int) -> list[dic
             WorkspaceDataRecord.dataset_type == "products",
         )
     )
-    products = [row.payload for row in result.scalars().all()]
+    records = list(result.scalars().all())
+    products = [
+        {
+            **row.payload,
+            "_source_record_id": getattr(row, "id", None),
+            "_source_updated_at": (
+                row.updated_at.isoformat() if getattr(row, "updated_at", None) else None
+            ),
+        }
+        for row in records
+    ]
     low = sorted(
         (product for product in products if _payload_int(product.get("stock")) <= 5),
         key=lambda product: _payload_int(product.get("stock")),
@@ -262,7 +273,10 @@ async def _workspace_candidates(db: AsyncSession, workspace_id: int) -> list[dic
                 "severity": "critical" if stock == 0 else "warning",
                 "title": f"{name} còn {stock} sản phẩm trong kho",
                 "evidence": {
-                    "source": "confirmed_import", "sku": sku, "product_name": name,
+                    "source": "confirmed_import",
+                    "source_record_id": product.get("_source_record_id"),
+                    "source_updated_at": product.get("_source_updated_at"),
+                    "sku": sku, "product_name": name,
                     "stock": stock, "current_price_vnd": _payload_int(product.get("price")),
                 },
                 "baseline_explanation": "Cảnh báo dựa trên tồn kho trong file đã xác nhận; chưa ước tính doanh thu hay tốc độ bán vì bạn chưa nạp lịch sử đơn hàng.",
@@ -276,6 +290,25 @@ async def _workspace_candidates(db: AsyncSession, workspace_id: int) -> list[dic
 
 
 def serialize(row: AutopilotOpportunity) -> dict:
+    selected = next(
+        (item for item in row.options if item.get("id") == row.selected_option_id), None
+    )
+    execution = None
+    monitoring = None
+    if row.status == "applied" and selected:
+        execution = {
+            "action": selected.get("label"),
+            "target": "internal_workflow",
+            "status": "draft_created",
+            "message": "Đã tạo workflow nội bộ; chưa gửi thay đổi sang nền tảng bán hàng.",
+            "executed_at": row.applied_at,
+        }
+        monitoring = {
+            "status": "waiting_for_new_data",
+            "before": selected.get("impact", {}),
+            "after": None,
+            "message": "Cần một lần đồng bộ mới để so sánh KPI trước và sau.",
+        }
     return {
         "id": row.id, "workspace_id": row.workspace_id, "kind": row.kind,
         "severity": row.severity, "status": row.status, "title": row.title,
@@ -285,6 +318,74 @@ def serialize(row: AutopilotOpportunity) -> dict:
         "selected_option_id": row.selected_option_id,
         "created_at": row.created_at, "updated_at": row.updated_at,
         "applied_at": row.applied_at,
+        "problem": row.title,
+        "impact_level": row.severity,
+        "confidence": {
+            "score": 0.95 if row.evidence.get("source") == "confirmed_import" else 0.7,
+            "basis": "Dữ liệu import đã xác nhận" if row.evidence.get("source") == "confirmed_import" else "Rule vận hành",
+        },
+        "data_updated_at": row.evidence.get("source_updated_at"),
+        "execution": execution,
+        "monitoring": monitoring,
+    }
+
+
+def _derive_center_state(readiness: dict[str, object], opportunity_statuses: list[str]) -> str:
+    shops = readiness.get("shops") or []
+    shop_statuses = {str(shop.get("status", "")).lower() for shop in shops if isinstance(shop, dict)}
+    if shop_statuses & {"failed", "error", "sync_failed"}:
+        return "sync_failed"
+    if shop_statuses & {"pending", "connecting", "authorizing", "syncing"}:
+        return "syncing"
+    if not readiness.get("ready"):
+        return "no_data"
+    if not opportunity_statuses:
+        return "ready_unanalyzed"
+    if any(status in {"detected", "simulated"} for status in opportunity_statuses):
+        return "awaiting_approval"
+    if any(status == "applied" for status in opportunity_statuses):
+        return "monitoring"
+    return "analyzed"
+
+
+async def center_state(db: AsyncSession, workspace_id: int) -> dict:
+    data = await onboarding_data.readiness(db, workspace_id)
+    imported_updated_at = await db.scalar(
+        select(func.max(WorkspaceDataRecord.updated_at)).where(
+            WorkspaceDataRecord.workspace_id == workspace_id
+        )
+    )
+    result = await db.execute(
+        select(AutopilotOpportunity).where(AutopilotOpportunity.workspace_id == workspace_id)
+    )
+    rows = list(result.scalars().all())
+    shops = data.get("shops") or []
+    synced = sum(
+        str(shop.get("status", "")).lower() in {"active", "connected", "synced"}
+        for shop in shops if isinstance(shop, dict)
+    )
+    timestamps = [
+        shop.get("last_synced_at") for shop in shops
+        if isinstance(shop, dict) and shop.get("last_synced_at")
+    ]
+    if imported_updated_at:
+        timestamps.append(imported_updated_at.isoformat())
+    timestamps.extend(
+        row.evidence.get("source_updated_at") for row in rows
+        if row.evidence.get("source_updated_at")
+    )
+    statuses = [row.status for row in rows]
+    return {
+        "state": _derive_center_state(data, statuses),
+        "data": data,
+        "latest_data_at": max(timestamps) if timestamps else None,
+        "sync": {"completed_sources": synced, "total_sources": len(shops)},
+        "decisions": {
+            "total": len(rows),
+            "awaiting_approval": sum(status in {"detected", "simulated"} for status in statuses),
+            "approved": sum(status == "applied" for status in statuses),
+            "rejected": sum(status == "rejected" for status in statuses),
+        },
     }
 
 
@@ -375,7 +476,9 @@ async def decide(db: AsyncSession, *, opportunity_id: int, workspace_id: int,
     row.status = "applied" if decision == "approve" else "rejected"
     row.applied_at = now if decision == "approve" else None
     payload = {"option_id": option_id, "option_label": option["label"], "note": note,
-               "execution_mode": "workflow_draft", "impact": option["impact"]}
+               "execution_mode": "workflow_draft", "target": "internal_workflow",
+               "delivery_status": "draft_created", "platform_sent": False,
+               "impact": option["impact"]}
     db.add(AutopilotAuditEvent(opportunity_id=row.id, workspace_id=workspace_id,
         actor_user_id=actor_user_id, event_type=row.status, payload=payload))
     await db.commit()

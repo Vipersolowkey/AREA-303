@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight, Bot, Check, CircleAlert, FlaskConical,
+  ArrowRight, Bot, Check, CircleAlert, Clock3, Database, FlaskConical,
   RefreshCw, ShieldCheck, Target, X,
 } from "lucide-react";
 import { api, ApiClientError } from "@/lib/api";
@@ -17,17 +17,28 @@ type Opportunity = {
   id: number; kind: string; severity: string; status: string; title: string;
   explanation: string; evidence: Record<string, string | number>; options: Option[];
   model: string | null; llm_used: boolean; selected_option_id: string | null;
+  problem: string; impact_level: string; data_updated_at: string | null;
+  confidence: { score: number; basis: string };
+  execution: { action: string; target: string; status: string; message: string; executed_at: string | null } | null;
+  monitoring: { status: string; before: Record<string, unknown>; after: Record<string, unknown> | null; message: string } | null;
+};
+type CenterState = {
+  state: "no_data" | "syncing" | "sync_failed" | "ready_unanalyzed" | "analyzed" | "awaiting_approval" | "monitoring";
+  latest_data_at: string | null;
+  sync: { completed_sources: number; total_sources: number };
+  decisions: { total: number; awaiting_approval: number; approved: number; rejected: number };
 };
 
 const money = (value: number) => `${new Intl.NumberFormat("vi-VN").format(value)}₫`;
 const labelMap: Record<string, string> = {
   inventory: "Tồn kho", reviews: "Trải nghiệm khách hàng", customer_risk: "Giữ chân khách",
-  detected: "Cần xem", simulated: "Đã mô phỏng", applied: "Đã duyệt", rejected: "Đã bỏ",
+  detected: "Cần mô phỏng", simulated: "Chờ duyệt", applied: "Đã tạo workflow", rejected: "Đã bỏ",
 };
 const evidenceLabels: Record<string, string> = {
   product_name: "Sản phẩm", runway_days: "Số ngày còn hàng", revenue_at_risk_vnd: "Doanh thu có rủi ro",
   negative_reviews_30d: "Review thấp / 30 ngày", customers_at_risk: "Khách cần giữ chân",
   ltv_at_risk_vnd: "LTV có rủi ro", stock: "Tồn hiện tại", daily_sales: "Bán/ngày",
+  current_price_vnd: "Giá hiện tại", sku: "SKU",
 };
 const impactLabels: Record<string, string> = {
   revenue_protected_vnd: "Doanh thu được bảo vệ",
@@ -43,17 +54,41 @@ const riskLabels: Record<string, string> = { low: "thấp", medium: "vừa", hig
 const showValue = (key: string, value: string | number) =>
   key.endsWith("_vnd") && typeof value === "number" ? money(value) : String(value);
 
+const stateCopy: Record<CenterState["state"], { title: string; detail: string; tone: "muted" | "warning" | "danger" | "live" }> = {
+  no_data: { title: "Chưa sẵn sàng", detail: "Workspace chưa có dữ liệu đã xác nhận.", tone: "muted" },
+  syncing: { title: "Đang đồng bộ dữ liệu", detail: "Tiến độ lấy trực tiếp từ các nguồn đã kết nối.", tone: "warning" },
+  sync_failed: { title: "Đồng bộ thất bại", detail: "Kiểm tra kết nối nguồn dữ liệu trước khi phân tích.", tone: "danger" },
+  ready_unanalyzed: { title: "Dữ liệu đã sẵn sàng", detail: "Có thể chạy phân tích lần đầu.", tone: "live" },
+  analyzed: { title: "Đã phân tích", detail: "Không có quyết định đang chờ duyệt.", tone: "live" },
+  awaiting_approval: { title: "Có quyết định chờ duyệt", detail: "AI chỉ đề xuất; seller quyết định sau khi mô phỏng.", tone: "warning" },
+  monitoring: { title: "Cần theo dõi hiệu quả", detail: "Đồng bộ dữ liệu mới để đối chiếu KPI trước và sau.", tone: "live" },
+};
+
+function relativeTime(value: string | null) {
+  if (!value) return "chưa xác định thời điểm";
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(value).getTime()) / 60000));
+  if (minutes < 1) return "vừa cập nhật";
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.round(minutes / 60);
+  return hours < 24 ? `${hours} giờ trước` : `${Math.round(hours / 24)} ngày trước`;
+}
+
 export function AutopilotPanel() {
   const t = useT();
   const [items, setItems] = useState<Opportunity[]>([]);
+  const [center, setCenter] = useState<CenterState | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const response = await api.get<Opportunity[]>("/autopilot/opportunities");
-      setItems(response.data ?? []);
+      const [opportunities, state] = await Promise.all([
+        api.get<Opportunity[]>("/autopilot/opportunities"),
+        api.get<CenterState>("/autopilot/state"),
+      ]);
+      setItems(opportunities.data ?? []);
+      setCenter(state.data ?? null);
     } catch (cause) {
       setError(cause instanceof ApiClientError ? cause.message : t("Hãy chọn workspace đang hoạt động."));
     }
@@ -65,6 +100,8 @@ export function AutopilotPanel() {
     try {
       const response = await api.post<Opportunity[]>("/autopilot/refresh", {});
       setItems(response.data ?? []);
+      const state = await api.get<CenterState>("/autopilot/state");
+      setCenter(state.data ?? null);
     } catch (cause) {
       setError(cause instanceof ApiClientError ? cause.message : t("Không thể phân tích dữ liệu vận hành."));
     } finally { setBusy(null); }
@@ -81,6 +118,8 @@ export function AutopilotPanel() {
       );
       if (response.data) setItems((rows) => rows.map((row) =>
         row.id === item.id ? response.data!.opportunity : row));
+      const state = await api.get<CenterState>("/autopilot/state");
+      setCenter(state.data ?? null);
     } catch (cause) {
       setError(cause instanceof ApiClientError ? cause.message : t("Hành động không hợp lệ."));
     } finally { setBusy(null); }
@@ -88,6 +127,7 @@ export function AutopilotPanel() {
 
   const active = items.filter((item) => !["applied", "rejected"].includes(item.status));
   const completed = items.length - active.length;
+  const currentState = center ? stateCopy[center.state] : null;
 
   return (
     <div className="space-y-6">
@@ -103,10 +143,28 @@ export function AutopilotPanel() {
               </p>
             </div>
           </div>
-          <Button onClick={refresh} disabled={busy !== null}>
-            <RefreshCw className={`h-4 w-4 ${busy === "refresh" ? "animate-spin" : ""}`} />
-            {busy === "refresh" ? t("Đang dựng snapshot…") : t("Cập nhật phân tích")}
-          </Button>
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            {currentState && <div className="text-right">
+              <Badge variant={currentState.tone}>{currentState.title}</Badge>
+              <p className="mt-1 text-xs text-text-muted">
+                {center?.latest_data_at ? `Dữ liệu mới nhất ${relativeTime(center.latest_data_at)}` : currentState.detail}
+              </p>
+              {center?.state === "syncing" && <p className="text-xs font-medium text-warning">
+                {center.sync.completed_sources}/{center.sync.total_sources} nguồn đã đồng bộ
+              </p>}
+              {!!center?.decisions.awaiting_approval && <p className="text-xs font-medium text-warning">
+                {center.decisions.awaiting_approval} quyết định chờ duyệt
+              </p>}
+            </div>}
+            {center?.state === "no_data" || center?.state === "sync_failed" ? (
+              <Button asChild><Link href="/seller/onboarding"><Database className="h-4 w-4" /> Nạp dữ liệu</Link></Button>
+            ) : (
+              <Button onClick={refresh} disabled={busy !== null || center?.state === "syncing"}>
+                <RefreshCw className={`h-4 w-4 ${busy === "refresh" ? "animate-spin" : ""}`} />
+                {busy === "refresh" ? t("Đang phân tích snapshot…") : center?.state === "ready_unanalyzed" ? "Chạy phân tích lần đầu" : t("Cập nhật phân tích")}
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -121,7 +179,7 @@ export function AutopilotPanel() {
         <Card><CardContent className="p-10 text-center">
           <Target className="mx-auto h-8 w-8 text-accent" />
           <h3 className="mt-3 text-lg">{t("Chưa có snapshot quyết định")}</h3>
-          <p className="mt-1 text-sm text-text-muted">{t("Cập nhật phân tích để đọc tồn kho, khách hàng và review từ cùng một snapshot.")}</p>
+          <p className="mt-1 text-sm text-text-muted">{center?.state === "no_data" ? "Nạp dữ liệu sản phẩm hoặc kết nối sàn trước khi tạo quyết định." : t("Chạy phân tích để đọc dữ liệu đã xác nhận trong cùng một snapshot.")}</p>
         </CardContent></Card>
       )}
 
@@ -141,6 +199,11 @@ export function AutopilotPanel() {
                     </div>
                     <CardTitle className="mt-3">{item.title}</CardTitle>
                     <p className="mt-2 max-w-3xl text-sm leading-6 text-text-muted">{item.explanation}</p>
+                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-dim">
+                      <span>Mức ảnh hưởng: <b className="text-text">{item.impact_level === "critical" ? "Cao" : item.impact_level === "warning" ? "Trung bình" : "Thấp"}</b></span>
+                      <span>Độ tin cậy: <b className="text-text">{Math.round(item.confidence.score * 100)}%</b> · {item.confidence.basis}</span>
+                      <span className="inline-flex items-center gap-1"><Clock3 className="h-3 w-3" /> Dữ liệu {relativeTime(item.data_updated_at)}</span>
+                    </div>
                   </div>
                   {item.llm_used && <span className="text-xs text-text-dim">{t("Ollama giải thích · số liệu do rule tính")}</span>}
                 </div>
@@ -156,6 +219,10 @@ export function AutopilotPanel() {
                       </div>
                     ))}
                   </div>
+                  <p className="mt-3 text-xs text-text-dim">
+                    Nguồn: {item.evidence.source === "confirmed_import" ? "File đã xác nhận trong workspace" : String(item.evidence.source ?? "Không xác định")}
+                    {item.evidence.source_record_id ? ` · Bản ghi #${item.evidence.source_record_id}` : ""}
+                  </p>
                 </div>
                 {selected ? (
                   <div className="rounded-md border-2 border-text/70 bg-surface p-4 shadow-[3px_4px_0_hsl(var(--text)/calc(.1*var(--shadow-strength)))]">
@@ -177,7 +244,7 @@ export function AutopilotPanel() {
                         </Button>
                       ) : (
                         <Button size="sm" disabled={busy !== null} onClick={() => act(item, selected, "approve")}>
-                          <Check className="h-3.5 w-3.5" /> {t("Duyệt hành động")}
+                          <Check className="h-3.5 w-3.5" /> {t("Duyệt tạo workflow")}
                         </Button>
                       )}
                       <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => act(item, selected, "reject")}>
@@ -224,6 +291,11 @@ export function AutopilotPanel() {
                 <Badge variant={item.status === "applied" ? "success" : "muted"}>
                   {labelMap[item.status] ?? item.status}
                 </Badge>
+                {item.execution && <div className="w-full rounded-md bg-surface-2 p-3 text-xs text-text-muted">
+                  <b className="text-text">{item.execution.action}</b>
+                  <p className="mt-1">{item.execution.message}</p>
+                  <p className="mt-2 font-medium text-warning">KPI: {item.monitoring?.message}</p>
+                </div>}
               </div>
             ))}
           </div>

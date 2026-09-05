@@ -11,6 +11,23 @@ from app.core.exceptions import UpstreamUnavailableError
 from app.services import autopilot
 
 
+def test_center_state_requires_real_data_before_analysis() -> None:
+    readiness = {"ready": False, "shops": []}
+    assert autopilot._derive_center_state(readiness, []) == "no_data"  # noqa: SLF001
+
+
+def test_center_state_exposes_sync_failure_before_generic_readiness() -> None:
+    readiness = {"ready": False, "shops": [{"status": "sync_failed"}]}
+    assert autopilot._derive_center_state(readiness, []) == "sync_failed"  # noqa: SLF001
+
+
+def test_center_state_moves_from_first_analysis_to_monitoring() -> None:
+    readiness = {"ready": True, "shops": []}
+    assert autopilot._derive_center_state(readiness, []) == "ready_unanalyzed"  # noqa: SLF001
+    assert autopilot._derive_center_state(readiness, ["detected"]) == "awaiting_approval"  # noqa: SLF001
+    assert autopilot._derive_center_state(readiness, ["applied"]) == "monitoring"  # noqa: SLF001
+
+
 @pytest.mark.asyncio
 async def test_candidates_use_confirmed_workspace_import_only() -> None:
     class _Row:
