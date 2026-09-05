@@ -1,6 +1,6 @@
 """Workspace-scoped Seller Autopilot API."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import WorkspaceAccess, get_db_dep, get_workspace_access, require_workspace_role
@@ -39,6 +39,16 @@ async def refresh(access: WorkspaceAccess = Depends(_MANAGER),
     return _ok(await service.refresh(
         db, workspace_id=access.workspace_id, actor_user_id=access.user_id,
         use_seed_data=access.role == "platform_admin",
+    ))
+
+
+@router.post("/demo/reset", response_model=ApiResponse[list[dict]])
+async def reset_demo(access: WorkspaceAccess = Depends(_MANAGER),
+                     db: AsyncSession = Depends(get_db_dep)) -> ApiResponse:
+    if access.role != "platform_admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Chỉ tài khoản admin được tạo lại bản demo.")
+    return _ok(await service.reset_demo(
+        db, workspace_id=access.workspace_id, actor_user_id=access.user_id,
     ))
 
 

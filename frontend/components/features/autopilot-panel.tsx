@@ -24,6 +24,7 @@ type Opportunity = {
 };
 type CenterState = {
   state: "no_data" | "syncing" | "sync_failed" | "ready_unanalyzed" | "analyzed" | "awaiting_approval" | "monitoring";
+  demo_mode: boolean;
   latest_data_at: string | null;
   sync: { completed_sources: number; total_sources: number };
   decisions: { total: number; awaiting_approval: number; approved: number; rejected: number };
@@ -117,6 +118,20 @@ export function AutopilotPanel() {
     } finally { setBusy(null); }
   };
 
+  const resetDemo = async () => {
+    setBusy("reset-demo"); setError(null); setRefreshNotice(null);
+    try {
+      const response = await api.post<Opportunity[]>("/autopilot/demo/reset", {});
+      const demoItems = response.data ?? [];
+      setItems(demoItems);
+      const state = await api.get<CenterState>("/autopilot/state");
+      setCenter(state.data ?? null);
+      setRefreshNotice(`Đã tạo lại bản demo với ${demoItems.length} quyết định mẫu.`);
+    } catch (cause) {
+      setError(cause instanceof ApiClientError ? cause.message : "Không thể tạo lại bản demo.");
+    } finally { setBusy(null); }
+  };
+
   const act = async (item: Opportunity, option: Option, decision?: "approve" | "reject") => {
     const key = `${item.id}:${option.id}:${decision ?? "simulate"}`;
     setBusy(key); setError(null);
@@ -169,10 +184,18 @@ export function AutopilotPanel() {
             {center?.state === "no_data" || center?.state === "sync_failed" ? (
               <Button asChild><Link href="/seller/onboarding"><Database className="h-4 w-4" /> Nạp dữ liệu</Link></Button>
             ) : (
-              <Button onClick={refresh} disabled={busy !== null || center?.state === "syncing"}>
-                <RefreshCw className={`h-4 w-4 ${busy === "refresh" ? "animate-spin" : ""}`} />
-                {busy === "refresh" ? t("Đang phân tích snapshot…") : center?.state === "ready_unanalyzed" ? "Chạy phân tích lần đầu" : t("Cập nhật phân tích")}
-              </Button>
+              <div className="flex flex-wrap justify-end gap-2">
+                {center?.demo_mode && active.length === 0 && completed > 0 && (
+                  <Button variant="secondary" onClick={resetDemo} disabled={busy !== null}>
+                    <RefreshCw className={`h-4 w-4 ${busy === "reset-demo" ? "animate-spin" : ""}`} />
+                    {busy === "reset-demo" ? "Đang tạo lại demo…" : "Tạo lại bản demo"}
+                  </Button>
+                )}
+                <Button onClick={refresh} disabled={busy !== null || center?.state === "syncing"}>
+                  <RefreshCw className={`h-4 w-4 ${busy === "refresh" ? "animate-spin" : ""}`} />
+                  {busy === "refresh" ? t("Đang phân tích snapshot…") : center?.state === "ready_unanalyzed" ? "Chạy phân tích lần đầu" : t("Cập nhật phân tích")}
+                </Button>
+              </div>
             )}
           </div>
         </CardContent>

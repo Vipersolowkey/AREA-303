@@ -376,6 +376,7 @@ async def center_state(
     if not data["ready"]:
         return {
             "state": _derive_center_state(data, []),
+            "demo_mode": use_seed_data,
             "data": data,
             "latest_data_at": None,
             "sync": {"completed_sources": 0, "total_sources": len(data.get("shops") or [])},
@@ -411,6 +412,7 @@ async def center_state(
     statuses = [row.status for row in rows]
     return {
         "state": _derive_center_state(data, statuses),
+        "demo_mode": use_seed_data,
         "data": data,
         "latest_data_at": max(timestamps) if timestamps else None,
         "sync": {"completed_sources": synced, "total_sources": len(shops)},
@@ -461,6 +463,27 @@ async def refresh(
     for row in output:
         await db.refresh(row)
     return [serialize(row) for row in output]
+
+
+async def reset_demo(db: AsyncSession, *, workspace_id: int, actor_user_id: int) -> list[dict]:
+    """Rebuild the seeded admin walkthrough without touching seller workspace data."""
+    fingerprints = _seed_fingerprints()
+    result = await db.execute(select(AutopilotOpportunity).where(
+        AutopilotOpportunity.workspace_id == workspace_id,
+        AutopilotOpportunity.fingerprint.in_(fingerprints),
+    ))
+    for row in result.scalars():
+        row.status = "detected"
+        row.selected_option_id = None
+        row.approved_by = None
+        row.applied_at = None
+    await db.commit()
+    return await refresh(
+        db,
+        workspace_id=workspace_id,
+        actor_user_id=actor_user_id,
+        use_seed_data=True,
+    )
 
 
 async def list_opportunities(
