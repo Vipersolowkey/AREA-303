@@ -350,6 +350,14 @@ def _derive_center_state(readiness: dict[str, object], opportunity_statuses: lis
 
 async def center_state(db: AsyncSession, workspace_id: int) -> dict:
     data = await onboarding_data.readiness(db, workspace_id)
+    if not data["ready"]:
+        return {
+            "state": _derive_center_state(data, []),
+            "data": data,
+            "latest_data_at": None,
+            "sync": {"completed_sources": 0, "total_sources": len(data.get("shops") or [])},
+            "decisions": {"total": 0, "awaiting_approval": 0, "approved": 0, "rejected": 0},
+        }
     imported_updated_at = await db.scalar(
         select(func.max(WorkspaceDataRecord.updated_at)).where(
             WorkspaceDataRecord.workspace_id == workspace_id
@@ -422,6 +430,10 @@ async def refresh(db: AsyncSession, *, workspace_id: int, actor_user_id: int) ->
 
 
 async def list_opportunities(db: AsyncSession, workspace_id: int) -> list[dict]:
+    # Audit rows are retained, but stale recommendations must not be shown
+    # before the current workspace has confirmed source data.
+    if not (await onboarding_data.readiness(db, workspace_id))["ready"]:
+        return []
     result = await db.execute(select(AutopilotOpportunity).where(
         AutopilotOpportunity.workspace_id == workspace_id
     ).order_by(AutopilotOpportunity.created_at.desc()))
