@@ -19,21 +19,27 @@ def _ok(data: dict | list) -> ApiResponse:
 @router.get("/opportunities", response_model=ApiResponse[list[dict]])
 async def opportunities(access: WorkspaceAccess = Depends(get_workspace_access),
                         db: AsyncSession = Depends(get_db_dep)) -> ApiResponse:
-    return _ok(await service.list_opportunities(db, access.workspace_id))
+    return _ok(await service.list_opportunities(
+        db, access.workspace_id, use_seed_data=access.role == "platform_admin"
+    ))
 
 
 @router.get("/state", response_model=ApiResponse[dict])
 async def state(access: WorkspaceAccess = Depends(get_workspace_access),
                 db: AsyncSession = Depends(get_db_dep)) -> ApiResponse:
     """Workspace-scoped data and decision state machine for the center header."""
-    return _ok(await service.center_state(db, access.workspace_id))
+    return _ok(await service.center_state(
+        db, access.workspace_id, use_seed_data=access.role == "platform_admin"
+    ))
 
 
 @router.post("/refresh", response_model=ApiResponse[list[dict]])
 async def refresh(access: WorkspaceAccess = Depends(_MANAGER),
                   db: AsyncSession = Depends(get_db_dep)) -> ApiResponse:
-    return _ok(await service.refresh(db, workspace_id=access.workspace_id,
-                                     actor_user_id=access.user_id))
+    return _ok(await service.refresh(
+        db, workspace_id=access.workspace_id, actor_user_id=access.user_id,
+        use_seed_data=access.role == "platform_admin",
+    ))
 
 
 @router.post("/opportunities/{opportunity_id}/simulate", response_model=ApiResponse[dict])

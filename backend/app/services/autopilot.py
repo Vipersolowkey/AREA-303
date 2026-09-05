@@ -321,8 +321,14 @@ def serialize(row: AutopilotOpportunity) -> dict:
         "problem": row.title,
         "impact_level": row.severity,
         "confidence": {
-            "score": 0.95 if row.evidence.get("source") == "confirmed_import" else 0.7,
-            "basis": "Dữ liệu import đã xác nhận" if row.evidence.get("source") == "confirmed_import" else "Rule vận hành",
+            "score": 0.95 if row.evidence.get("source") in {"confirmed_import", "seeded_admin_demo"} else 0.7,
+            "basis": (
+                "Dữ liệu import đã xác nhận"
+                if row.evidence.get("source") == "confirmed_import"
+                else "Bộ dữ liệu mẫu của tài khoản admin"
+                if row.evidence.get("source") == "seeded_admin_demo"
+                else "Rule vận hành"
+            ),
         },
         "data_updated_at": row.evidence.get("source_updated_at"),
         "execution": execution,
@@ -348,8 +354,25 @@ def _derive_center_state(readiness: dict[str, object], opportunity_statuses: lis
     return "analyzed"
 
 
-async def center_state(db: AsyncSession, workspace_id: int) -> dict:
-    data = await onboarding_data.readiness(db, workspace_id)
+def _seed_fingerprints() -> set[str]:
+    return {candidate["fingerprint"] for candidate in _candidates()}
+
+
+async def center_state(
+    db: AsyncSession, workspace_id: int, *, use_seed_data: bool = False
+) -> dict:
+    data = (
+        {
+            "ready": True,
+            "total_records": len(store.all_products()) + len(store.all_demo_orders()),
+            "manual_records": 0,
+            "marketplace_records": 0,
+            "shops": [],
+            "source": "seeded_admin_demo",
+        }
+        if use_seed_data
+        else await onboarding_data.readiness(db, workspace_id)
+    )
     if not data["ready"]:
         return {
             "state": _derive_center_state(data, []),
@@ -367,6 +390,9 @@ async def center_state(db: AsyncSession, workspace_id: int) -> dict:
         select(AutopilotOpportunity).where(AutopilotOpportunity.workspace_id == workspace_id)
     )
     rows = list(result.scalars().all())
+    if use_seed_data:
+        fingerprints = _seed_fingerprints()
+        rows = [row for row in rows if row.fingerprint in fingerprints]
     shops = data.get("shops") or []
     synced = sum(
         str(shop.get("status", "")).lower() in {"active", "connected", "synced"}
@@ -397,8 +423,16 @@ async def center_state(db: AsyncSession, workspace_id: int) -> dict:
     }
 
 
-async def refresh(db: AsyncSession, *, workspace_id: int, actor_user_id: int) -> list[dict]:
-    candidates = await _workspace_candidates(db, workspace_id)
+async def refresh(
+    db: AsyncSession, *, workspace_id: int, actor_user_id: int,
+    use_seed_data: bool = False,
+) -> list[dict]:
+    candidates = _candidates() if use_seed_data else await _workspace_candidates(db, workspace_id)
+    if use_seed_data:
+        snapshot_at = datetime.now(UTC).isoformat()
+        for candidate in candidates:
+            candidate["evidence"]["source"] = "seeded_admin_demo"
+            candidate["evidence"]["source_updated_at"] = snapshot_at
     explanations, llm_used, model = await _ollama_explain(candidates)
     existing = await db.execute(select(AutopilotOpportunity).where(
         AutopilotOpportunity.workspace_id == workspace_id
@@ -429,15 +463,21 @@ async def refresh(db: AsyncSession, *, workspace_id: int, actor_user_id: int) ->
     return [serialize(row) for row in output]
 
 
-async def list_opportunities(db: AsyncSession, workspace_id: int) -> list[dict]:
+async def list_opportunities(
+    db: AsyncSession, workspace_id: int, *, use_seed_data: bool = False
+) -> list[dict]:
     # Audit rows are retained, but stale recommendations must not be shown
     # before the current workspace has confirmed source data.
-    if not (await onboarding_data.readiness(db, workspace_id))["ready"]:
+    if not use_seed_data and not (await onboarding_data.readiness(db, workspace_id))["ready"]:
         return []
     result = await db.execute(select(AutopilotOpportunity).where(
         AutopilotOpportunity.workspace_id == workspace_id
     ).order_by(AutopilotOpportunity.created_at.desc()))
-    return [serialize(row) for row in result.scalars()]
+    rows = list(result.scalars())
+    if use_seed_data:
+        fingerprints = _seed_fingerprints()
+        rows = [row for row in rows if row.fingerprint in fingerprints]
+    return [serialize(row) for row in rows]
 
 
 async def _get(db: AsyncSession, opportunity_id: int, workspace_id: int) -> AutopilotOpportunity:

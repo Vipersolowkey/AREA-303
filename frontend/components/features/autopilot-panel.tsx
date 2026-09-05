@@ -220,7 +220,11 @@ export function AutopilotPanel() {
                     ))}
                   </div>
                   <p className="mt-3 text-xs text-text-dim">
-                    Nguồn: {item.evidence.source === "confirmed_import" ? "File đã xác nhận trong workspace" : String(item.evidence.source ?? "Không xác định")}
+                    Nguồn: {item.evidence.source === "confirmed_import"
+                      ? "File đã xác nhận trong workspace"
+                      : item.evidence.source === "seeded_admin_demo"
+                        ? "Bộ dữ liệu mẫu của tài khoản admin"
+                        : String(item.evidence.source ?? "Không xác định")}
                     {item.evidence.source_record_id ? ` · Bản ghi #${item.evidence.source_record_id}` : ""}
                   </p>
                 </div>
