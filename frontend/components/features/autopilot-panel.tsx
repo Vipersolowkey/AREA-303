@@ -79,6 +79,7 @@ export function AutopilotPanel() {
   const [center, setCenter] = useState<CenterState | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshNotice, setRefreshNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -96,10 +97,19 @@ export function AutopilotPanel() {
   useEffect(() => { void load(); }, [load]);
 
   const refresh = async () => {
-    setBusy("refresh"); setError(null);
+    setBusy("refresh"); setError(null); setRefreshNotice(null);
     try {
       const response = await api.post<Opportunity[]>("/autopilot/refresh", {});
-      setItems(response.data ?? []);
+      const refreshedItems = response.data ?? [];
+      setItems(refreshedItems);
+      const decisionsToReview = refreshedItems.filter(
+        (item) => !["applied", "rejected"].includes(item.status),
+      ).length;
+      setRefreshNotice(
+        decisionsToReview > 0
+          ? `Phân tích hoàn tất: ${decisionsToReview} quyết định cần xem.`
+          : "Phân tích hoàn tất: không phát hiện quyết định mới từ snapshot hiện tại.",
+      );
       const state = await api.get<CenterState>("/autopilot/state");
       setCenter(state.data ?? null);
     } catch (cause) {
@@ -175,6 +185,11 @@ export function AutopilotPanel() {
       </div>
 
       {error && <div className="rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">{error}</div>}
+      {refreshNotice && !error && (
+        <div role="status" className="rounded-lg border border-success/30 bg-success/10 p-3 text-sm font-medium text-success">
+          {refreshNotice}
+        </div>
+      )}
       {!items.length && !error && (
         <Card><CardContent className="p-10 text-center">
           <Target className="mx-auto h-8 w-8 text-accent" />
